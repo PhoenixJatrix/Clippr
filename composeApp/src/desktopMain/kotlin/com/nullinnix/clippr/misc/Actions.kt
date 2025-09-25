@@ -10,3 +10,15 @@ sealed interface ClipAction {
     data class OnTogglePin(val clip: Clip): ClipAction
     data class OnDelete(val clip: Clip): ClipAction
 }
+
+sealed interface Tab {
+    object ClipsTab: Tab
+    object SettingsTab: Tab
+}
+
+fun Tab.name(): String {
+    return when (this) {
+        Tab.ClipsTab -> "Clips"
+        Tab.SettingsTab -> "Settings"
+    }
+}

@@ -21,14 +21,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +54,7 @@ import clippr.composeapp.generated.resources.Urbanist_Regular
 import clippr.composeapp.generated.resources.pin
 import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipAction
+import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.misc.epochToReadableTime
 import com.nullinnix.clippr.misc.formatText
@@ -55,6 +62,7 @@ import com.nullinnix.clippr.misc.getIconForContent
 import com.nullinnix.clippr.model.ClipsViewModel
 import com.nullinnix.clippr.theme.Transparent
 import com.nullinnix.clippr.theme.White
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -67,8 +75,19 @@ fun App(
     MaterialTheme {
         val pinnedClips = clipsViewModel.clipsState.collectAsState().value.pinnedClips
         val otherClips = clipsViewModel.clipsState.collectAsState().value.otherClips
+        val pagerState = rememberPagerState { 2 }
 
-        Column(
+        var currentTab by remember { mutableStateOf<Tab>(Tab.ClipsTab) }
+        val coroutineScope = rememberCoroutineScope()
+
+        LaunchedEffect(pagerState.currentPage) {
+            currentTab = when (pagerState.currentPage) {
+                0 -> Tab.ClipsTab
+                else -> Tab.SettingsTab
+            }
+        }
+
+        Column (
             modifier = Modifier
                 .background(White)
                 .fillMaxSize()
@@ -76,62 +95,87 @@ fun App(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            if (pinnedClips.isNotEmpty() && otherClips.isNotEmpty()) {
-                LazyColumn {
-                    item {
-                        Spacer(Modifier.height(15.dp))
-                    }
+            Tabs(
+                currentTab = currentTab
+            ) {
+                coroutineScope.launch {
+                    pagerState.animateScrollToPage(
+                        page = when (it) {
+                            Tab.ClipsTab -> 0
+                            Tab.SettingsTab -> 1
+                        }
+                    )
+                }
+            }
 
-                    item {
-                        if (pinnedClips.isNotEmpty()) {
+            HorizontalPager(
+                state = pagerState
+            ) {
+                when (currentTab) {
+                    Tab.ClipsTab -> {
+                        if (pinnedClips.isNotEmpty() || otherClips.isNotEmpty()) {
+                            LazyColumn {
+                                item {
+                                    Spacer(Modifier.height(15.dp))
+                                }
+
+                                item {
+                                    if (pinnedClips.isNotEmpty()) {
+                                        Text(
+                                            text = "Pinned Clips",
+                                            color = Color.Black,
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+
+                                items(pinnedClips) { clip ->
+                                    ClipTemplate(clip) { action ->
+                                        clipsViewModel.onAction(action)
+                                    }
+
+                                    Spacer(Modifier.height(50.dp))
+                                }
+
+
+                                item {
+                                    if (pinnedClips.isNotEmpty()) {
+                                        Spacer(Modifier.height(10.dp))
+                                        Text(
+                                            text = "Other Clips",
+                                            color = Color.Black,
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+
+                                items(otherClips) { clip ->
+                                    ClipTemplate(clip) { action ->
+                                        clipsViewModel.onAction(action)
+                                    }
+
+                                    Spacer(Modifier.height(50.dp))
+                                }
+
+                                item {
+                                    Spacer(Modifier.height(15.dp))
+                                }
+                            }
+                        } else {
                             Text(
-                                text = "Pinned Clips",
-                                color = Color.Black,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
+                                text = "Try copying something...",
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 25.sp
                             )
                         }
                     }
 
-                    items(pinnedClips) { clip ->
-                        ClipTemplate(clip) { action ->
-                            clipsViewModel.onAction(action)
-                        }
+                    else -> {
 
-                        Spacer(Modifier.height(50.dp))
-                    }
-
-
-                    item {
-                        if (pinnedClips.isNotEmpty()) {
-                            Spacer(Modifier.height(10.dp))
-                            Text(
-                                text = "Other Clips",
-                                color = Color.Black,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    items(otherClips) { clip ->
-                        ClipTemplate(clip) { action ->
-                            clipsViewModel.onAction(action)
-                        }
-
-                        Spacer(Modifier.height(50.dp))
-                    }
-
-                    item {
-                        Spacer(Modifier.height(15.dp))
                     }
                 }
-            } else {
-                Text(
-                    text = "Try copying something...",
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 25.sp
-                )
             }
         }
     }

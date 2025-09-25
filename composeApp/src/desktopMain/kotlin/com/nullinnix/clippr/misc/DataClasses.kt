@@ -20,10 +20,6 @@ data class ClipsState(
 )
 
 const val CLIP_ID = "clipID"
-const val CONTENT = "content"
-const val URIS  = "uris"
-const val COPIED_AT = "copiedAt"
-const val IS_PINNED = "isPinned"
 const val MIME_TYPE = "mimeType"
 
 const val MIME_TYPE_PLAIN_TEXT = "text/plain"

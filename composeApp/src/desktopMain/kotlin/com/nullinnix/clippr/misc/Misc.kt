@@ -30,22 +30,6 @@ fun String.hash(): String {
     return digest.digest().joinToString("") { "%02x".format(it) }
 }
 
-fun MutableMap<String, Clip>.toJsonArray(): JsonArray{
-    return buildJsonArray {
-        for (clip in this@toJsonArray.values) {
-            add(
-                buildJsonObject {
-                    put(CLIP_ID, JsonPrimitive(clip.clipID))
-                    put(CONTENT, JsonPrimitive(clip.content))
-                    put(COPIED_AT, JsonPrimitive(clip.copiedAt))
-                    put(IS_PINNED, JsonPrimitive(clip.isPinned))
-                    put(MIME_TYPE, JsonPrimitive(clip.mimeType))
-                }
-            )
-        }
-    }
-}
-
 fun Collection<Any>.toJsonArray(): JsonArray {
     return buildJsonArray {
         for (item in this@toJsonArray) {

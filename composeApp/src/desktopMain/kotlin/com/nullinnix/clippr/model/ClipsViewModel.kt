@@ -27,6 +27,8 @@ class ClipsViewModel(
         clipsDao
             .getClips()
             .onEach {
+                println("${it.size}")
+
                 val pinned = mutableListOf<Clip>()
                 val other = mutableListOf<Clip>()
 
