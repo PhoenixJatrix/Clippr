@@ -1,154 +1,42 @@
 package com.nullinnix.clippr.misc
 
-import androidx.annotation.DrawableRes
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import clippr.composeapp.generated.resources.Res
-import clippr.composeapp.generated.resources.invalid
+import clippr.composeapp.generated.resources.audio
+import clippr.composeapp.generated.resources.blank
+import clippr.composeapp.generated.resources.broken
+import clippr.composeapp.generated.resources.code
+import clippr.composeapp.generated.resources.directory
+import clippr.composeapp.generated.resources.image
+import clippr.composeapp.generated.resources.runnable
+import clippr.composeapp.generated.resources.text
+import clippr.composeapp.generated.resources.unknown
+import clippr.composeapp.generated.resources.video
+import clippr.composeapp.generated.resources.zip
 import com.nullinnix.clippr.model.ViewModel
-import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.apache.tika.Tika
-import org.jetbrains.skia.Bitmap
-import org.jetbrains.skia.Drawable
-import org.jetbrains.skiko.toBitmap
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
-import java.awt.image.BufferedImage
 import java.io.File
 import java.security.MessageDigest
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.util.Locale
 import java.util.UUID
-import javax.imageio.ImageIO
-import kotlin.io.encoding.Base64
-
-
-//fun toBufferedImage(img: Image): BufferedImage {
-//    if (img is BufferedImage) return img
-//
-//    val width = img.getWidth(null)
-//    val height = img.getHeight(null)
-//
-//    val bImage = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
-//    val g2d = bImage.createGraphics()
-//    g2d.drawImage(img, 0, 0, null)
-//    g2d.dispose()
-//    return bImage
-//}
-
-//fun getImageFromClipboard(): Bitmap? {
-//    val toolkit = Toolkit.getDefaultToolkit()
-//    val clipboard = toolkit.systemClipboard
-//    val contents = clipboard.getContents(null)
-//
-//    if (contents != null && contents.isDataFlavorSupported(DataFlavor.imageFlavor)) {
-//        val image = contents.getTransferData(DataFlavor.imageFlavor) as Image
-//        val bitmap = toBufferedImage(image).toBitmap()
-//
-//        println("image found")
-//        return bitmap
-//    }
-//
-//    println("no image")
-//    return null
-//}
-
-fun getImage(): Bitmap? {
-    val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-    val contents = clipboard.getContents(null)
-    if (contents != null && contents.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-        val files = contents.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
-        if (files.isNotEmpty()) {
-            val image = ImageIO.read(files.first() as File)
-            return image.toBitmap()
-        }
-    }
-
-    return null
-}
-
-fun getText(): String? {
-    val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-    val contents = clipboard.getContents(null)
-
-    if (contents.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-        return contents.getTransferData(DataFlavor.stringFlavor) as String
-    }
-
-    return null
-}
-
-fun getClipboard(
-    onPlainTextFound: (Clip) -> Unit,
-    onPathsFound: (Clip) -> Unit
-) {
-    val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-    val contents = clipboard.getContents(null)
-
-    if (contents.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-        val paths = contents.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
-        val tika = Tika()
-
-        val mimeType = tika.detect(paths.first().toString())
-        val hash = paths.toString().hash()
-
-        if (ViewModel.lastCopiedItemHash != hash) {
-            onPathsFound(
-                Clip(
-                    clipID = UUID.randomUUID().toString(),
-                    text = mimeType,
-                    uris = paths.map { it.toString() },
-                    copiedAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
-                    isPinned = false,
-                    mimeType = mimeType,
-                    isImage = false
-                )
-            )
-
-            ViewModel.lastCopiedItemHash = hash
-        }
-    } else if (contents.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-        val content = contents.getTransferData(DataFlavor.stringFlavor) as String
-        val hash = content.hash()
-
-        if (ViewModel.lastCopiedItemHash != hash) {
-            onPlainTextFound(
-                Clip(
-                    clipID = UUID.randomUUID().toString(),
-                    text = content,
-                    uris = listOf(),
-                    copiedAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
-                    isPinned = false,
-                    mimeType = "text/plain",
-                    isImage = false
-                )
-            )
-
-            ViewModel.lastCopiedItemHash = hash
-        }
-    }
-}
-
-fun clipboardListener(onChange: (String) -> Unit) {
-    while (true) {
-        Thread.sleep(500)
-    }
-}
-
-fun setClipboard(data: Any) {
-    val process = ProcessBuilder("pbcopy").start()
-    process.outputStream.bufferedWriter().use {
-        it.write("paste this shit")
-    }
-}
 
 fun String.hash(): String {
     val digest = MessageDigest.getInstance("SHA-256")
@@ -160,31 +48,13 @@ fun String.hash(): String {
     return digest.digest().joinToString("") { "%02x".format(it) }
 }
 
-fun BufferedImage.hash(): String {
-    val pixels = IntArray(this.width * this.height)
-
-    this.getRGB(0, 0, this.width, this.height, pixels, 0, this.width)
-
-    val digest = MessageDigest.getInstance("SHA-256")
-
-    for (pixel in pixels) {
-        digest.update((pixel shr 24).toByte())
-        digest.update((pixel shr 16).toByte())
-        digest.update((pixel shr 8).toByte())
-        digest.update(pixel.toByte())
-    }
-
-    return digest.digest().joinToString("") { "%02x".format(it) }
-}
-
 fun MutableMap<String, Clip>.toJsonArray(): JsonArray{
     return buildJsonArray {
         for (clip in this@toJsonArray.values) {
             add(
                 buildJsonObject {
                     put(CLIP_ID, JsonPrimitive(clip.clipID))
-                    put(TEXT, JsonPrimitive(clip.text))
-                    put(URIS, clip.uris.toJsonArray())
+                    put(CONTENT, JsonPrimitive(clip.content))
                     put(COPIED_AT, JsonPrimitive(clip.copiedAt))
                     put(IS_PINNED, JsonPrimitive(clip.isPinned))
                     put(MIME_TYPE, JsonPrimitive(clip.mimeType))
@@ -206,6 +76,172 @@ fun JsonArray.toStringList(): List<String> {
     return this.map { it.jsonPrimitive.content }
 }
 
+fun JsonObject.getData(key: String): String {
+    return if (this.containsKey(key)) this[key]!!.jsonPrimitive.content else ""
+}
+
 fun formatText(string: String): String {
     return string.replace("\n", " ")
+}
+
+fun formatMillisToTime(millis: Long, returnEmptyStrIfNoUsage: Boolean = true, includeSeconds: Boolean = false): String {
+    val seconds = millis / 1000
+    val minutes = (seconds / 60) % 60
+    val hours = (seconds / 60) / 60
+
+    var hoursStr = ""
+    var minutesStr = ""
+    var secondsStr = ""
+
+    if (hours > 0) {
+        hoursStr = " ${hours}h"
+    }
+
+    if (minutes > 0) {
+        minutesStr = " ${minutes}m"
+    }
+
+    if (includeSeconds) {
+        secondsStr = " ${seconds % 60}s"
+    }
+
+    return if (hoursStr.isEmpty() && minutesStr.isEmpty()) {
+        if (includeSeconds) {
+            secondsStr
+        } else {
+            if (returnEmptyStrIfNoUsage) {
+                ""
+            } else {
+                " 0s"
+            }
+        }
+    } else {
+        "${hoursStr}${minutesStr}${secondsStr}"
+    }
+}
+
+fun formatSecondsToDays(secondsToFormat: Long): String {
+    val seconds = secondsToFormat % 60
+    val minutes = (secondsToFormat / 60) % 60
+    val hours = ((secondsToFormat / 60) / 60) % 24
+    val days = ((secondsToFormat / 60) / 60) / 24
+
+    var hoursStr = ""
+    var daysStr = ""
+    var minutesStr = ""
+    var secondsStr = " 0s"
+
+    if (days > 0) {
+        daysStr = " ${days}d"
+    }
+
+    if (hours > 0) {
+        hoursStr = " ${hours}h"
+    }
+
+    if (minutes > 0) {
+        minutesStr = " ${minutes}m"
+    }
+
+    if (seconds > 0) {
+        secondsStr = " ${seconds % 60}s"
+    }
+
+    return if (daysStr.isEmpty() && hoursStr.isEmpty() && minutesStr.isEmpty()) {
+        return secondsStr
+    } else {
+        "${daysStr}${hoursStr}${minutesStr}${secondsStr}"
+    }
+}
+
+fun formatMinutesToTime(minutes: Long): String {
+    val m = minutes % 60
+    val hours = minutes / 60
+
+    var hoursStr = ""
+    var minutesStr = ""
+
+    if (hours > 0) {
+        hoursStr = hours.toString() + "h"
+    }
+
+    if (m > 0) {
+        minutesStr = " ${m}m"
+    }
+
+    return if (hoursStr.isEmpty() && minutesStr.isEmpty()) "0m" else "${hoursStr}${minutesStr}"
+}
+
+fun formatSignificantUnitsOnly(millis: Long): String {
+    val seconds = millis / 1000
+    val minutes = (seconds / 60) % 60
+    val hours = (seconds / 60) / 60
+
+    var hoursStr = ""
+    var minutesStr = ""
+    var secondsStr = ""
+
+    if (hours >= 1) {
+        hoursStr = hours.toString() + "h "
+    }
+
+    if (minutes >= 1) {
+        minutesStr = "${minutes}m "
+    }
+
+    if (seconds >= 0) {
+        secondsStr = "${seconds % 60}s "
+    }
+
+    if (hours >= 1) {
+        return hoursStr
+    }
+
+    if (minutes >= 1) {
+        return minutesStr
+    }
+
+    if (seconds % 60 > 0) {
+        return secondsStr
+    }
+
+    return "0s"
+}
+
+@Composable
+fun corners(
+    top: Dp = 15.dp,
+    bottom: Dp = 15.dp,
+): RoundedCornerShape {
+    return RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom)
+}
+
+@Composable
+fun corners(
+    all: Dp = 15.dp
+): RoundedCornerShape {
+    return RoundedCornerShape(all)
+}
+
+fun Modifier.noGleamTaps(enabled: Boolean = true, onClick: () -> Unit): Modifier = composed {
+    val emptyClick = {}
+    this then Modifier.clickable(
+        indication = null,
+        interactionSource = remember { MutableInteractionSource() },
+        onClick = if (enabled) onClick else emptyClick
+    )
+}
+
+fun epochToReadableTime (epoch: Long): String {
+    val timeElapsedSinceEpoch = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - epoch
+
+    return when (timeElapsedSinceEpoch) {
+        in Long.MIN_VALUE..10800L -> "${formatSignificantUnitsOnly(timeElapsedSinceEpoch * 1000).trim()} ago"
+        in 10800L..86400 -> "Today"
+        in 86400..86400L * 2 -> "Yesterday"
+        else -> {
+            val constructedDayTime = LocalDateTime.ofEpochSecond(epoch, 0, ZoneOffset.UTC)
+            "${constructedDayTime.dayOfWeek.name.substring(0, 3).lowercase().capitalize(Locale.ROOT)}, ${constructedDayTime.dayOfMonth} ${constructedDayTime.month.name.lowercase().capitalize(Locale.ROOT)} ${constructedDayTime.year}"
+        }
+    }
 }

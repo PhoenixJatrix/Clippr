@@ -5,12 +5,11 @@ import com.nullinnix.clippr.misc.COPIED_AT
 import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.IS_PINNED
 import com.nullinnix.clippr.misc.MIME_TYPE
-import com.nullinnix.clippr.misc.TEXT
-import com.nullinnix.clippr.misc.URIS
+import com.nullinnix.clippr.misc.CONTENT
+import com.nullinnix.clippr.misc.MIME_TYPE_PLAIN_TEXT
+import com.nullinnix.clippr.misc.getData
 import com.nullinnix.clippr.misc.toJsonArray
-import com.nullinnix.clippr.misc.toStringList
 import com.nullinnix.clippr.model.ViewModel
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -24,7 +23,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStreamReader
-import java.util.UUID
 
 class Database (){
     companion object  {
@@ -68,27 +66,58 @@ class Database (){
                 for (clip in clipsJson) {
                     val clipData = clip.jsonObject
                     val clipID = clipData[CLIP_ID]!!.jsonPrimitive.content
-                    val text = clipData[TEXT]!!.jsonPrimitive.content
-                    val uris = Json.parseToJsonElement(clipData[URIS].toString()).jsonArray.toStringList()
+                    val content = clipData[CONTENT]?.jsonPrimitive?.content ?: ""
                     val copiedAt = clipData[COPIED_AT]!!.jsonPrimitive.content.toLong()
                     val isPinned = clipData[IS_PINNED]!!.jsonPrimitive.content == "true"
                     val mimeType = clipData[MIME_TYPE]!!.jsonPrimitive.content
                     val isImage = mimeType.split("/")[0] == "image"
 
-                    println("key: $clipID")
-                    println(UUID.randomUUID().toString())
-
                     ViewModel.clips[clipID] = Clip (
                         clipID = clipID,
-                        text = text,
-                        uris = uris,
+                        content = content,
                         copiedAt = copiedAt,
                         isPinned = isPinned,
                         mimeType = mimeType,
-                        isImage = isImage
+                        isImage = isImage,
+                        exists = if (mimeType != MIME_TYPE_PLAIN_TEXT) {
+                            File(content).exists()
+                        } else {
+                            true
+                        }
                     )
                 }
+
+                val sortedClips = ViewModel.clips.map {
+                    Pair(it.key, it.value.copiedAt)
+                }.sortedBy {
+                    it.second
+                }
+
+                val pinnedClips = mutableListOf<String>()
+                var otherClips = mutableListOf<String>()
+
+                for (clip in sortedClips) {
+                    if (ViewModel.clips[clip.first]?.isPinned ?: false) {
+                        pinnedClips.add(clip.first)
+                    } else {
+                        otherClips.add(clip.first)
+                    }
+                }
+
+                otherClips = if (otherClips.size > 100) {
+                    otherClips.subList(otherClips.size - 100, otherClips.size)
+                } else {
+                    otherClips
+                }
+
+                ViewModel.pinnedClipKeys.clear()
+                ViewModel.otherClipKeys.clear()
+
+                ViewModel.pinnedClipKeys.addAll(pinnedClips)
+                ViewModel.otherClipKeys.addAll(otherClips)
             }
+
+            ViewModel.lastCopiedItemHash = peasantDB!!.getData(LAST_COPIED_HASH).ifEmpty { "" }
         }
     }
 
@@ -96,12 +125,14 @@ class Database (){
         clip: Clip
     ) {
         ViewModel.clips[clip.clipID] = clip
+        ViewModel.otherClipKeys.add(clip.clipID)
         save("create clip")
     }
 
     private fun save(savingFrom: String) {
         val updatedDB = mutableMapOf<String, Any>()
         updatedDB[CLIPS_KEY] = ViewModel.clips.toJsonArray()
+        updatedDB[LAST_COPIED_HASH] = ViewModel.lastCopiedItemHash
 
         val jsonFromDB = buildJsonObject {
             updatedDB.forEach { (key, value) ->
@@ -139,3 +170,4 @@ fun peasantDBFile(): File {
 }
 
 const val CLIPS_KEY = "clips"
+const val LAST_COPIED_HASH = "lastCopiedHash"

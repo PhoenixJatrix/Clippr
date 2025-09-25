@@ -32,6 +32,7 @@ kotlin {
             implementation(libs.kotlinx.coroutinesSwing)
             implementation("org.apache.tika:tika-core:2.9.1")
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+            implementation("net.java.dev.jna:jna:5.17.0")
         }
     }
 }
