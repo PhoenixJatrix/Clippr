@@ -12,7 +12,6 @@ import clippr.composeapp.generated.resources.text
 import clippr.composeapp.generated.resources.unknown
 import clippr.composeapp.generated.resources.video
 import clippr.composeapp.generated.resources.zip
-import com.nullinnix.clippr.model.ViewModel
 import org.apache.tika.Tika
 import org.jetbrains.compose.resources.DrawableResource
 import java.awt.Image
@@ -25,11 +24,12 @@ import java.io.File
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
-import javax.imageio.ImageIO
 import javax.swing.JTextField
 
+var lastCopiedItemHash = ""
+
 fun getClipboard(
-    onCopy: (Clip) -> Unit
+    onCopy: (Clip) -> Unit,
 ) {
     val clipboard = Toolkit.getDefaultToolkit().systemClipboard
     val contents = clipboard.getContents(null)
@@ -38,8 +38,8 @@ fun getClipboard(
         val paths = contents.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
         val hash = paths.toString().hash()
 
-        if (ViewModel.lastCopiedItemHash != hash) {
-            ViewModel.lastCopiedItemHash = hash
+        if (lastCopiedItemHash != hash) {
+            lastCopiedItemHash = hash
 
             for (path in paths) {
                 if ((path as File).isDirectory) {
@@ -79,8 +79,8 @@ fun getClipboard(
         val content = contents.getTransferData(DataFlavor.stringFlavor) as String
         val hash = content.hash()
 
-        if (ViewModel.lastCopiedItemHash != hash) {
-            ViewModel.lastCopiedItemHash = hash
+        if (lastCopiedItemHash != hash) {
+            lastCopiedItemHash = hash
 
             onCopy(
                 Clip(
@@ -171,9 +171,15 @@ fun getIconForContent(
     }
 }
 
-fun onCopy(content: String, mimeType: String) {
+fun onCopyToClipboard(content: String, mimeType: String, onHashed: (String?) -> Unit) {
     val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-    clipboard.setContents(CustomTransferable(mimeType, content), CustomClipboardOwner())
+    val customTransferable = CustomTransferable(mimeType, content)
+
+    if (customTransferable.hash != null) {
+        onHashed(customTransferable.hash)
+    }
+
+    clipboard.setContents(customTransferable, CustomClipboardOwner())
 }
 
 fun mimeTypeToDataFlavor(mimeType: String): List<DataFlavor> {
@@ -208,9 +214,10 @@ class CustomTransferable(mimeType: String, val content: String): Transferable {
     val mediaType = mimeType.split("/")[0]
     val subType = mimeType.split("/")[1]
     val dataFlavors = mimeTypeToDataFlavor(mimeType)
+    var hash: String? = null
 
     init {
-        ViewModel.lastCopiedItemHash = content.hash()
+        hash = content.hash()
     }
 
     override fun getTransferDataFlavors(): Array<out DataFlavor?>? {

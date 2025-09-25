@@ -1,13 +1,22 @@
 package com.nullinnix.clippr.misc
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "clips")
 data class Clip(
-    val clipID: String,
+    @PrimaryKey val clipID: String,
     val content: String,
     val copiedAt: Long,
     var isPinned: Boolean,
     val mimeType: String,
     val isImage: Boolean,
     val exists: Boolean
+)
+
+data class ClipsState(
+    val pinnedClips: List<Clip> = emptyList(),
+    val otherClips: List<Clip> = emptyList()
 )
 
 const val CLIP_ID = "clipID"

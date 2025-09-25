@@ -9,34 +9,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import clippr.composeapp.generated.resources.Res
-import clippr.composeapp.generated.resources.audio
-import clippr.composeapp.generated.resources.blank
-import clippr.composeapp.generated.resources.broken
-import clippr.composeapp.generated.resources.code
-import clippr.composeapp.generated.resources.directory
-import clippr.composeapp.generated.resources.image
-import clippr.composeapp.generated.resources.runnable
-import clippr.composeapp.generated.resources.text
-import clippr.composeapp.generated.resources.unknown
-import clippr.composeapp.generated.resources.video
-import clippr.composeapp.generated.resources.zip
-import com.nullinnix.clippr.model.ViewModel
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import org.apache.tika.Tika
-import java.awt.Toolkit
-import java.awt.datatransfer.DataFlavor
-import java.io.File
 import java.security.MessageDigest
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.Locale
-import java.util.UUID
 
 fun String.hash(): String {
     val digest = MessageDigest.getInstance("SHA-256")
