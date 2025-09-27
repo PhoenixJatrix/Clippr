@@ -1,7 +1,7 @@
 [versions]
 androidx-lifecycle = "2.9.1"
 composeHotReload = "1.0.0-alpha11"
-composeMultiplatform = "1.8.2"
+composeMultiplatform = "1.9.0"
 junit = "4.13.2"
 kotlin = "2.2.0"
 kotlinx-coroutines = "1.10.2"
@@ -18,7 +18,6 @@ androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle
 kotlinx-coroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
-room-runtime-android = { module = "androidx.room:room-runtime-android", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
 

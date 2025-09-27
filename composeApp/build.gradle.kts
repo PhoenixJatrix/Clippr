@@ -37,6 +37,7 @@ kotlin {
             implementation("org.apache.tika:tika-core:2.9.1")
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
             implementation("net.java.dev.jna:jna:5.17.0")
+            implementation("com.github.tulskiy:jkeymaster:1.3")
         }
     }
 }
@@ -46,9 +47,18 @@ compose.desktop {
         mainClass = "com.nullinnix.clippr.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Dmg, TargetFormat.Deb)
             packageName = "com.nullinnix.clippr"
             packageVersion = "1.0.0"
+            macOS {
+                bundleID = "com.XXXXXX.desktop"
+                infoPlist {
+                    extraKeysRawXml = """
+                        <key>LSUIElement</key>
+                        <string>true</string>
+                    """.trimIndent()
+                }
+            }
         }
     }
 }

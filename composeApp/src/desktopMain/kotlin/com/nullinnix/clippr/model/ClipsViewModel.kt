@@ -1,21 +1,22 @@
 package com.nullinnix.clippr.model
 
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nullinnix.clippr.database.ClipsDao
 import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.ClipsState
+import com.nullinnix.clippr.misc.Tab
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+
+const val FETCH_OFFSET = 100
 
 class ClipsViewModel(
     private val clipsDao: ClipsDao
@@ -25,23 +26,19 @@ class ClipsViewModel(
 
     init {
         clipsDao
-            .getClips()
+            .getOtherClips(clipsState.value.currentOtherClipsFetchOffset + FETCH_OFFSET)
             .onEach {
-                println("${it.size}")
-
-                val pinned = mutableListOf<Clip>()
-                val other = mutableListOf<Clip>()
-
-                it.forEach {
-                    if (it.isPinned) {
-                        pinned.add(it)
-                    } else {
-                        other.add(it)
-                    }
+                _clipsState.update { state ->
+                    state.copy(currentOtherClipsFetchOffset = state.currentOtherClipsFetchOffset + FETCH_OFFSET, otherClips = it)
                 }
+            }
+            .launchIn(viewModelScope)
 
-                _clipsState.update {
-                    it.copy(pinnedClips = pinned, otherClips = other)
+        clipsDao
+            .getPinnedClips(clipsState.value.currentPinnedClipsFetchOffset + FETCH_OFFSET)
+            .onEach {
+                _clipsState.update { state ->
+                    state.copy(currentPinnedClipsFetchOffset = state.currentPinnedClipsFetchOffset + FETCH_OFFSET, pinnedClips = it)
                 }
             }
             .launchIn(viewModelScope)
@@ -50,8 +47,6 @@ class ClipsViewModel(
     fun onAction (action: ClipAction) {
         when (action) {
             is ClipAction.OnAddClip -> {
-                println("on action ${action::class.java.simpleName}")
-
                 addClip(action.clip)
             }
 
@@ -78,6 +73,18 @@ class ClipsViewModel(
     }
 
     fun togglePinnedClip(clip: Clip) {
-        addClip(clip.copy(isPinned = !clip.isPinned))
+        addClip(clip.copy(isPinned = !clip.isPinned, pinnedAt = if (!clip.isPinned) LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) else 0L))
+    }
+
+    fun setShowMainApp(value: Boolean) {
+        _clipsState.update {
+            it.copy(showMainApp = value)
+        }
+    }
+
+    fun switchTab(value: Tab) {
+        _clipsState.update {
+            it.copy(currentTab = value)
+        }
     }
 }

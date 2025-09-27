@@ -15,10 +15,13 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import java.awt.Robot
+import java.awt.event.KeyEvent
 import java.security.MessageDigest
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.Locale
+import javax.swing.JOptionPane
 
 fun String.hash(): String {
     val digest = MessageDigest.getInstance("SHA-256")
@@ -210,4 +213,8 @@ fun epochToReadableTime (epoch: Long): String {
             "${constructedDayTime.dayOfWeek.name.substring(0, 3).lowercase().capitalize(Locale.ROOT)}, ${constructedDayTime.dayOfMonth} ${constructedDayTime.month.name.lowercase().capitalize(Locale.ROOT)} ${constructedDayTime.year}"
         }
     }
+}
+
+fun String.coerce(maxChar: Int): String {
+    return if (this.length <= maxChar) this else this.substring(0, maxChar)
 }

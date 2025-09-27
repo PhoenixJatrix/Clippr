@@ -11,12 +11,17 @@ data class Clip(
     var isPinned: Boolean,
     val mimeType: String,
     val isImage: Boolean,
-    val exists: Boolean
+    val exists: Boolean,
+    val pinnedAt: Long
 )
 
 data class ClipsState(
     val pinnedClips: List<Clip> = emptyList(),
-    val otherClips: List<Clip> = emptyList()
+    val otherClips: List<Clip> = emptyList(),
+    val currentPinnedClipsFetchOffset: Int = 0,
+    val currentOtherClipsFetchOffset: Int = 0,
+    val showMainApp: Boolean = false,
+    val currentTab: Tab = Tab.ClipsTab
 )
 
 const val CLIP_ID = "clipID"

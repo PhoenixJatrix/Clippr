@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,6 +46,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,13 +61,18 @@ import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.misc.epochToReadableTime
 import com.nullinnix.clippr.misc.formatText
 import com.nullinnix.clippr.misc.getIconForContent
+import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.model.ClipsViewModel
+import com.nullinnix.clippr.theme.Translucent
 import com.nullinnix.clippr.theme.Transparent
 import com.nullinnix.clippr.theme.White
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import java.awt.Image
+import java.awt.SystemTray
+import java.awt.TrayIcon
 
 @Composable
 @Preview
@@ -73,28 +80,47 @@ fun App(
     clipsViewModel: ClipsViewModel
 ) {
     MaterialTheme {
-        val pinnedClips = clipsViewModel.clipsState.collectAsState().value.pinnedClips
-        val otherClips = clipsViewModel.clipsState.collectAsState().value.otherClips
-        val pagerState = rememberPagerState { 2 }
+        val clipState = clipsViewModel.clipsState.collectAsState().value
+        val pinnedClips = clipState.pinnedClips
+        val otherClips = clipState.otherClips
+        val currentTab =  clipState.currentTab
 
-        var currentTab by remember { mutableStateOf<Tab>(Tab.ClipsTab) }
+        val pagerState = rememberPagerState { 2 }
         val coroutineScope = rememberCoroutineScope()
 
+        val showAllInteractionSource = remember { MutableInteractionSource() }
+        val isHovered by showAllInteractionSource.collectIsHoveredAsState()
+        var allPinnedClipsExpanded by remember { mutableStateOf(false) }
+        var onActualTabChanged by remember { mutableStateOf(false) }
+
+        LaunchedEffect(currentTab) {
+            pagerState.animateScrollToPage(
+                when (currentTab) {
+                    Tab.ClipsTab -> 0
+                    Tab.SettingsTab -> 1
+                }
+            )
+        }
+
         LaunchedEffect(pagerState.currentPage) {
-            currentTab = when (pagerState.currentPage) {
-                0 -> Tab.ClipsTab
-                else -> Tab.SettingsTab
+            if (onActualTabChanged) {
+                clipsViewModel.switchTab(when (pagerState.currentPage) {
+                    0 -> Tab.ClipsTab
+                    else -> Tab.SettingsTab
+                })
             }
+
+            onActualTabChanged = true
         }
 
         Column (
             modifier = Modifier
                 .background(White)
-                .fillMaxSize()
-                .padding(horizontal = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(Modifier.height(15.dp))
+
             Tabs(
                 currentTab = currentTab
             ) {
@@ -107,6 +133,8 @@ fun App(
                     )
                 }
             }
+
+            Spacer(Modifier.height(10.dp))
 
             HorizontalPager(
                 state = pagerState
@@ -121,33 +149,61 @@ fun App(
 
                                 item {
                                     if (pinnedClips.isNotEmpty()) {
-                                        Text(
-                                            text = "Pinned Clips",
-                                            color = Color.Black,
-                                            fontSize = 18.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(10.dp),
+                                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "Pinned Clips",
+                                                color = Color.Black,
+                                                fontSize = 18.sp,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+
+                                            if (pinnedClips.size > 5) {
+                                                Text(
+                                                    text = if (!allPinnedClipsExpanded) "Show All (${pinnedClips.size})" else "Show Less",
+                                                    color = Color.Gray,
+                                                    modifier = Modifier
+                                                        .noGleamTaps {
+                                                            allPinnedClipsExpanded = !allPinnedClipsExpanded
+                                                        }
+                                                        .hoverable(showAllInteractionSource),
+                                                    textDecoration = if (isHovered) TextDecoration.Underline else TextDecoration.None
+                                                )
+                                            }
+                                        }
                                     }
                                 }
 
-                                items(pinnedClips) { clip ->
+                                items(if (!allPinnedClipsExpanded && pinnedClips.size > 5) pinnedClips.subList(0, 5) else pinnedClips) { clip ->
                                     ClipTemplate(clip) { action ->
                                         clipsViewModel.onAction(action)
                                     }
 
-                                    Spacer(Modifier.height(50.dp))
+                                    Spacer(Modifier.height(20.dp))
                                 }
 
 
                                 item {
                                     if (pinnedClips.isNotEmpty()) {
                                         Spacer(Modifier.height(10.dp))
-                                        Text(
-                                            text = "Other Clips",
-                                            color = Color.Black,
-                                            fontSize = 18.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
+
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(10.dp),
+                                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "Other Clips",
+                                                color = Color.Black,
+                                                fontSize = 18.sp,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        }
                                     }
                                 }
 
@@ -156,7 +212,7 @@ fun App(
                                         clipsViewModel.onAction(action)
                                     }
 
-                                    Spacer(Modifier.height(50.dp))
+                                    Spacer(Modifier.height(20.dp))
                                 }
 
                                 item {
@@ -164,15 +220,18 @@ fun App(
                                 }
                             }
                         } else {
-                            Text(
-                                text = "Try copying something...",
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 25.sp
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize(), contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Try copying something...",
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 25.sp
+                                )
+                            }
                         }
-                    }
-
-                    else -> {
+                    } else -> {
 
                     }
                 }
@@ -200,10 +259,11 @@ fun ClipTemplate(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(70.dp)
-                .padding(horizontal = 7.dp),
+                .height(70.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Spacer(Modifier.width(10.dp))
+
             Icon(
                 painter = painterResource(Res.drawable.pin),
                 contentDescription = null,
@@ -222,11 +282,11 @@ fun ClipTemplate(
             Box (
                 modifier = Modifier
                     .fillMaxSize()
-//                    .clip(corners(10.dp))
             ) {
                 Row (
                     modifier = Modifier
                         .fillMaxHeight()
+                        .padding(end = 10.dp)
                         .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
                         .clip(corners(15.dp))
                         .clickable {
@@ -234,37 +294,10 @@ fun ClipTemplate(
                         }
                         .hoverable(interactionSource)
                         .background(Color.White)
-                        .padding(horizontal = 3.dp)
+                        .padding(start = 65.dp)
                         .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Image(
-                        painter = painterResource(getIconForContent(clip.mimeType, clip.exists)),
-                        contentDescription = "",
-                        modifier = Modifier
-                            .height(65.dp)
-                            .clip(corners(7.dp))
-                            .padding(3.dp),
-                        contentScale = ContentScale.FillHeight
-                    )
-
-                    Spacer(Modifier.width(7.dp))
-
-                    Canvas(
-                        modifier = Modifier
-                            .height(50.dp)
-                    ) {
-                        drawLine(
-                            color = Color.DarkGray,
-                            start = Offset.Zero,
-                            end = Offset(x = 0f, y = this.size.height),
-                            cap = StrokeCap.Round,
-                            strokeWidth = 6f
-                        )
-                    }
-
-                    Spacer(Modifier.width(15.dp))
-
                     Text(
                         text = formatText(clip.content),
                         color = Color.Black,
@@ -272,15 +305,67 @@ fun ClipTemplate(
                         maxLines = 3,
                         fontSize = 13.5.sp,
                         lineHeight = 17.sp,
-                        fontFamily = FontFamily(Font(Res.font.Urbanist_Regular))
+                        fontFamily = FontFamily(Font(Res.font.Urbanist_Regular)),
+                        modifier = Modifier
+                            .padding(end = 5.dp)
+                            .weight(1f)
+                    )
+
+                    //transparent time text to force text weight
+                    Text (
+                        text = epochToReadableTime(clip.copiedAt),
+                        modifier = Modifier
+                            .align(Alignment.Bottom)
+//                            .weight(1f)
+                            .padding(end = 10.dp, bottom = 10.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(timeCopiedBackgroundAnim)
+                            .padding(horizontal = 10.dp),
+                        fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+                        color = Transparent,
+                        fontSize = 12.sp
                     )
                 }
 
+                //icon and canvas bar
+                Row(
+                    modifier = Modifier
+                        .height(65.dp)
+                        .align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(getIconForContent(clip.mimeType, clip.exists)),
+                        contentDescription = "",
+                        modifier = Modifier
+                            .height(65.dp)
+                            .width(55.dp)
+                            .padding(5.dp)
+                            .shadow(25.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow),
+                        contentScale = ContentScale.FillHeight
+                    )
+
+                    Spacer(Modifier.width(3.dp))
+
+                    Canvas(
+                        modifier = Modifier
+                            .height(50.dp)
+                    ) {
+                        drawLine(
+                            color = Translucent,
+                            start = Offset.Zero,
+                            end = Offset(x = 0f, y = this.size.height),
+                            cap = StrokeCap.Round,
+                            strokeWidth = 6f
+                        )
+                    }
+                }
+
+                //time copied
                 Text(
                     text = epochToReadableTime(clip.copiedAt),
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(end = 10.dp, bottom = 10.dp)
+                        .padding(end = 20.dp, bottom = 10.dp)
                         .shadow(10.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
                         .clip(RoundedCornerShape(10.dp))
                         .background(timeCopiedBackgroundAnim)

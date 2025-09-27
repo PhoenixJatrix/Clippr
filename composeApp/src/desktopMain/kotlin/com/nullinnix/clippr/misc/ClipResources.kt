@@ -12,18 +12,25 @@ import clippr.composeapp.generated.resources.text
 import clippr.composeapp.generated.resources.unknown
 import clippr.composeapp.generated.resources.video
 import clippr.composeapp.generated.resources.zip
+import com.sun.jna.Library
+import com.sun.jna.Native
+import com.sun.jna.Pointer
 import org.apache.tika.Tika
 import org.jetbrains.compose.resources.DrawableResource
-import java.awt.Image
+import java.awt.AWTException
+import java.awt.Robot
 import java.awt.Toolkit
+import java.awt.Window
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.ClipboardOwner
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
+import java.awt.event.KeyEvent
 import java.io.File
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
+import javax.swing.JOptionPane
 import javax.swing.JTextField
 
 var lastCopiedItemHash = ""
@@ -53,7 +60,8 @@ fun getClipboard(
                             isPinned = false,
                             mimeType = MIME_TYPE_DIR,
                             isImage = false,
-                            exists = path.exists()
+                            exists = path.exists(),
+                            pinnedAt = 0L
                         )
                     )
                 } else {
@@ -69,7 +77,8 @@ fun getClipboard(
                             isPinned = false,
                             mimeType = mimeType,
                             isImage = false,
-                            exists = path.exists()
+                            exists = path.exists(),
+                            pinnedAt = 0L
                         )
                     )
                 }
@@ -90,7 +99,8 @@ fun getClipboard(
                     isPinned = false,
                     mimeType = MIME_TYPE_PLAIN_TEXT,
                     isImage = false,
-                    exists = true
+                    exists = true,
+                    pinnedAt = 0L
                 )
             )
         }
@@ -99,7 +109,7 @@ fun getClipboard(
 
 fun getIconForContent(
     mimeType: String,
-    exists: Boolean
+    exists: Boolean,
 ): DrawableResource {
     val mediaType = mimeType.split("/")[0]
     val subType = mimeType.split("/")[1]
@@ -171,15 +181,15 @@ fun getIconForContent(
     }
 }
 
-fun onCopyToClipboard(content: String, mimeType: String, onHashed: (String?) -> Unit) {
+fun onCopyToClipboard(clip: Clip, onHashed: (String?) -> Unit) {
     val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-    val customTransferable = CustomTransferable(mimeType, content)
+    val customTransferable = CustomTransferable(clip)
+
+    clipboard.setContents(customTransferable, CustomClipboardOwner())
 
     if (customTransferable.hash != null) {
         onHashed(customTransferable.hash)
     }
-
-    clipboard.setContents(customTransferable, CustomClipboardOwner())
 }
 
 fun mimeTypeToDataFlavor(mimeType: String): List<DataFlavor> {
@@ -210,14 +220,14 @@ fun mimeTypeToDataFlavor(mimeType: String): List<DataFlavor> {
     }
 }
 
-class CustomTransferable(mimeType: String, val content: String): Transferable {
-    val mediaType = mimeType.split("/")[0]
-    val subType = mimeType.split("/")[1]
-    val dataFlavors = mimeTypeToDataFlavor(mimeType)
+class CustomTransferable(private val clip: Clip): Transferable {
+    val mediaType = clip.mimeType.split("/")[0]
+    val subType = clip.mimeType.split("/")[1]
+    val dataFlavors = mimeTypeToDataFlavor(clip.mimeType)
     var hash: String? = null
 
     init {
-        hash = content.hash()
+        hash = clip.content.hash()
     }
 
     override fun getTransferDataFlavors(): Array<out DataFlavor?>? {
@@ -237,13 +247,11 @@ class CustomTransferable(mimeType: String, val content: String): Transferable {
             "text" -> {
                 when(subType) {
                     "plain" -> {
-                        println("copying text")
-                        content
+                        clip.content
                     }
 
                     else -> {
-                        println("copying other")
-                        listOf(File(content))
+                        listOf(File(clip.content))
                     }
                 }
 
@@ -252,16 +260,13 @@ class CustomTransferable(mimeType: String, val content: String): Transferable {
             "image" -> {
                 println("copying image")
 
-                val toolKit = Toolkit.getDefaultToolkit()
-                val file = File(content)
+                val file = File(clip.content)
                 println(file.exists())
-                //it exists
-                toolKit.getImage(content) as Image
             }
 
             else -> {
                 println("copying other")
-                listOf(File(content))
+                listOf(File(clip.content))
             }
         }
     }
@@ -272,7 +277,7 @@ class CustomClipboardOwner: ClipboardOwner {
         p0: Clipboard?,
         p1: Transferable?,
     ) {
-        TODO("Not yet implemented")
+        println("lost ownership")
     }
 }
 
@@ -283,4 +288,96 @@ fun pasteClipboardTextIntoField(field: JTextField) {
         val text = contents.getTransferData(DataFlavor.stringFlavor) as String
         field.text = text
     }
+}
+
+fun pasteWithRobot(clip: Clip) {
+    onCopyToClipboard(clip) {
+        val cg = CoreGraphics.INSTANCE
+        val source = cg.CGEventSourceCreate(CoreGraphics.kCGEventSourceStateHIDSystemState)
+
+        val vDown = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, true)
+        cg.CGEventSetFlags(vDown, CoreGraphics.kCGEventFlagMaskCommand)
+        cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vDown)
+        Thread.sleep(30)
+
+        val vUp = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, false)
+        cg.CGEventSetFlags(vUp, CoreGraphics.kCGEventFlagMaskCommand)
+        cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vUp)
+        Thread.sleep(30)
+
+        val cmdUp = cg.CGEventCreateKeyboardEvent(source, 55, false)
+        cg.CGEventPost(CoreGraphics.kCGSessionEventTap, cmdUp)
+
+        cg.CFRelease(vDown)
+        cg.CFRelease(vUp)
+        cg.CFRelease(cmdUp)
+        cg.CFRelease(source)
+    }
+}
+
+fun showMacConfirmDialog(
+    title: String,
+    description: String,
+): Boolean {
+    val result = JOptionPane.showConfirmDialog(
+        null,
+        description,
+        title,
+        JOptionPane.OK_CANCEL_OPTION,
+        JOptionPane.WARNING_MESSAGE
+    )
+    return result == JOptionPane.OK_OPTION
+}
+
+interface CoreGraphics : Library {
+    companion object {
+        val INSTANCE: CoreGraphics = Native.load("CoreGraphics", CoreGraphics::class.java)
+        const val kCGEventSourceStateHIDSystemState = 1
+        const val kCGSessionEventTap = 1
+        const val kCGEventFlagMaskCommand: Long = 1L shl 20
+
+        // virtual key codes (Carbon)
+        const val kVK_ANSI_V = 9
+    }
+
+    fun CGEventSourceCreate(stateID: Int): Pointer
+    fun CGEventCreateKeyboardEvent(source: Pointer?, virtualKey: Int, keyDown: Boolean): Pointer
+    fun CGEventSetFlags(event: Pointer, flags: Long)
+    fun CGEventPost(tap: Int, event: Pointer)
+    fun CFRelease(ref: Pointer)
+}
+
+interface Cocoa : Library {
+    companion object {
+        val INSTANCE: Cocoa = Native.load("Cocoa", Cocoa::class.java)
+    }
+
+    fun objc_getClass(name: String): Pointer
+    fun sel_registerName(name: String): Pointer
+    fun objc_msgSend(receiver: Pointer, selector: Pointer, vararg args: Any): Pointer
+}
+
+fun getCPlatformWindow(frame: Window): Any {
+    val peerField = Window::class.java.getDeclaredField("peer")
+    peerField.isAccessible = true
+    return peerField.get(frame)
+}
+
+fun getNSWindowPointer(frame: Window): Long {
+    val cPlatformWindow = getCPlatformWindow(frame)
+    val nsWindowField = cPlatformWindow.javaClass.getDeclaredField("nsWindowPtr")
+    nsWindowField.isAccessible = true
+    return nsWindowField.getLong(cPlatformWindow)
+}
+
+fun getNSWindow(frame: Window): Pointer {
+    val ptr = getNSWindowPointer(frame)
+    return Pointer(ptr)
+}
+
+fun disableHide(frame: Window) {
+    val nsWindow = getNSWindow(frame)
+    val cocoa = Cocoa.INSTANCE
+    val sel = cocoa.sel_registerName("setCanHide:")
+    cocoa.objc_msgSend(nsWindow, sel, false)
 }

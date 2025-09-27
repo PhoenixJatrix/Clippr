@@ -1,10 +1,12 @@
 package com.nullinnix.clippr
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Text
@@ -15,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.corners
@@ -28,8 +31,10 @@ fun Tabs (
     Row (
         modifier = Modifier
             .width(200.dp)
+            .height(50.dp)
             .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
-            .clip(corners(10.dp))
+            .clip(corners(15.dp))
+            .background(Color.White)
     ) {
         TabElement(
             isSelected = currentTab == Tab.ClipsTab,
@@ -65,7 +70,8 @@ fun TabElement (
     ) {
         Text(
             text = tab.name(),
-            color = textColorAnim
+            color = textColorAnim,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
         )
     }
 }
