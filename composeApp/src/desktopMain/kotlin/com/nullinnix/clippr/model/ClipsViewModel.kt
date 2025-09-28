@@ -85,7 +85,7 @@ class ClipsViewModel(
         }
     }
 
-    fun forceShowMainApp(window: Window?) {
+    fun forceShowMainApp() {
         viewModelScope.launch {
             _clipsState.update {
                 it.copy(showMainApp = false)
@@ -99,7 +99,7 @@ class ClipsViewModel(
 
             delay(100)
 
-            focusWindow(window)
+            focusWindow()
         }
     }
 

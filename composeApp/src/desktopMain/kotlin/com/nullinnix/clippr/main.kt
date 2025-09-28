@@ -14,6 +14,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberTrayState
 import androidx.compose.ui.window.rememberWindowState
 import clippr.composeapp.generated.resources.Res
+import clippr.composeapp.generated.resources.clippr_status_icon
 import clippr.composeapp.generated.resources.pin
 import com.nullinnix.clippr.database.ClipsDatabaseFactory
 import com.nullinnix.clippr.misc.ClipAction
@@ -82,13 +83,13 @@ fun main() {
 
         Tray (
             state = trayState,
-            icon = painterResource(Res.drawable.pin), // place under resources
+            icon = painterResource(Res.drawable.clippr_status_icon),
             menu = {
                 val pinned = if (clipsState.pinnedClips.size > 5) clipsState.pinnedClips.subList(0, 5) else clipsState.pinnedClips
                 val others = if (clipsState.otherClips.size > 25) clipsState.otherClips.subList(0, 25) else clipsState.otherClips
 
                 Item(text = "Open app") {
-                    clipsViewModel.forceShowMainApp(composeWindowState)
+                    clipsViewModel.forceShowMainApp()
                 }
 
                 Separator()
@@ -120,7 +121,7 @@ fun main() {
 
                 Item(text = "Settings") {
                     clipsViewModel.switchTab(Tab.SettingsTab)
-                    clipsViewModel.forceShowMainApp(composeWindowState)
+                    clipsViewModel.forceShowMainApp()
                 }
 
                 Separator()
@@ -220,5 +221,3 @@ interface Cocoa : Library {
         val INSTANCE: Cocoa = Native.load("objc", Cocoa::class.java)
     }
 }
-
-red.com
