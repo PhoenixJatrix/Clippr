@@ -23,8 +23,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,12 +48,14 @@ import com.nullinnix.clippr.misc.name
 import com.nullinnix.clippr.misc.noGleamCombinedClickable
 import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.theme.Transparent
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
 import java.awt.MouseInfo
 import java.awt.Window
 
 @Composable
 fun Tabs (
+    isFocused: Boolean,
     currentTab: Tab,
     onTabChanged: (Tab) -> Unit
 ) {
@@ -64,6 +68,7 @@ fun Tabs (
             .background(Color.White)
     ) {
         TabElement(
+            isFocused = isFocused,
             isSelected = currentTab == Tab.ClipsTab,
             tab = Tab.ClipsTab
         ) {
@@ -71,6 +76,7 @@ fun Tabs (
         }
 
         TabElement(
+            isFocused = isFocused,
             isSelected = currentTab == Tab.SettingsTab,
             tab = Tab.SettingsTab
         ) {
@@ -81,6 +87,7 @@ fun Tabs (
 
 @Composable
 fun TabElement (
+    isFocused: Boolean,
     isSelected: Boolean,
     tab: Tab,
     onClick: (Tab) -> Unit
@@ -97,7 +104,7 @@ fun TabElement (
     ) {
         Text(
             text = tab.name(),
-            color = textColorAnim,
+            color = textColorAnim.copy(if (isFocused) textColorAnim.alpha else 0.5f),
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
         )
     }
@@ -109,10 +116,12 @@ fun WindowBar (
     onToggleFullScreen: () -> Unit,
     onHideMainApp: () -> Unit
 ) {
+    var isFocused by remember { mutableStateOf(true) }
+
     val hoverSource = remember { MutableInteractionSource() }
     val onHover by hoverSource.collectIsHoveredAsState()
 
-    val closeOpacityAnim by animateFloatAsState(if (onHover) 1f else 0.45f, animationSpec = tween(500))
+    val closeOpacityAnim by animateFloatAsState(if (onHover) 1f else if (isFocused) 0.45f else 0.15f, animationSpec = tween(500))
 
     val closeShadowColor by animateColorAsState(if (onHover) Color.Red else Transparent, animationSpec = tween(500))
     val maximizeShadowColor by animateColorAsState(if (onHover) Color.Green else Transparent, animationSpec = tween(500))
@@ -121,6 +130,15 @@ fun WindowBar (
     var startY by remember { mutableIntStateOf(0) }
     var windowStartX by remember { mutableIntStateOf(0) }
     var windowStartY by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            isFocused = window.isFocused
+            delay(300)
+
+            println("red")
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -209,7 +227,7 @@ fun WindowBar (
 
         Text(
             text = "Clippr",
-            color = Color.Black,
+            color = if (isFocused) Color.Black else Color.LightGray,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier

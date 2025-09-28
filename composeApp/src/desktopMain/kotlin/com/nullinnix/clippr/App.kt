@@ -66,6 +66,7 @@ import com.nullinnix.clippr.model.ClipsViewModel
 import com.nullinnix.clippr.theme.Translucent
 import com.nullinnix.clippr.theme.Transparent
 import com.nullinnix.clippr.theme.White
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
@@ -73,13 +74,26 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.awt.Image
 import java.awt.SystemTray
 import java.awt.TrayIcon
+import java.awt.Window
 
 @Composable
 @Preview
 fun App(
+    window: Window,
     clipsViewModel: ClipsViewModel
 ) {
     MaterialTheme {
+        var isFocused by remember { mutableStateOf(true) }
+
+        LaunchedEffect(Unit) {
+            while (true) {
+                isFocused = window.isFocused
+                delay(300)
+
+                println("red")
+            }
+        }
+
         val clipState = clipsViewModel.clipsState.collectAsState().value
         val pinnedClips = clipState.pinnedClips
         val otherClips = clipState.otherClips
@@ -121,7 +135,8 @@ fun App(
         ) {
             Spacer(Modifier.height(15.dp))
 
-            Tabs(
+            Tabs (
+                isFocused = isFocused,
                 currentTab = currentTab
             ) {
                 coroutineScope.launch {
@@ -179,7 +194,7 @@ fun App(
                                 }
 
                                 items(if (!allPinnedClipsExpanded && pinnedClips.size > 5) pinnedClips.subList(0, 5) else pinnedClips) { clip ->
-                                    ClipTemplate(clip) { action ->
+                                    ClipTemplate(clip = clip, isFocused = isFocused) { action ->
                                         clipsViewModel.onAction(action)
                                     }
 
@@ -208,7 +223,7 @@ fun App(
                                 }
 
                                 items(otherClips) { clip ->
-                                    ClipTemplate(clip) { action ->
+                                    ClipTemplate(clip = clip, isFocused = isFocused) { action ->
                                         clipsViewModel.onAction(action)
                                     }
 
@@ -241,7 +256,8 @@ fun App(
 }
 
 @Composable
-fun ClipTemplate(
+fun ClipTemplate (
+    isFocused: Boolean,
     clip: Clip,
     onAction: (ClipAction) -> Unit
 ) {
@@ -292,7 +308,7 @@ fun ClipTemplate(
                         .clickable {
                             onAction(ClipAction.OnAddClip(clip))
                         }
-                        .hoverable(interactionSource)
+                        .hoverable(interactionSource, isFocused)
                         .background(Color.White)
                         .padding(start = 65.dp)
                         .fillMaxWidth(),

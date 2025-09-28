@@ -153,7 +153,7 @@ fun main() {
                         .clip(corners(10.dp))
                         .background(Color.White)
                 ){
-                    WindowBar(
+                    WindowBar (
                         window = window,
                         onToggleFullScreen = {
                             toggleFullscreen(window)
@@ -164,7 +164,8 @@ fun main() {
                     )
 
                     Theme {
-                        App(
+                        App (
+                            window = window,
                             clipsViewModel = clipsViewModel
                         )
                     }
