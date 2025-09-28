@@ -48,16 +48,19 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Deb)
-            packageName = "com.nullinnix.clippr"
+            packageName = "Clippr"
             packageVersion = "1.0.0"
+
             macOS {
-                bundleID = "com.XXXXXX.desktop"
+                bundleID = "com.nullinnix.clippr"
                 infoPlist {
                     extraKeysRawXml = """
                         <key>LSUIElement</key>
                         <string>true</string>
                     """.trimIndent()
                 }
+                appCategory = "public.app-category.productivity"
+                iconFile.set(project.file("src/desktopMain/composeResources/drawable/MyIcon.icns"))
             }
         }
     }
