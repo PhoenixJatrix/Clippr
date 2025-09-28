@@ -346,38 +346,3 @@ interface CoreGraphics : Library {
     fun CGEventPost(tap: Int, event: Pointer)
     fun CFRelease(ref: Pointer)
 }
-
-interface Cocoa : Library {
-    companion object {
-        val INSTANCE: Cocoa = Native.load("Cocoa", Cocoa::class.java)
-    }
-
-    fun objc_getClass(name: String): Pointer
-    fun sel_registerName(name: String): Pointer
-    fun objc_msgSend(receiver: Pointer, selector: Pointer, vararg args: Any): Pointer
-}
-
-fun getCPlatformWindow(frame: Window): Any {
-    val peerField = Window::class.java.getDeclaredField("peer")
-    peerField.isAccessible = true
-    return peerField.get(frame)
-}
-
-fun getNSWindowPointer(frame: Window): Long {
-    val cPlatformWindow = getCPlatformWindow(frame)
-    val nsWindowField = cPlatformWindow.javaClass.getDeclaredField("nsWindowPtr")
-    nsWindowField.isAccessible = true
-    return nsWindowField.getLong(cPlatformWindow)
-}
-
-fun getNSWindow(frame: Window): Pointer {
-    val ptr = getNSWindowPointer(frame)
-    return Pointer(ptr)
-}
-
-fun disableHide(frame: Window) {
-    val nsWindow = getNSWindow(frame)
-    val cocoa = Cocoa.INSTANCE
-    val sel = cocoa.sel_registerName("setCanHide:")
-    cocoa.objc_msgSend(nsWindow, sel, false)
-}

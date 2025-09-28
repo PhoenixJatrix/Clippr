@@ -1,6 +1,7 @@
 package com.nullinnix.clippr.misc
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -198,6 +199,17 @@ fun Modifier.noGleamTaps(enabled: Boolean = true, onClick: () -> Unit): Modifier
         indication = null,
         interactionSource = remember { MutableInteractionSource() },
         onClick = if (enabled) onClick else emptyClick
+    )
+}
+
+fun Modifier.noGleamCombinedClickable(enabled: Boolean = true, onClick: () -> Unit = {}, onLongClick: () -> Unit = {}, onDoubleClick: () -> Unit = {}): Modifier = composed {
+    val emptyClick = {}
+    this then Modifier.combinedClickable(
+        indication = null,
+        interactionSource = remember { MutableInteractionSource() },
+        onClick = if (enabled) onClick else emptyClick,
+        onLongClick = if (enabled) onLongClick else emptyClick,
+        onDoubleClick = if (enabled) onDoubleClick else emptyClick
     )
 }
 

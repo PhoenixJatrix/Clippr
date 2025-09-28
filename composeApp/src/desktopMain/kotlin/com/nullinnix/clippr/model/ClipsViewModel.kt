@@ -3,16 +3,19 @@ package com.nullinnix.clippr.model
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nullinnix.clippr.database.ClipsDao
+import com.nullinnix.clippr.focusWindow
 import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.ClipsState
 import com.nullinnix.clippr.misc.Tab
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.awt.Window
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
@@ -79,6 +82,24 @@ class ClipsViewModel(
     fun setShowMainApp(value: Boolean) {
         _clipsState.update {
             it.copy(showMainApp = value)
+        }
+    }
+
+    fun forceShowMainApp(window: Window?) {
+        viewModelScope.launch {
+            _clipsState.update {
+                it.copy(showMainApp = false)
+            }
+
+            delay(100)
+
+            _clipsState.update {
+                it.copy(showMainApp = true)
+            }
+
+            delay(100)
+
+            focusWindow(window)
         }
     }
 

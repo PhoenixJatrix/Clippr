@@ -63,6 +63,12 @@ compose.desktop {
     }
 }
 
+tasks.withType<JavaExec> {
+    jvmArgs(
+        "--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED"
+    )
+}
+
 dependencies {
     ksp(libs.room.compiler)
 }
