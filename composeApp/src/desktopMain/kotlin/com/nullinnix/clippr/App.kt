@@ -54,7 +54,6 @@ import clippr.composeapp.generated.resources.Baloo2_Regular
 import clippr.composeapp.generated.resources.Res
 import clippr.composeapp.generated.resources.Urbanist_Regular
 import clippr.composeapp.generated.resources.pin
-import com.nullinnix.clippr.misc.BROKEN
 import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.Tab
@@ -62,22 +61,15 @@ import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.misc.drawableMap
 import com.nullinnix.clippr.misc.epochToReadableTime
 import com.nullinnix.clippr.misc.formatText
-import com.nullinnix.clippr.misc.getIconForContent
 import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.model.ClipsViewModel
 import com.nullinnix.clippr.theme.Translucent
 import com.nullinnix.clippr.theme.Transparent
 import com.nullinnix.clippr.theme.White
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import java.awt.Image
-import java.awt.SystemTray
-import java.awt.TrayIcon
-import java.awt.Window
 
 @Composable
 @Preview

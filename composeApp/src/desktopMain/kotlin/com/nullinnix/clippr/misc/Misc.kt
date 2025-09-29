@@ -228,5 +228,5 @@ fun epochToReadableTime (epoch: Long): String {
 }
 
 fun String.coerce(maxChar: Int): String {
-    return if (this.length <= maxChar) this else this.substring(0, maxChar)
+    return if (this.length <= maxChar) this else this.substring(0, maxChar - 3) + "..."
 }

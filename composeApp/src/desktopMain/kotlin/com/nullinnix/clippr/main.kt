@@ -55,7 +55,7 @@ fun main() {
     provider.register(
         KeyStroke.getKeyStroke("meta shift V")
     ) {
-        clipsViewModel.setShowMainApp(!clipsViewModel.clipsState.value.showMainApp)
+        clipsViewModel.forceShowMainApp()
     }
 
     CoroutineScope(Dispatchers.IO).launch {
@@ -105,7 +105,7 @@ fun main() {
                 Separator()
 
                 for (clip in pinned) {
-                    Item(clip.content.trimIndent().coerce(50)) {
+                    Item(clip.content.trimIndent().trimMargin().coerce(50)) {
                         println("pasted new...")
                         pasteWithRobot(clip)
                     }

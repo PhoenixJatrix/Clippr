@@ -36,7 +36,7 @@ import javax.swing.JTextField
 
 var lastCopiedItemHash = ""
 
-fun getClipboard(
+fun getClipboard (
     onCopy: (Clip) -> Unit,
 ) {
     val clipboard = Toolkit.getDefaultToolkit().systemClipboard
@@ -164,6 +164,10 @@ fun getIconForContent (
                             CODE
                         }
 
+                        in listOf("octet-stream") -> {
+                            BLANK
+                        }
+
                         else -> {
                             UNKNOWN
                         }
@@ -206,11 +210,11 @@ fun onCopyToClipboard(clip: Clip, onHashed: (String?) -> Unit) {
     val clipboard = Toolkit.getDefaultToolkit().systemClipboard
     val customTransferable = CustomTransferable(clip)
 
-    clipboard.setContents(customTransferable, CustomClipboardOwner())
-
     if (customTransferable.hash != null) {
         onHashed(customTransferable.hash)
     }
+
+    clipboard.setContents(customTransferable, CustomClipboardOwner())
 }
 
 fun mimeTypeToDataFlavor(mimeType: String): List<DataFlavor> {
@@ -313,6 +317,8 @@ fun pasteClipboardTextIntoField(field: JTextField) {
 
 fun pasteWithRobot(clip: Clip) {
     onCopyToClipboard(clip) {
+        lastCopiedItemHash = it ?: lastCopiedItemHash
+
         val cg = CoreGraphics.INSTANCE
         val source = cg.CGEventSourceCreate(CoreGraphics.kCGEventSourceStateHIDSystemState)
 
