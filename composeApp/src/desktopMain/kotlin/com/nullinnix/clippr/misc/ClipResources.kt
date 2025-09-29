@@ -11,6 +11,7 @@ import clippr.composeapp.generated.resources.runnable
 import clippr.composeapp.generated.resources.text
 import clippr.composeapp.generated.resources.unknown
 import clippr.composeapp.generated.resources.video
+import clippr.composeapp.generated.resources.web
 import clippr.composeapp.generated.resources.zip
 import com.sun.jna.Library
 import com.sun.jna.Native
@@ -61,7 +62,8 @@ fun getClipboard(
                             mimeType = MIME_TYPE_DIR,
                             isImage = false,
                             exists = path.exists(),
-                            pinnedAt = 0L
+                            pinnedAt = 0L,
+                            associatedIcon = getIconForContent(MIME_TYPE_DIR, path.exists(), path.path)
                         )
                     )
                 } else {
@@ -78,7 +80,8 @@ fun getClipboard(
                             mimeType = mimeType,
                             isImage = false,
                             exists = path.exists(),
-                            pinnedAt = 0L
+                            pinnedAt = 0L,
+                            associatedIcon = getIconForContent(mimeType, path.exists(), path.path)
                         )
                     )
                 }
@@ -91,6 +94,10 @@ fun getClipboard(
         if (lastCopiedItemHash != hash) {
             lastCopiedItemHash = hash
 
+            val tika = Tika()
+            val mimeType = tika.detect(content)
+            println("$content = $mimeType")
+
             onCopy(
                 Clip(
                     clipID = UUID.randomUUID().toString(),
@@ -100,55 +107,65 @@ fun getClipboard(
                     mimeType = MIME_TYPE_PLAIN_TEXT,
                     isImage = false,
                     exists = true,
-                    pinnedAt = 0L
+                    pinnedAt = 0L,
+                    associatedIcon = getIconForContent(mimeType, true, content)
                 )
             )
         }
     }
 }
 
-fun getIconForContent(
+fun getIconForContent (
     mimeType: String,
     exists: Boolean,
-): DrawableResource {
+    content: String
+): String {
     val mediaType = mimeType.split("/")[0]
     val subType = mimeType.split("/")[1]
 
+    println("$mimeType for $content")
+
     return if (exists) {
+        for (url in urlExtensions) {
+            if (content.endsWith(url) || "$url/" in content) {
+                return WEB
+            }
+        }
+
         if (mimeType != MIME_TYPE_PLAIN_TEXT) {
             when (mediaType) {
                 "dir" -> {
-                    Res.drawable.directory
+                    DIRECTORY
                 }
 
                 "image" -> {
-                    Res.drawable.image
+                    IMAGE
                 }
 
                 "audio" -> {
-                    Res.drawable.audio
+                    AUDIO
                 }
 
                 "video" -> {
-                    Res.drawable.video
+                    VIDEO
                 }
 
                 "application" -> {
                     when (subType) {
                         in listOf("zip", "7z", "gz", "rar", "java-archive", "tar.gz", "app", "zlib") -> {
-                            Res.drawable.zip
+                            ZIP
                         }
 
                         in listOf("x-bzip2", "dmg", "x-apple-diskimage", "msi", "x-ms-installer", "x-dosexec", "jar", "x-bat") -> {
-                            Res.drawable.runnable
+                            RUNNABLE
                         }
 
                         in listOf("json") -> {
-                            Res.drawable.code
+                            CODE
                         }
 
                         else -> {
-                            Res.drawable.unknown
+                            UNKNOWN
                         }
                     }
                 }
@@ -156,28 +173,32 @@ fun getIconForContent(
                 "text" -> {
                     when (subType) {
                         in listOf("plain", "csv") -> {
-                            Res.drawable.text
+                            TEXT
                         }
 
-                        in listOf("x-c++src", "x-csrc", "x-java-source", "x-groovy", "x-scala", "x-kotlin", "x-python", "javascript", "x-typescript", "x-go", "x-rustsrc", "x-swift", "x-ruby", "x-php", "x-clojure", "x-haskell", "x-ocaml", "x-perl", "x-sh", "x-r-source", "vnd.dart", "x-elixir", "x-lua", "x-matlab", "x-vbasic", "x-stsrc", "x-coffeescript", "x-less", "x-yaml", "x-rst", "json", "xml", "sql") -> {
-                            Res.drawable.code
+                        in listOf("x-c++src", "x-csrc", "x-java-source", "x-groovy", "x-scala", "x-kotlin", "x-python", "javascript", "x-typescript", "x-go", "x-rustsrc", "x-swift", "x-ruby", "x-php", "x-clojure", "x-haskell", "x-ocaml", "x-perl", "x-sh", "x-r-source", "vnd.dart", "x-elixir", "x-lua", "x-matlab", "x-vbasic", "x-stsrc", "x-coffeescript", "x-less", "x-yaml", "x-rst", "json", "xml", "sql", "x-pascal") -> {
+                            CODE
                         }
 
                         else -> {
-                            Res.drawable.unknown
+                            UNKNOWN
                         }
                     }
                 }
 
                 else -> {
-                    Res.drawable.unknown
+                    UNKNOWN
                 }
             }
         } else {
-            Res.drawable.blank
+            if (content.endsWith(".txt")) {
+                TEXT
+            } else {
+                BLANK
+            }
         }
     } else {
-        Res.drawable.broken
+        BROKEN
     }
 }
 
@@ -346,3 +367,54 @@ interface CoreGraphics : Library {
     fun CGEventPost(tap: Int, event: Pointer)
     fun CFRelease(ref: Pointer)
 }
+
+val urlExtensions = listOf(
+    ".com",
+    ".org",
+    ".net",
+    ".xyz",
+    ".info",
+    ".io",
+    ".co",
+    ".us",
+    ".uk",
+    ".de",
+    ".jp",
+    ".fr",
+    ".ru",
+    ".br",
+    ".in",
+    ".cn",
+    ".ca",
+    ".au",
+    ".es",
+    ".it"
+)
+
+const val AUDIO = "audio"
+const val BLANK = "blank"
+const val BROKEN = "broken"
+const val CODE = "code"
+const val DIRECTORY = "directory"
+const val IMAGE = "image"
+const val RUNNABLE = "runnable"
+const val TEXT = "text"
+const val UNKNOWN = "unknown"
+const val VIDEO = "video"
+const val WEB = "web"
+const val ZIP = "zip"
+
+val drawableMap: Map<String, DrawableResource> = mapOf(
+    AUDIO to Res.drawable.audio,
+    BLANK to Res.drawable.blank,
+    BROKEN to Res.drawable.broken,
+    CODE to Res.drawable.code,
+    DIRECTORY to Res.drawable.directory,
+    IMAGE to Res.drawable.image,
+    RUNNABLE to Res.drawable.runnable,
+    TEXT to Res.drawable.text,
+    UNKNOWN to Res.drawable.unknown,
+    VIDEO to Res.drawable.video,
+    WEB to Res.drawable.web,
+    ZIP to Res.drawable.zip,
+)

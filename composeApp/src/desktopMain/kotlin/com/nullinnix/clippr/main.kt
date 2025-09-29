@@ -4,6 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -15,7 +19,6 @@ import androidx.compose.ui.window.rememberTrayState
 import androidx.compose.ui.window.rememberWindowState
 import clippr.composeapp.generated.resources.Res
 import clippr.composeapp.generated.resources.clippr_status_icon
-import clippr.composeapp.generated.resources.pin
 import com.nullinnix.clippr.database.ClipsDatabaseFactory
 import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.Tab
@@ -38,15 +41,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import java.awt.Dimension
-import java.awt.Frame
 import java.awt.Point
 import java.awt.Toolkit
 import java.awt.Window
-import java.awt.event.WindowEvent
-import java.awt.event.WindowFocusListener
-import java.lang.Exception
 import javax.swing.KeyStroke
-import javax.swing.SwingUtilities
 
 fun main() {
     val database = ClipsDatabaseFactory().create()
@@ -80,6 +78,18 @@ fun main() {
         val windowState = rememberWindowState()
 
         val composeWindowState = composeWindowStateRaw.collectAsState().value
+
+        var isFocused by remember { mutableStateOf(true) }
+
+        LaunchedEffect(composeWindowState) {
+            while (true) {
+                if (composeWindowState != null) {
+                    isFocused = composeWindowState.isFocused
+                }
+
+                delay(100)
+            }
+        }
 
         Tray (
             state = trayState,
@@ -155,6 +165,7 @@ fun main() {
                 ){
                     WindowBar (
                         window = window,
+                        isFocused = isFocused,
                         onToggleFullScreen = {
                             toggleFullscreen(window)
                         },
@@ -165,7 +176,7 @@ fun main() {
 
                     Theme {
                         App (
-                            window = window,
+                            isFocused = isFocused,
                             clipsViewModel = clipsViewModel
                         )
                     }

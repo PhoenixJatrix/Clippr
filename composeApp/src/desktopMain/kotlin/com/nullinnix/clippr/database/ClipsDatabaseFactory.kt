@@ -21,13 +21,13 @@ class ClipsDatabaseFactory {
         val dbFile = File(appDataDir, "clips")
         return Room.databaseBuilder<ClipsDatabase>(dbFile.absolutePath)
             .setDriver(BundledSQLiteDriver())
-            .addMigrations(Migration1To2())
+            .addMigrations(Migration3to1())
             .build()
     }
 }
 
-class Migration1To2: Migration(1, 2) {
+class Migration3to1: Migration(3, 1) {
     override fun migrate(connection: SQLiteConnection) {
-        connection.execSQL("ALTER TABLE clips ADD COLUMN pinnedAt INTEGER NOT NULL DEFAULT 0")
+        super.migrate(connection)
     }
 }

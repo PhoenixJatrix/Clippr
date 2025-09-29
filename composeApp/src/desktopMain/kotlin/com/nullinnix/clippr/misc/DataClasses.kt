@@ -2,6 +2,7 @@ package com.nullinnix.clippr.misc
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import org.jetbrains.compose.resources.DrawableResource
 
 @Entity(tableName = "clips")
 data class Clip(
@@ -12,7 +13,8 @@ data class Clip(
     val mimeType: String,
     val isImage: Boolean,
     val exists: Boolean,
-    val pinnedAt: Long
+    val pinnedAt: Long,
+    val associatedIcon: String
 )
 
 data class ClipsState(

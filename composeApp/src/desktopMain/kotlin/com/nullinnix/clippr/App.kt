@@ -54,10 +54,12 @@ import clippr.composeapp.generated.resources.Baloo2_Regular
 import clippr.composeapp.generated.resources.Res
 import clippr.composeapp.generated.resources.Urbanist_Regular
 import clippr.composeapp.generated.resources.pin
+import com.nullinnix.clippr.misc.BROKEN
 import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.corners
+import com.nullinnix.clippr.misc.drawableMap
 import com.nullinnix.clippr.misc.epochToReadableTime
 import com.nullinnix.clippr.misc.formatText
 import com.nullinnix.clippr.misc.getIconForContent
@@ -68,6 +70,7 @@ import com.nullinnix.clippr.theme.Transparent
 import com.nullinnix.clippr.theme.White
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -78,22 +81,11 @@ import java.awt.Window
 
 @Composable
 @Preview
-fun App(
-    window: Window,
+fun App (
+    isFocused: Boolean,
     clipsViewModel: ClipsViewModel
 ) {
     MaterialTheme {
-        var isFocused by remember { mutableStateOf(true) }
-
-        LaunchedEffect(Unit) {
-            while (true) {
-                isFocused = window.isFocused
-                delay(300)
-
-                println("red")
-            }
-        }
-
         val clipState = clipsViewModel.clipsState.collectAsState().value
         val pinnedClips = clipState.pinnedClips
         val otherClips = clipState.otherClips
@@ -308,7 +300,7 @@ fun ClipTemplate (
                         .clickable {
                             onAction(ClipAction.OnAddClip(clip))
                         }
-                        .hoverable(interactionSource, isFocused)
+                        .hoverable(interactionSource)
                         .background(Color.White)
                         .padding(start = 65.dp)
                         .fillMaxWidth(),
@@ -326,6 +318,8 @@ fun ClipTemplate (
                             .padding(end = 5.dp)
                             .weight(1f)
                     )
+
+
 
                     //transparent time text to force text weight
                     Text (
@@ -350,7 +344,7 @@ fun ClipTemplate (
                         .align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically
                 ) {
                     Image(
-                        painter = painterResource(getIconForContent(clip.mimeType, clip.exists)),
+                        painter = painterResource(drawableMap[clip.associatedIcon]!!),
                         contentDescription = "",
                         modifier = Modifier
                             .height(65.dp)

@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "f193ff02d93c6c33c400f95bbba16981",
+    "identityHash": "999502d858585fe96631e2cf3dde1b50",
     "entities": [
       {
         "tableName": "clips",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`clipID` TEXT NOT NULL, `content` TEXT NOT NULL, `copiedAt` INTEGER NOT NULL, `isPinned` INTEGER NOT NULL, `mimeType` TEXT NOT NULL, `isImage` INTEGER NOT NULL, `exists` INTEGER NOT NULL, PRIMARY KEY(`clipID`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`clipID` TEXT NOT NULL, `content` TEXT NOT NULL, `copiedAt` INTEGER NOT NULL, `isPinned` INTEGER NOT NULL, `mimeType` TEXT NOT NULL, `isImage` INTEGER NOT NULL, `exists` INTEGER NOT NULL, `pinnedAt` INTEGER NOT NULL, `associatedIcon` TEXT NOT NULL, PRIMARY KEY(`clipID`))",
         "fields": [
           {
             "fieldPath": "clipID",
@@ -49,6 +49,18 @@
             "columnName": "exists",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "pinnedAt",
+            "columnName": "pinnedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "associatedIcon",
+            "columnName": "associatedIcon",
+            "affinity": "TEXT",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -61,7 +73,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f193ff02d93c6c33c400f95bbba16981')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '999502d858585fe96631e2cf3dde1b50')"
     ]
   }
 }

@@ -113,11 +113,10 @@ fun TabElement (
 @Composable
 fun WindowBar (
     window: Window,
+    isFocused: Boolean,
     onToggleFullScreen: () -> Unit,
     onHideMainApp: () -> Unit
 ) {
-    var isFocused by remember { mutableStateOf(true) }
-
     val hoverSource = remember { MutableInteractionSource() }
     val onHover by hoverSource.collectIsHoveredAsState()
 
@@ -130,15 +129,6 @@ fun WindowBar (
     var startY by remember { mutableIntStateOf(0) }
     var windowStartX by remember { mutableIntStateOf(0) }
     var windowStartY by remember { mutableIntStateOf(0) }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            isFocused = window.isFocused
-            delay(300)
-
-            println("red")
-        }
-    }
 
     Box(
         modifier = Modifier
