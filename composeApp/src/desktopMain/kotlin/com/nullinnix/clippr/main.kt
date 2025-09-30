@@ -3,9 +3,6 @@ package com.nullinnix.clippr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -14,7 +11,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
@@ -29,10 +25,8 @@ import com.nullinnix.clippr.database.settings.SettingsDatabaseFactory
 import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.SettingsAction
 import com.nullinnix.clippr.misc.Tab
-import com.nullinnix.clippr.misc.addToLoginItems
 import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.corners
-import com.nullinnix.clippr.misc.isInLoginItems
 import com.nullinnix.clippr.misc.isInLoginItemsChecker
 import com.nullinnix.clippr.misc.listenForCopy
 import com.nullinnix.clippr.misc.pasteWithRobot

@@ -1,7 +1,6 @@
 package com.nullinnix.clippr
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
@@ -26,10 +25,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,7 +49,6 @@ import com.nullinnix.clippr.misc.noGleamCombinedClickable
 import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.theme.HeaderColor
 import com.nullinnix.clippr.theme.Transparent
-import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
 import java.awt.MouseInfo
 import java.awt.Window
@@ -265,7 +261,7 @@ fun CheckBox(
             .height(28.dp)
             .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(corners(90.dp))
-            .hoverable(interactionSource)
+            .hoverable(interactionSource, enabled)
             .background(Color.White)
             .clickable(enabled) {
                 onClick(!isChecked)

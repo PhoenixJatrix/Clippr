@@ -64,7 +64,7 @@ class SettingsViewModel (
 
             SettingsAction.ToggleStartAtLogin -> {
                 viewModelScope.launch {
-                    if (isInLoginItems()) {
+                    if (!isInLoginItems()) {
                         addToLoginItems()
                     } else {
                         removeFromLoginItems()

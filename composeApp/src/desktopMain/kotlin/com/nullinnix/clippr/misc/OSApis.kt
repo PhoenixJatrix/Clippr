@@ -134,8 +134,6 @@ fun isInLoginItemsChecker (
         while(true) {
             delay(5000)
             onDone(isInLoginItems())
-
-            println("checking for app in login items")
         }
     }
 }

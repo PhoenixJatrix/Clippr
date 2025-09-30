@@ -1,7 +1,6 @@
 package com.nullinnix.clippr.database.settings
 
 import androidx.room.TypeConverter
-import androidx.room.TypeConverters
 import com.nullinnix.clippr.misc.SettingsState
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json

@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -29,9 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.nullinnix.clippr.misc.SettingsAction
 import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.theme.HeaderColor
-import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
-import jdk.jfr.Enabled
 
 @Composable
 fun Settings (
@@ -64,9 +60,11 @@ fun Settings (
         Spacer(Modifier.height(20.dp))
 
         SettingsCheckBoxElement(
-            title = "Start recording on login",
-            description = "Start recording clips automatically whenever the device is started",
-            isChecked = startAtLogin
+            title = "Start recording on login. Read more below",
+            description = "Start recording clips automatically whenever the device is started (and recording is enabled)",
+            isChecked = startAtLogin,
+            enabled = startAtLogin,
+            extras = "Go to System Settings -> General -> Login Items and Extensions. Click + then add Clippr"
         ) {
             settingsViewModel.onAction(SettingsAction.ToggleStartAtLogin)
         }
@@ -84,7 +82,7 @@ fun Settings (
         Spacer(Modifier.height(20.dp))
 
         SettingsCheckBoxElement(
-            title = "Clear unpinned clips on login",
+            title = "Clear unpinned on login",
             description = "Delete all unpinned clips when the device is started",
             isChecked = clearAllUnpinnedClipsOnDeviceStart
         ) {
@@ -95,7 +93,7 @@ fun Settings (
 
         SettingsCheckBoxElement(
             title = "Clear unpinned after 30 days",
-            description = "Delete all unpinned clips after 30 days",
+            description = "Delete any unpinned clip after 30 days",
             isChecked = deleteUnpinnedClipsAfter30Days
         ) {
             settingsViewModel.onAction(SettingsAction.ToggleDeleteUnpinnedAfter30)
@@ -109,6 +107,7 @@ fun Settings (
 fun SettingsCheckBoxElement (
     title: String,
     description: String,
+    extras: String? = null,
     isChecked: Boolean,
     enabled: Boolean = true,
     onClick: (Boolean) -> Unit
@@ -148,6 +147,17 @@ fun SettingsCheckBoxElement (
                 .height(2.dp)
         ) {
             drawLine(color = Color.Black.copy(0.25f), start = Offset.Zero, end = Offset(this.size.width, 0f))
+        }
+
+        if (extras != null) {
+            Text(
+                text = extras,
+                modifier = Modifier
+                    .padding(start = 20.dp, end = 20.dp, top = 20.dp),
+                color = Color.Black,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp
+            )
         }
 
         Text(
