@@ -1,6 +1,7 @@
 package com.nullinnix.clippr
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,10 +50,12 @@ fun main() {
     val composeWindowStateRaw = MutableStateFlow<Window?>(null)
 
     registerKeyStroke {
-        if (composeWindowStateRaw.value != null && composeWindowStateRaw.value?.isVisible ?: false) {
-            clipsViewModel.setShowMainApp(false)
-        } else {
-            clipsViewModel.forceShowMainApp()
+        if (settingsViewModel.settings.value.enableMetaShiftVPopup) {
+            if (composeWindowStateRaw.value != null && composeWindowStateRaw.value?.isVisible ?: false) {
+                clipsViewModel.setShowMainApp(false)
+            } else {
+                clipsViewModel.forceShowMainApp()
+            }
         }
     }
 
@@ -157,6 +160,7 @@ fun main() {
                 Column (
                     modifier = Modifier
                         .clip(corners(10.dp))
+                        .border(1.dp, color = Color.Black.copy(0.25f), shape = corners(10.dp))
                         .background(Color.White)
                 ){
                     WindowBar (

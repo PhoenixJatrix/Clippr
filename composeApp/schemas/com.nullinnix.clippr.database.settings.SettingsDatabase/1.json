@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "e8596ba155e52b05e53fa0bd414cb495",
+    "identityHash": "7821766b2168f29edf50c7dfb5c0a98a",
     "entities": [
       {
         "tableName": "settings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `recordingEnabled` INTEGER NOT NULL, `clearAllUnpinnedClipsOnDeviceStart` INTEGER NOT NULL, `maximumRememberableUnpinnedClips` INTEGER NOT NULL, `enableMetaShiftVPopup` INTEGER NOT NULL, `deleteUnpinnedClipsAfter30Days` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `recordingEnabled` INTEGER NOT NULL, `clearAllUnpinnedClipsOnDeviceStart` INTEGER NOT NULL, `maximumRememberableUnpinnedClips` INTEGER NOT NULL, `enableMetaShiftVPopup` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -37,12 +37,6 @@
             "columnName": "enableMetaShiftVPopup",
             "affinity": "INTEGER",
             "notNull": true
-          },
-          {
-            "fieldPath": "deleteUnpinnedClipsAfter30Days",
-            "columnName": "deleteUnpinnedClipsAfter30Days",
-            "affinity": "INTEGER",
-            "notNull": true
           }
         ],
         "primaryKey": {
@@ -55,7 +49,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e8596ba155e52b05e53fa0bd414cb495')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7821766b2168f29edf50c7dfb5c0a98a')"
     ]
   }
 }

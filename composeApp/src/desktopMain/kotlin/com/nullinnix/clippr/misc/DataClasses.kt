@@ -28,13 +28,17 @@ data class ClipsState(
 )
 
 @Entity(tableName = "settings")
-data class SettingsState (
+data class SettingsClass (
     @PrimaryKey(autoGenerate = false) val id: Int = 0,
+    val settingsState: SettingsState
+)
+
+@Serializable
+data class SettingsState (
     val recordingEnabled: Boolean = true,
     val clearAllUnpinnedClipsOnDeviceStart: Boolean = false,
     val maximumRememberableUnpinnedClips: Int = 1000,
-    val enableMetaShiftVPopup: Boolean = false,
-    val deleteUnpinnedClipsAfter30Days: Boolean = true
+    val enableMetaShiftVPopup: Boolean = false
 )
 
 const val CLIP_ID = "clipID"

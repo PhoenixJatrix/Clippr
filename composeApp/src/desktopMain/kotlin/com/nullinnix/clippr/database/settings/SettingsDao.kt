@@ -5,14 +5,15 @@ import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Upsert
 import com.nullinnix.clippr.misc.Clip
+import com.nullinnix.clippr.misc.SettingsClass
 import com.nullinnix.clippr.misc.SettingsState
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SettingsDao {
     @Upsert
-    suspend fun save(settingsState: SettingsState)
+    suspend fun save(SettingsClass: SettingsClass)
 
     @Query("SELECT * FROM settings")
-    fun getSettings(): Flow<List<SettingsState>>
+    fun getSettings(): Flow<List<SettingsClass>>
 }

@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nullinnix.clippr.database.settings.SettingsDao
 import com.nullinnix.clippr.misc.SettingsAction
+import com.nullinnix.clippr.misc.SettingsClass
 import com.nullinnix.clippr.misc.SettingsState
+import com.nullinnix.clippr.misc.lastCopiedItemHash
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -23,7 +25,7 @@ class SettingsViewModel (
             .getSettings()
             .onEach { savedSettings ->
                 _settings.update {
-                    savedSettings.firstOrNull() ?: SettingsState()
+                    savedSettings.firstOrNull()?.settingsState ?: SettingsState()
                 }
             }
             .launchIn(viewModelScope)
@@ -47,6 +49,8 @@ class SettingsViewModel (
                 _settings.update {
                     it.copy(recordingEnabled = !it.recordingEnabled)
                 }
+
+                lastCopiedItemHash = ""
             }
         }
 
@@ -55,7 +59,7 @@ class SettingsViewModel (
 
     fun save () {
         viewModelScope.launch {
-            settingsDao.save(settings.value)
+            settingsDao.save(SettingsClass(settingsState = settings.value))
         }
     }
 }

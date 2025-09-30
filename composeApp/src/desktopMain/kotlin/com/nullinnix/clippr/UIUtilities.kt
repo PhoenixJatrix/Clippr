@@ -254,7 +254,7 @@ fun CheckBox(
     )
 
     val tickColorAnim by animateColorAsState (
-        targetValue = if (isChecked) Color.Black else Color.LightGray, label = "", animationSpec = tween(500)
+        targetValue = if (isChecked) Color.Black else Color.Gray, label = "", animationSpec = tween(500)
     )
 
     val interactionSource = remember { MutableInteractionSource() }
