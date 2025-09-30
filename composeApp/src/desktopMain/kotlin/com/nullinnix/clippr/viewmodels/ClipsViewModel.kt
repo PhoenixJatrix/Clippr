@@ -32,7 +32,7 @@ class ClipsViewModel(
 
     init {
         deleteUnpinnedOlderThan30()
-        monitorOldClips(clipsDao = clipsDao)
+        monitorOldClips(clipsViewModel = this@ClipsViewModel)
 
         clipsDao
             .getOtherClips(clipsState.value.currentOtherClipsFetchOffset + FETCH_OFFSET)

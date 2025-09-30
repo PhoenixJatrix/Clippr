@@ -13,7 +13,7 @@ class SettingsTypeConverters {
     }
 
     @TypeConverter
-    fun fromSettings(json: String): SettingsState {
+    fun toSettings(json: String): SettingsState {
         return Json.decodeFromString<SettingsState>(json)
     }
 }

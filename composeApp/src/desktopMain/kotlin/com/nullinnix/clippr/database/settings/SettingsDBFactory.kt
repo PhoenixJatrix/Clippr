@@ -20,6 +20,7 @@ class SettingsDatabaseFactory {
         return Room.databaseBuilder<SettingsDatabase>(dbFile.absolutePath)
             .setDriver(BundledSQLiteDriver())
             .addMigrations()
+            .fallbackToDestructiveMigration(true)
             .build()
     }
 }

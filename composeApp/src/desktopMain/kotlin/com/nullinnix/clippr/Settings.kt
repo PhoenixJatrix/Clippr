@@ -41,6 +41,8 @@ fun Settings (
     val recordingEnabled = settingsState.recordingEnabled
     val enableMetaShiftVPopup = settingsState.enableMetaShiftVPopup
     val clearAllUnpinnedClipsOnDeviceStart = settingsState.clearAllUnpinnedClipsOnDeviceStart
+    val deleteUnpinnedClipsAfter30Days = settingsState.deleteUnpinnedClipsAfter30Days
+    val startAtLogin = settingsState.startAtLogin
 
     val scrollState = rememberScrollState()
 
@@ -62,8 +64,18 @@ fun Settings (
         Spacer(Modifier.height(20.dp))
 
         SettingsCheckBoxElement(
+            title = "Start recording on login",
+            description = "Start recording clips automatically whenever the device is started",
+            isChecked = startAtLogin
+        ) {
+            settingsViewModel.onAction(SettingsAction.ToggleStartAtLogin)
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        SettingsCheckBoxElement(
             title = "Enable ⌘ + ⇧ + V (Command + Shift + V) shortcut",
-            description = "Enable the shortcut to show/hide the app when it's running. (Requires restart)",
+            description = "Enable the shortcut to show/hide the app when it's running. (Requires app restart)",
             isChecked = enableMetaShiftVPopup
         ) {
             settingsViewModel.onAction(SettingsAction.ToggleEnableMetaShiftV)
@@ -72,12 +84,24 @@ fun Settings (
         Spacer(Modifier.height(20.dp))
 
         SettingsCheckBoxElement(
-            title = "Clear unpinned clips on startup",
-            description = "Delete all unpinned clips when the device is booted",
+            title = "Clear unpinned clips on login",
+            description = "Delete all unpinned clips when the device is started",
             isChecked = clearAllUnpinnedClipsOnDeviceStart
         ) {
             settingsViewModel.onAction(SettingsAction.ToggleClearAllUnpinnedDevicesOnStart)
         }
+
+        Spacer(Modifier.height(20.dp))
+
+        SettingsCheckBoxElement(
+            title = "Clear unpinned after 30 days",
+            description = "Delete all unpinned clips after 30 days",
+            isChecked = deleteUnpinnedClipsAfter30Days
+        ) {
+            settingsViewModel.onAction(SettingsAction.ToggleDeleteUnpinnedAfter30)
+        }
+
+        Spacer(Modifier.height(20.dp))
     }
 }
 

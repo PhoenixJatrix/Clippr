@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,6 +19,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.theme.White
@@ -64,8 +67,8 @@ fun App (
 
         Column (
             modifier = Modifier
-                .background(White)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .background(White),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.height(15.dp))
@@ -86,7 +89,7 @@ fun App (
 
             Spacer(Modifier.height(10.dp))
 
-            HorizontalPager(
+            HorizontalPager (
                 state = pagerState
             ) {
                 when (currentTab) {

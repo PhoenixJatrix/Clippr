@@ -6,7 +6,10 @@ import com.nullinnix.clippr.database.settings.SettingsDao
 import com.nullinnix.clippr.misc.SettingsAction
 import com.nullinnix.clippr.misc.SettingsClass
 import com.nullinnix.clippr.misc.SettingsState
+import com.nullinnix.clippr.misc.addToLoginItems
+import com.nullinnix.clippr.misc.isInLoginItems
 import com.nullinnix.clippr.misc.lastCopiedItemHash
+import com.nullinnix.clippr.misc.removeFromLoginItems
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -51,6 +54,32 @@ class SettingsViewModel (
                 }
 
                 lastCopiedItemHash = ""
+            }
+
+            SettingsAction.ToggleDeleteUnpinnedAfter30 -> {
+                _settings.update {
+                    it.copy(deleteUnpinnedClipsAfter30Days = !it.deleteUnpinnedClipsAfter30Days)
+                }
+            }
+
+            SettingsAction.ToggleStartAtLogin -> {
+                viewModelScope.launch {
+                    if (isInLoginItems()) {
+                        addToLoginItems()
+                    } else {
+                        removeFromLoginItems()
+                    }
+
+                    _settings.update {
+                        it.copy(startAtLogin = isInLoginItems())
+                    }
+                }
+            }
+
+            is SettingsAction.SetStartAtLogin -> {
+                _settings.update {
+                    it.copy(startAtLogin = action.value)
+                }
             }
         }
 

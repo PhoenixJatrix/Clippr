@@ -1,6 +1,5 @@
 package com.nullinnix.clippr.misc
 
-import com.nullinnix.clippr.database.clips.ClipsDao
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.Pointer
@@ -13,8 +12,6 @@ import java.awt.Dimension
 import java.awt.Point
 import java.awt.Toolkit
 import java.awt.Window
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 import javax.swing.KeyStroke
 
 var size = Dimension(300, 200)
@@ -89,6 +86,56 @@ fun listenForCopy(
             )
 
             delay(300)
+        }
+    }
+}
+
+fun addToLoginItems() {
+    val script = """
+        tell application "System Events"
+            make login item at end with properties {path:"Library/Application Support/Clippr.app", hidden:false}
+        end tell
+    """.trimIndent()
+
+    ProcessBuilder("osascript", "-e", script).start().waitFor()
+}
+
+fun removeFromLoginItems() {
+    val script = """
+        tell application "System Events"
+            delete login item "Clippr"
+        end tell
+    """.trimIndent()
+
+    ProcessBuilder("osascript", "-e", script).start().waitFor()
+}
+
+fun isInLoginItems(): Boolean {
+    val script = """
+        tell application "System Events"
+            get the name of every login item
+        end tell
+    """.trimIndent()
+
+    val process = ProcessBuilder("osascript", "-e", script)
+        .redirectErrorStream(true)
+        .start()
+
+    val output = process.inputStream.bufferedReader().readText().trim()
+    process.waitFor()
+
+    return output.split(", ").any { it == "Clippr" }
+}
+
+fun isInLoginItemsChecker (
+    onDone: (Boolean) -> Unit
+) {
+    CoroutineScope(Dispatchers.IO).launch {
+        while(true) {
+            delay(5000)
+            onDone(isInLoginItems())
+
+            println("checking for app in login items")
         }
     }
 }

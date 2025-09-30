@@ -11,6 +11,7 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nullinnix.clippr.database.clips.ClipsDao
+import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -217,7 +218,12 @@ fun Modifier.noGleamCombinedClickable(enabled: Boolean = true, onClick: () -> Un
 }
 
 fun epochToReadableTime (epoch: Long): String {
-    val timeElapsedSinceEpoch = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - epoch
+
+    //todo
+    val dateTime = LocalDateTime.now()
+    val timeElapsedSinceEpoch = dateTime.toEpochSecond(ZoneOffset.UTC) - epoch
+
+    val endOfToday = LocalDateTime.of(dateTime.year, dateTime.month, dateTime.dayOfMonth, 23, 59, 59)
 
     return when (timeElapsedSinceEpoch) {
         in Long.MIN_VALUE..10800L -> "${formatSignificantUnitsOnly(timeElapsedSinceEpoch * 1000).trim()} ago"
@@ -235,7 +241,7 @@ fun String.coerce(maxChar: Int): String {
 }
 
 fun monitorOldClips(
-    clipsDao: ClipsDao
+    clipsViewModel: ClipsViewModel
 ) {
     CoroutineScope(Dispatchers.IO).launch {
         while(true) {
@@ -244,7 +250,7 @@ fun monitorOldClips(
 
             log("monitor clips", "monitorOldClips")
 
-            clipsDao.deleteUnpinnedOlderThan30(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC))
+            clipsViewModel.deleteUnpinnedOlderThan30()
         }
     }
 }
