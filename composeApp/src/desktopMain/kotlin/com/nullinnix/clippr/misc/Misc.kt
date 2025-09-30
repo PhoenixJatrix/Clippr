@@ -251,8 +251,8 @@ fun monitorOldClips(
 
 fun log(content: String, from: String) {
     val time = Calendar.getInstance().time.toString()
-    val fullMessage = "MESSAGE: $content\nFROM: $from\nAT: $time\n"
+    val fullMessage = "MESSAGE: $content\nFROM: $from\nAT: $time\n\n"
 
-    val file = File("log.txt")
+    val file = File(System.getProperty("user.home"), "Library/Application Support/Clippr/log.txt")
     file.appendText(fullMessage)
 }

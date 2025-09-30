@@ -26,4 +26,6 @@ fun Tab.name(): String {
 
 sealed interface SettingsAction {
     object ToggleClearAllUnpinnedDevicesOnStart: SettingsAction
+    object ToggleEnableMetaShiftV: SettingsAction
+    object ToggleEnableClipping: SettingsAction
 }

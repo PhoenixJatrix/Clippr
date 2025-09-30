@@ -10,9 +10,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class SettingsViewModel (
-    settingsDao: SettingsDao
+    private val settingsDao: SettingsDao
 ): ViewModel() {
     private val _settings = MutableStateFlow(SettingsState())
     val settings = _settings.asStateFlow()
@@ -35,6 +36,26 @@ class SettingsViewModel (
                     it.copy(clearAllUnpinnedClipsOnDeviceStart = !it.clearAllUnpinnedClipsOnDeviceStart)
                 }
             }
+
+            SettingsAction.ToggleEnableMetaShiftV -> {
+                _settings.update {
+                    it.copy(enableMetaShiftVPopup = !it.enableMetaShiftVPopup)
+                }
+            }
+
+            SettingsAction.ToggleEnableClipping -> {
+                _settings.update {
+                    it.copy(recordingEnabled = !it.recordingEnabled)
+                }
+            }
+        }
+
+        save()
+    }
+
+    fun save () {
+        viewModelScope.launch {
+            settingsDao.save(settings.value)
         }
     }
 }

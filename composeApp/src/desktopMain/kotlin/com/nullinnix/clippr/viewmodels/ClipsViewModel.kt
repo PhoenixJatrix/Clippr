@@ -24,7 +24,8 @@ import java.time.ZoneOffset
 const val FETCH_OFFSET = 100
 
 class ClipsViewModel(
-    private val clipsDao: ClipsDao
+    private val clipsDao: ClipsDao,
+    private val settingsViewModel: SettingsViewModel
 ): ViewModel() {
     private val _clipsState = MutableStateFlow(ClipsState())
     val clipsState = _clipsState.asStateFlow()
@@ -67,7 +68,9 @@ class ClipsViewModel(
             }
 
             is ClipAction.OnAddClip -> {
-                addClip(action.clip)
+                if (settingsViewModel.settings.value.recordingEnabled) {
+                    addClip(action.clip)
+                }
             }
         }
     }

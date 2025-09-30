@@ -50,6 +50,8 @@ val AccentColor = Color(0xFF38B000) // Bright neon-like accent
 val TextColor = Color(0xFFDFFFD6) // Soft pastel green for readability
 val GrayBG = Color(0.10f, 0.10f, 0.10f, 1f)
 
+val HeaderColor = Color(0.97f, 0.97f, 0.97f)
+
 // Material 3 Color Scheme
 val md_theme_light_primary = PrimaryColor
 val md_theme_light_secondary = SecondaryColor

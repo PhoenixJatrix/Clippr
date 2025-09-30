@@ -43,13 +43,17 @@ import java.awt.Window
 fun main() {
     val clipsDatabase = ClipsDatabaseFactory().create()
     val settingsDatabase = SettingsDatabaseFactory().create()
-    val clipsViewModel = ClipsViewModel(clipsDatabase.clipsDao())
     val settingsViewModel = SettingsViewModel(settingsDatabase.settingsDao())
+    val clipsViewModel = ClipsViewModel(clipsDatabase.clipsDao(), settingsViewModel)
 
     val composeWindowStateRaw = MutableStateFlow<Window?>(null)
 
     registerKeyStroke {
-        clipsViewModel.forceShowMainApp()
+        if (composeWindowStateRaw.value != null && composeWindowStateRaw.value?.isVisible ?: false) {
+            clipsViewModel.setShowMainApp(false)
+        } else {
+            clipsViewModel.forceShowMainApp()
+        }
     }
 
     listenForCopy {

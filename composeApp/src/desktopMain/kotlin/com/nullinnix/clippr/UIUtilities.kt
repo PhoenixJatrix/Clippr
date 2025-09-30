@@ -1,7 +1,9 @@
 package com.nullinnix.clippr
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -47,6 +50,7 @@ import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.misc.name
 import com.nullinnix.clippr.misc.noGleamCombinedClickable
 import com.nullinnix.clippr.misc.noGleamTaps
+import com.nullinnix.clippr.theme.HeaderColor
 import com.nullinnix.clippr.theme.Transparent
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
@@ -134,6 +138,7 @@ fun WindowBar (
         modifier = Modifier
             .fillMaxWidth()
             .height(60.dp)
+            .background(HeaderColor)
     ) {
         Row (
             modifier = Modifier
@@ -231,5 +236,50 @@ fun WindowBar (
             .height(2.dp)
     ) {
         drawLine(color = Color.Black.copy(0.25f), start = Offset.Zero, end = Offset(this.size.width, 0f))
+    }
+}
+
+@Composable
+fun CheckBox(
+    enabled: Boolean = false,
+    isChecked: Boolean,
+    onClick: (Boolean) -> Unit
+) {
+    val tickSize = 22
+    val checkboxWidth = 50
+    val tickPosition by animateIntAsState(
+        targetValue = if (isChecked) (checkboxWidth - tickSize) - 3 else 3,
+        label = "",
+        animationSpec = tween(500)
+    )
+
+    val tickColorAnim by animateColorAsState (
+        targetValue = if (isChecked) Color.Black else Color.LightGray, label = "", animationSpec = tween(500)
+    )
+
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Box(
+        modifier = Modifier
+            .width(checkboxWidth.dp)
+            .height(28.dp)
+            .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+            .clip(corners(90.dp))
+            .hoverable(interactionSource)
+            .background(Color.White)
+            .clickable(enabled) {
+                onClick(!isChecked)
+            }
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .offset(x = tickPosition.dp)
+                .size(tickSize.dp)
+                .clip(corners(90.dp))
+                .background(tickColorAnim), contentAlignment = Alignment.Center
+        ) {
+
+        }
     }
 }
