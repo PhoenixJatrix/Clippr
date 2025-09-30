@@ -1,13 +1,13 @@
-package com.nullinnix.clippr.model
+package com.nullinnix.clippr.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nullinnix.clippr.database.ClipsDao
-import com.nullinnix.clippr.focusWindow
+import com.nullinnix.clippr.database.clips.ClipsDao
 import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.ClipsState
 import com.nullinnix.clippr.misc.Tab
+import com.nullinnix.clippr.misc.focusWindow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.awt.Window
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 

@@ -2,6 +2,7 @@ package com.nullinnix.clippr.misc
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.DrawableResource
 
 @Entity(tableName = "clips")
@@ -24,6 +25,15 @@ data class ClipsState(
     val currentOtherClipsFetchOffset: Int = 0,
     val showMainApp: Boolean = false,
     val currentTab: Tab = Tab.ClipsTab
+)
+
+@Entity(tableName = "settings")
+data class SettingsState (
+    @PrimaryKey(autoGenerate = false) val id: Int = 0,
+    val recordingEnabled: Boolean = true,
+    val clearAllUnpinnedClipsOnDeviceStart: Boolean = false,
+    val maximumRememberableUnpinnedClips: Int = 1000,
+    val deleteUnpinnedClipsAfter30Days: Boolean = true
 )
 
 const val CLIP_ID = "clipID"

@@ -1,4 +1,4 @@
-package com.nullinnix.clippr.database
+package com.nullinnix.clippr.database.clips
 
 import androidx.room.Dao
 import androidx.room.Delete

@@ -22,3 +22,7 @@ fun Tab.name(): String {
         Tab.SettingsTab -> "Settings"
     }
 }
+
+sealed interface SettingsAction {
+    object ToggleClearAllUnpinnedDevicesOnStart: SettingsAction
+}

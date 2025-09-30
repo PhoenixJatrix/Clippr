@@ -94,10 +94,6 @@ fun getClipboard (
         if (lastCopiedItemHash != hash) {
             lastCopiedItemHash = hash
 
-            val tika = Tika()
-            val mimeType = tika.detect(content)
-            println("$content = $mimeType")
-
             onCopy(
                 Clip(
                     clipID = UUID.randomUUID().toString(),
@@ -108,7 +104,7 @@ fun getClipboard (
                     isImage = false,
                     exists = true,
                     pinnedAt = 0L,
-                    associatedIcon = getIconForContent(mimeType, true, content)
+                    associatedIcon = getIconForContent(MIME_TYPE_PLAIN_TEXT, true, content)
                 )
             )
         }

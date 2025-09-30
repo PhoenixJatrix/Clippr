@@ -1,12 +1,10 @@
-package com.nullinnix.clippr.database
+package com.nullinnix.clippr.database.clips
 
 import ClipsDatabase
 import androidx.room.Room
-import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import androidx.sqlite.execSQL
 import java.io.File
 
 class ClipsDatabaseFactory {

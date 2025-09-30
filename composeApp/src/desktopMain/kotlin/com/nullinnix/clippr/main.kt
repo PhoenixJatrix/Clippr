@@ -19,16 +19,21 @@ import androidx.compose.ui.window.rememberTrayState
 import androidx.compose.ui.window.rememberWindowState
 import clippr.composeapp.generated.resources.Res
 import clippr.composeapp.generated.resources.clippr_status_icon
-import com.nullinnix.clippr.database.ClipsDatabaseFactory
+import com.nullinnix.clippr.database.clips.ClipsDatabaseFactory
+import com.nullinnix.clippr.database.settings.SettingsDatabaseFactory
 import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.misc.getClipboard
+import com.nullinnix.clippr.misc.listenForCopy
 import com.nullinnix.clippr.misc.pasteWithRobot
+import com.nullinnix.clippr.misc.registerKeyStroke
 import com.nullinnix.clippr.misc.showMacConfirmDialog
-import com.nullinnix.clippr.model.ClipsViewModel
+import com.nullinnix.clippr.misc.toggleFullscreen
+import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.theme.Theme
+import com.nullinnix.clippr.viewmodels.SettingsViewModel
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.Pointer
@@ -47,27 +52,19 @@ import java.awt.Window
 import javax.swing.KeyStroke
 
 fun main() {
-    val database = ClipsDatabaseFactory().create()
-    val clipsViewModel = ClipsViewModel(database.clipsDao())
-    val provider = Provider.getCurrentProvider(true)
+    val clipsDatabase = ClipsDatabaseFactory().create()
+    val settingsDatabase = SettingsDatabaseFactory().create()
+    val clipsViewModel = ClipsViewModel(clipsDatabase.clipsDao())
+    val settingsViewModel = SettingsViewModel(settingsDatabase.settingsDao())
+
     val composeWindowStateRaw = MutableStateFlow<Window?>(null)
 
-    provider.register(
-        KeyStroke.getKeyStroke("meta shift V")
-    ) {
+    registerKeyStroke {
         clipsViewModel.forceShowMainApp()
     }
 
-    CoroutineScope(Dispatchers.IO).launch {
-        while(true) {
-            getClipboard(
-                onCopy = {
-                    clipsViewModel.onAction(ClipAction.OnAddClip(it))
-                }
-            )
-
-            delay(1000)
-        }
+    listenForCopy {
+        clipsViewModel.onAction(ClipAction.OnAddClip(it))
     }
 
     application {
@@ -139,7 +136,11 @@ fun main() {
                 Item(text = "Quit") {
                     exitApplication()
                 }
-            }
+            },
+            onAction = {
+                println("action")
+            },
+            tooltip = "this is tool tip"
         )
 
         if (showMain) {
@@ -177,59 +178,12 @@ fun main() {
                     Theme {
                         App (
                             isFocused = isFocused,
-                            clipsViewModel = clipsViewModel
+                            clipsViewModel = clipsViewModel,
+                            settingsViewModel = settingsViewModel
                         )
                     }
                 }
             }
         }
-    }
-}
-
-var size = Dimension(300, 200)
-var location = Point(0, 0)
-var isFullScreen = false
-
-fun toggleFullscreen(window: Window?) {
-    try {
-        if (window != null) {
-            val gd = window.graphicsConfiguration
-            val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd)
-            val maxSize = Dimension(window.graphicsConfiguration.bounds.size.width, window.graphicsConfiguration.bounds.size.height - (insets.top + insets.bottom))
-            val initialFullScreenPosition = Point(0, insets.top)
-
-            if (isFullScreen && window.size == maxSize && window.location == initialFullScreenPosition) {
-                window.size = size
-                window.location = location
-
-                isFullScreen = false
-            } else {
-                size = window.size
-                location = window.location
-
-                window.location = Point(0, insets.top)
-                window.size = Dimension(window.graphicsConfiguration.bounds.size.width, window.graphicsConfiguration.bounds.size.height - (insets.top + insets.bottom))
-
-                isFullScreen = true
-            }
-        }
-    } catch (e: Exception) {
-        e.printStackTrace()
-    }
-}
-
-fun focusWindow() {
-    val nsApp = Cocoa.INSTANCE.objc_getClass("NSApplication")
-    val sharedApp = Cocoa.INSTANCE.objc_msgSend(nsApp, Cocoa.INSTANCE.sel_registerName("sharedApplication"))
-    Cocoa.INSTANCE.objc_msgSend(sharedApp, Cocoa.INSTANCE.sel_registerName("activateIgnoringOtherApps:"))
-}
-
-interface Cocoa : Library {
-    fun objc_getClass(name: String): Pointer
-    fun sel_registerName(name: String): Pointer
-    fun objc_msgSend(receiver: Pointer, selector: Pointer): Pointer
-
-    companion object {
-        val INSTANCE: Cocoa = Native.load("objc", Cocoa::class.java)
     }
 }
