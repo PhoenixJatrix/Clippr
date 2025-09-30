@@ -1,5 +1,6 @@
 package com.nullinnix.clippr.misc
 
+import com.nullinnix.clippr.database.clips.ClipsDao
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.Pointer
@@ -12,6 +13,8 @@ import java.awt.Dimension
 import java.awt.Point
 import java.awt.Toolkit
 import java.awt.Window
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import javax.swing.KeyStroke
 
 var size = Dimension(300, 200)

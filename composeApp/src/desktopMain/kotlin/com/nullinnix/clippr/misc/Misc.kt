@@ -10,19 +10,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.nullinnix.clippr.database.clips.ClipsDao
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.awt.Robot
-import java.awt.event.KeyEvent
+import java.io.File
 import java.security.MessageDigest
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.util.Calendar
 import java.util.Locale
-import javax.swing.JOptionPane
 
 fun String.hash(): String {
     val digest = MessageDigest.getInstance("SHA-256")
@@ -229,4 +232,27 @@ fun epochToReadableTime (epoch: Long): String {
 
 fun String.coerce(maxChar: Int): String {
     return if (this.length <= maxChar) this else this.substring(0, maxChar - 3) + "..."
+}
+
+fun monitorOldClips(
+    clipsDao: ClipsDao
+) {
+    CoroutineScope(Dispatchers.IO).launch {
+        while(true) {
+            //every 30 minutes
+            delay(1800 * 1000)
+
+            log("monitor clips", "monitorOldClips")
+
+            clipsDao.deleteUnpinnedOlderThan30(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC))
+        }
+    }
+}
+
+fun log(content: String, from: String) {
+    val time = Calendar.getInstance().time.toString()
+    val fullMessage = "MESSAGE: $content\nFROM: $from\nAT: $time\n"
+
+    val file = File("log.txt")
+    file.appendText(fullMessage)
 }

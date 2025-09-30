@@ -25,31 +25,20 @@ import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.corners
-import com.nullinnix.clippr.misc.getClipboard
 import com.nullinnix.clippr.misc.listenForCopy
 import com.nullinnix.clippr.misc.pasteWithRobot
 import com.nullinnix.clippr.misc.registerKeyStroke
 import com.nullinnix.clippr.misc.showMacConfirmDialog
 import com.nullinnix.clippr.misc.toggleFullscreen
-import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.theme.Theme
+import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
-import com.sun.jna.Library
-import com.sun.jna.Native
-import com.sun.jna.Pointer
-import com.tulskiy.keymaster.common.Provider
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import java.awt.Dimension
-import java.awt.Point
-import java.awt.Toolkit
 import java.awt.Window
-import javax.swing.KeyStroke
 
 fun main() {
     val clipsDatabase = ClipsDatabaseFactory().create()
@@ -120,7 +109,7 @@ fun main() {
 
                 Item(text = "Clear unpinned") {
                     if (showMacConfirmDialog("Delete all unpinned clips?", "Delete all your unpinned clips")) {
-
+                        clipsViewModel.deleteAllUnpinned()
                     }
                 }
 
@@ -154,6 +143,8 @@ fun main() {
                 title = "Clippr",
             ) {
                 LaunchedEffect(Unit) {
+                    this@Window.window.minimumSize = Dimension(300, 300)
+
                     composeWindowStateRaw.update {
                         this@Window.window
                     }

@@ -58,7 +58,7 @@ fun getClipboard (
                             isImage = false,
                             exists = path.exists(),
                             pinnedAt = 0L,
-                            associatedIcon = getIconForContent(MIME_TYPE_DIR, path.exists(), path.path)
+                            associatedIcon = getIconForContent(MIME_TYPE_DIR, path.exists(), path.path.lowercase())
                         )
                     )
                 } else {
@@ -76,7 +76,7 @@ fun getClipboard (
                             isImage = false,
                             exists = path.exists(),
                             pinnedAt = 0L,
-                            associatedIcon = getIconForContent(mimeType, path.exists(), path.path)
+                            associatedIcon = getIconForContent(mimeType, path.exists(), path.path.lowercase())
                         )
                     )
                 }
@@ -99,7 +99,7 @@ fun getClipboard (
                     isImage = false,
                     exists = true,
                     pinnedAt = 0L,
-                    associatedIcon = getIconForContent(MIME_TYPE_PLAIN_TEXT, true, content)
+                    associatedIcon = getIconForContent(MIME_TYPE_PLAIN_TEXT, true, content.lowercase())
                 )
             )
         }
@@ -123,52 +123,64 @@ fun getIconForContent (
             }
         }
 
-        if (mimeType != MIME_TYPE_PLAIN_TEXT) {
-            when (mediaType) {
-                "dir" -> {
-                    DIRECTORY
-                }
+        return when (mediaType) {
+            "dir" -> {
+                DIRECTORY
+            }
 
-                "image" -> {
-                    IMAGE
-                }
+            "image" -> {
+                IMAGE
+            }
 
-                "audio" -> {
-                    AUDIO
-                }
+            "audio" -> {
+                AUDIO
+            }
 
-                "video" -> {
-                    VIDEO
-                }
+            "video" -> {
+                VIDEO
+            }
 
-                "application" -> {
-                    when (subType) {
-                        in listOf("zip", "7z", "gz", "rar", "java-archive", "tar.gz", "app", "zlib") -> {
-                            ZIP
-                        }
+            "application" -> {
+                return when (subType) {
+                    in listOf("zip", "7z", "gz", "rar", "java-archive", "tar.gz", "app", "zlib") -> {
+                        ZIP
+                    }
 
-                        in listOf("x-bzip2", "dmg", "x-apple-diskimage", "msi", "x-ms-installer", "x-dosexec", "jar", "x-bat") -> {
-                            RUNNABLE
-                        }
+                    in listOf("x-bzip2", "dmg", "x-apple-diskimage", "msi", "x-ms-installer", "x-dosexec", "jar", "x-bat") -> {
+                        RUNNABLE
+                    }
 
-                        in listOf("json") -> {
-                            CODE
-                        }
+                    in listOf("json") -> {
+                        CODE
+                    }
 
-                        in listOf("octet-stream") -> {
-                            BLANK
-                        }
+                    in listOf("octet-stream") -> {
+                        BLANK
+                    }
 
-                        else -> {
-                            UNKNOWN
-                        }
+                    else -> {
+                        UNKNOWN
                     }
                 }
+            }
 
-                "text" -> {
-                    when (subType) {
-                        in listOf("plain", "csv") -> {
+            "text" -> {
+                if (content.endsWith(".txt")) {
+                    return TEXT
+                } else {
+                    for (ext in codeExtensions) {
+                        if (content.endsWith(ext)) {
+                            return CODE
+                        }
+                    }
+
+                    return when (subType) {
+                        in listOf("csv") -> {
                             TEXT
+                        }
+
+                        in listOf("plain") -> {
+                            BLANK
                         }
 
                         in listOf("x-c++src", "x-csrc", "x-java-source", "x-groovy", "x-scala", "x-kotlin", "x-python", "javascript", "x-typescript", "x-go", "x-rustsrc", "x-swift", "x-ruby", "x-php", "x-clojure", "x-haskell", "x-ocaml", "x-perl", "x-sh", "x-r-source", "vnd.dart", "x-elixir", "x-lua", "x-matlab", "x-vbasic", "x-stsrc", "x-coffeescript", "x-less", "x-yaml", "x-rst", "json", "xml", "sql", "x-pascal") -> {
@@ -180,16 +192,10 @@ fun getIconForContent (
                         }
                     }
                 }
-
-                else -> {
-                    UNKNOWN
-                }
             }
-        } else {
-            if (content.endsWith(".txt")) {
-                TEXT
-            } else {
-                BLANK
+
+            else -> {
+                UNKNOWN
             }
         }
     } else {
@@ -374,6 +380,58 @@ val urlExtensions = listOf(
     ".au",
     ".es",
     ".it"
+)
+
+val codeExtensions = listOf(
+    ".c",
+    ".cpp",
+    ".h",
+    ".cs",
+    ".java",
+    ".kt",
+    ".kts",
+    ".py",
+    ".rb",
+    ".php",
+    ".js",
+    ".jsx",
+    ".ts",
+    ".tsx",
+    ".go",
+    ".rs",
+    ".swift",
+    ".m",
+    ".mm",
+    ".sh",
+    ".bat",
+    ".pl",
+    ".r",
+    ".scala",
+    ".groovy",
+    ".hs",
+    ".erl",
+    ".ex",
+    ".exs",
+    ".dart",
+    ".jl",
+    ".html",
+    ".htm",
+    ".css",
+    ".scss",
+    ".less",
+    ".xml",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".toml",
+    ".ini",
+    ".cfg",
+    ".conf",
+    ".md",
+    ".markdown",
+    ".txt",
+    ".csv",
+    ".tsv"
 )
 
 const val AUDIO = "audio"

@@ -8,6 +8,8 @@ import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.ClipsState
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.focusWindow
+import com.nullinnix.clippr.misc.log
+import com.nullinnix.clippr.misc.monitorOldClips
 import com.nullinnix.clippr.misc.onCopyToClipboard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +30,9 @@ class ClipsViewModel(
     val clipsState = _clipsState.asStateFlow()
 
     init {
+        deleteUnpinnedOlderThan30()
+        monitorOldClips(clipsDao = clipsDao)
+
         clipsDao
             .getOtherClips(clipsState.value.currentOtherClipsFetchOffset + FETCH_OFFSET)
             .onEach {
@@ -91,6 +96,7 @@ class ClipsViewModel(
 
     fun forceShowMainApp() {
         viewModelScope.launch {
+            log("force show app", "forceShowMainApp")
             _clipsState.update {
                 it.copy(showMainApp = false)
             }
@@ -110,6 +116,21 @@ class ClipsViewModel(
     fun switchTab(value: Tab) {
         _clipsState.update {
             it.copy(currentTab = value)
+        }
+    }
+
+    fun deleteAllUnpinned() {
+        viewModelScope.launch {
+            log("delete all unpinned clips", "deleteAllUnpinned")
+            clipsDao.deleteAllUnpinned()
+        }
+    }
+
+    fun deleteUnpinnedOlderThan30() {
+        viewModelScope.launch {
+            log("delete all unpinned clips older than 30 days", "deleteUnpinnedOlderThan30")
+
+            clipsDao.deleteUnpinnedOlderThan30(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC))
         }
     }
 }
