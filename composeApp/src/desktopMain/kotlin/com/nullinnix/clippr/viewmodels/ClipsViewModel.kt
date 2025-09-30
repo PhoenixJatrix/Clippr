@@ -8,6 +8,7 @@ import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.ClipsState
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.focusWindow
+import com.nullinnix.clippr.misc.onCopyToClipboard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,8 +49,8 @@ class ClipsViewModel(
 
     fun onAction (action: ClipAction) {
         when (action) {
-            is ClipAction.OnAddClip -> {
-                addClip(action.clip)
+            is ClipAction.OnCopyToClipboard -> {
+                onCopyToClipboard(clip = action.clip)
             }
 
             is ClipAction.OnDelete -> {
@@ -58,6 +59,10 @@ class ClipsViewModel(
 
             is ClipAction.OnTogglePin -> {
                 togglePinnedClip(action.clip)
+            }
+
+            is ClipAction.OnAddClip -> {
+                addClip(action.clip)
             }
         }
     }

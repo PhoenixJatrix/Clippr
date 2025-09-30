@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "123966f526e2ac76064f082895bb16a5",
+    "identityHash": "e8596ba155e52b05e53fa0bd414cb495",
     "entities": [
       {
         "tableName": "settings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `clearAllUnpinnedClipsOnDeviceStart` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `recordingEnabled` INTEGER NOT NULL, `clearAllUnpinnedClipsOnDeviceStart` INTEGER NOT NULL, `maximumRememberableUnpinnedClips` INTEGER NOT NULL, `enableMetaShiftVPopup` INTEGER NOT NULL, `deleteUnpinnedClipsAfter30Days` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -15,8 +15,32 @@
             "notNull": true
           },
           {
+            "fieldPath": "recordingEnabled",
+            "columnName": "recordingEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
             "fieldPath": "clearAllUnpinnedClipsOnDeviceStart",
             "columnName": "clearAllUnpinnedClipsOnDeviceStart",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maximumRememberableUnpinnedClips",
+            "columnName": "maximumRememberableUnpinnedClips",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enableMetaShiftVPopup",
+            "columnName": "enableMetaShiftVPopup",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deleteUnpinnedClipsAfter30Days",
+            "columnName": "deleteUnpinnedClipsAfter30Days",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -31,7 +55,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '123966f526e2ac76064f082895bb16a5')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e8596ba155e52b05e53fa0bd414cb495')"
     ]
   }
 }

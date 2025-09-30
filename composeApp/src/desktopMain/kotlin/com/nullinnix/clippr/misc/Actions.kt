@@ -6,9 +6,10 @@ package com.nullinnix.clippr.misc
 //val TOGGLE_PIN = ClipActions("toggle_pin")
 
 sealed interface ClipAction {
-    data class OnAddClip(val clip: Clip): ClipAction
     data class OnTogglePin(val clip: Clip): ClipAction
     data class OnDelete(val clip: Clip): ClipAction
+    data class OnCopyToClipboard(val clip: Clip): ClipAction
+    data class OnAddClip(val clip: Clip): ClipAction
 }
 
 sealed interface Tab {

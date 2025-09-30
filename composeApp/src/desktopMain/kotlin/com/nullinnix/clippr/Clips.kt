@@ -216,7 +216,7 @@ fun ClipTemplate (
                         .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
                         .clip(corners(15.dp))
                         .clickable {
-                            onAction(ClipAction.OnAddClip(clip))
+                            onAction(ClipAction.OnCopyToClipboard(clip))
                         }
                         .hoverable(interactionSource)
                         .background(Color.White)
@@ -236,9 +236,6 @@ fun ClipTemplate (
                             .padding(end = 5.dp)
                             .weight(1f)
                     )
-
-
-
                     //transparent time text to force text weight
                     Text (
                         text = epochToReadableTime(clip.copiedAt),

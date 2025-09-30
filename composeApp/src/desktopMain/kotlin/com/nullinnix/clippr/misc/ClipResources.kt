@@ -18,21 +18,16 @@ import com.sun.jna.Native
 import com.sun.jna.Pointer
 import org.apache.tika.Tika
 import org.jetbrains.compose.resources.DrawableResource
-import java.awt.AWTException
-import java.awt.Robot
 import java.awt.Toolkit
-import java.awt.Window
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.ClipboardOwner
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
-import java.awt.event.KeyEvent
 import java.io.File
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
 import javax.swing.JOptionPane
-import javax.swing.JTextField
 
 var lastCopiedItemHash = ""
 
@@ -202,13 +197,11 @@ fun getIconForContent (
     }
 }
 
-fun onCopyToClipboard(clip: Clip, onHashed: (String?) -> Unit) {
+fun onCopyToClipboard(clip: Clip) {
     val clipboard = Toolkit.getDefaultToolkit().systemClipboard
     val customTransferable = CustomTransferable(clip)
 
-    if (customTransferable.hash != null) {
-        onHashed(customTransferable.hash)
-    }
+    lastCopiedItemHash = customTransferable.hash ?: lastCopiedItemHash
 
     clipboard.setContents(customTransferable, CustomClipboardOwner())
 }
@@ -302,40 +295,31 @@ class CustomClipboardOwner: ClipboardOwner {
     }
 }
 
-fun pasteClipboardTextIntoField(field: JTextField) {
-    val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-    val contents = clipboard.getContents(null)
-    if (contents != null && contents.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-        val text = contents.getTransferData(DataFlavor.stringFlavor) as String
-        field.text = text
-    }
-}
-
 fun pasteWithRobot(clip: Clip) {
-    onCopyToClipboard(clip) {
-        lastCopiedItemHash = it ?: lastCopiedItemHash
+    onCopyToClipboard(clip)
 
-        val cg = CoreGraphics.INSTANCE
-        val source = cg.CGEventSourceCreate(CoreGraphics.kCGEventSourceStateHIDSystemState)
+    Thread.sleep(50)
 
-        val vDown = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, true)
-        cg.CGEventSetFlags(vDown, CoreGraphics.kCGEventFlagMaskCommand)
-        cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vDown)
-        Thread.sleep(30)
+    val cg = CoreGraphics.INSTANCE
+    val source = cg.CGEventSourceCreate(CoreGraphics.kCGEventSourceStateHIDSystemState)
 
-        val vUp = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, false)
-        cg.CGEventSetFlags(vUp, CoreGraphics.kCGEventFlagMaskCommand)
-        cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vUp)
-        Thread.sleep(30)
+    val vDown = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, true)
+    cg.CGEventSetFlags(vDown, CoreGraphics.kCGEventFlagMaskCommand)
+    cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vDown)
+    Thread.sleep(30)
 
-        val cmdUp = cg.CGEventCreateKeyboardEvent(source, 55, false)
-        cg.CGEventPost(CoreGraphics.kCGSessionEventTap, cmdUp)
+    val vUp = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, false)
+    cg.CGEventSetFlags(vUp, CoreGraphics.kCGEventFlagMaskCommand)
+    cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vUp)
+    Thread.sleep(30)
 
-        cg.CFRelease(vDown)
-        cg.CFRelease(vUp)
-        cg.CFRelease(cmdUp)
-        cg.CFRelease(source)
-    }
+    val cmdUp = cg.CGEventCreateKeyboardEvent(source, 55, false)
+    cg.CGEventPost(CoreGraphics.kCGSessionEventTap, cmdUp)
+
+    cg.CFRelease(vDown)
+    cg.CFRelease(vUp)
+    cg.CFRelease(cmdUp)
+    cg.CFRelease(source)
 }
 
 fun showMacConfirmDialog(
@@ -359,7 +343,6 @@ interface CoreGraphics : Library {
         const val kCGSessionEventTap = 1
         const val kCGEventFlagMaskCommand: Long = 1L shl 20
 
-        // virtual key codes (Carbon)
         const val kVK_ANSI_V = 9
     }
 
