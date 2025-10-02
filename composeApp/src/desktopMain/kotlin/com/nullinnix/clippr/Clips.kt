@@ -49,6 +49,7 @@ import clippr.composeapp.generated.resources.Baloo2_Regular
 import clippr.composeapp.generated.resources.Res
 import clippr.composeapp.generated.resources.Urbanist_Regular
 import clippr.composeapp.generated.resources.pin
+import com.nullinnix.clippr.misc.BROKEN
 import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.corners
@@ -259,7 +260,7 @@ fun ClipTemplate (
                         .align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically
                 ) {
                     Image(
-                        painter = painterResource(drawableMap[clip.associatedIcon]!!),
+                        painter = painterResource(drawableMap[if (clip.exists) clip.associatedIcon else BROKEN]!!),
                         contentDescription = "",
                         modifier = Modifier
                             .height(65.dp)

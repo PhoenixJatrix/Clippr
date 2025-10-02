@@ -16,7 +16,6 @@ import clippr.composeapp.generated.resources.zip
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.Pointer
-import org.apache.tika.Tika
 import org.jetbrains.compose.resources.DrawableResource
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
@@ -24,6 +23,8 @@ import java.awt.datatransfer.ClipboardOwner
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
@@ -34,128 +35,183 @@ var lastCopiedItemHash = ""
 fun getClipboard (
     onCopy: (Clip) -> Unit,
 ) {
-    val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-    val contents = clipboard.getContents(null)
+    try {
+        val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+        val contents = clipboard.getContents(null)
 
-    if (contents.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-        val paths = contents.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
-        val hash = paths.toString().hash()
+        if (contents.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+            val paths = contents.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
+            val hash = paths.toString().hash()
 
-        if (lastCopiedItemHash != hash) {
-            lastCopiedItemHash = hash
+            if (lastCopiedItemHash != hash) {
+                lastCopiedItemHash = hash
 
-            for (path in paths) {
-                if ((path as File).isDirectory) {
-                    println("$path = directory")
+                for (index in paths.indices) {
+                    if ((paths[index] as File).isDirectory) {
+                        val path = paths[index] as File
+                        val source = getClipSource()
 
-                    onCopy(
-                        Clip(
-                            clipID = UUID.randomUUID().toString(),
-                            content = path.path,
-                            copiedAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
-                            isPinned = false,
-                            mimeType = MIME_TYPE_DIR,
-                            isImage = false,
-                            exists = path.exists(),
-                            pinnedAt = 0L,
-                            associatedIcon = getIconForContent(MIME_TYPE_DIR, path.exists(), path.path.lowercase())
+                        log("dir ${path.path} to ${Files.probeContentType(Paths.get(path.path))} from $source", "")
+//                        log("dir ${path.path} to red", "")
+//                        println("file ${path.path} to ${Files.probeContentType(Paths.get(path.path))}")
+
+                        onCopy(
+                            Clip(
+                                clipID = UUID.randomUUID().toString(),
+                                content = path.path,
+                                copiedAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
+                                isPinned = false,
+                                mimeType = MIME_TYPE_DIR,
+                                isImage = false,
+                                exists = path.exists(),
+                                pinnedAt = 0L,
+                                associatedIcon = DIRECTORY,
+                                source = source
+                            )
                         )
-                    )
-                } else {
-                    val tika = Tika()
-                    val mimeType = tika.detect(path)
-                    println("$path = $mimeType")
+                    } else {
+                        val path = paths[index] as File
+                        val source = getClipSource()
 
-                    onCopy(
-                        Clip(
-                            clipID = UUID.randomUUID().toString(),
-                            content = path.path,
-                            copiedAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
-                            isPinned = false,
-                            mimeType = mimeType,
-                            isImage = false,
-                            exists = path.exists(),
-                            pinnedAt = 0L,
-                            associatedIcon = getIconForContent(mimeType, path.exists(), path.path.lowercase())
+                        log("file ${path.path} to ${Files.probeContentType(Paths.get(path.path))} from $source", "")
+//                        log("dir ${path.path} to red", "")
+//                        println("file ${path.path} to ${Files.probeContentType(Paths.get(path.path))}")
+
+                        val mimeType = Files.probeContentType(Paths.get(path.path))
+
+                        onCopy(
+                            Clip(
+                                clipID = UUID.randomUUID().toString(),
+                                content = path.path,
+                                copiedAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
+                                isPinned = false,
+                                mimeType = mimeType,
+                                isImage = false,
+                                exists = path.exists(),
+                                pinnedAt = 0L,
+                                associatedIcon = getIconForContent(mimeType, path.path.lowercase()),
+                                source = source
+                            )
                         )
-                    )
+                    }
                 }
             }
-        }
-    } else if (contents.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-        val content = contents.getTransferData(DataFlavor.stringFlavor) as String
-        val hash = content.hash()
+        } else if (contents.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+            val content = contents.getTransferData(DataFlavor.stringFlavor) as String
+            val hash = content.hash()
 
-        if (lastCopiedItemHash != hash) {
-            lastCopiedItemHash = hash
+            if (lastCopiedItemHash != hash) {
+                lastCopiedItemHash = hash
+                val source = getClipSource()
 
-            onCopy(
-                Clip(
-                    clipID = UUID.randomUUID().toString(),
-                    content = content,
-                    copiedAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
-                    isPinned = false,
-                    mimeType = MIME_TYPE_PLAIN_TEXT,
-                    isImage = false,
-                    exists = true,
-                    pinnedAt = 0L,
-                    associatedIcon = getIconForContent(MIME_TYPE_PLAIN_TEXT, true, content.lowercase())
+                log("str $content from $source", "")
+
+                onCopy(
+                    Clip(
+                        clipID = UUID.randomUUID().toString(),
+                        content = content,
+                        copiedAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
+                        isPinned = false,
+                        mimeType = MIME_TYPE_PLAIN_TEXT,
+                        isImage = false,
+                        exists = true,
+                        pinnedAt = 0L,
+                        associatedIcon = getIconForContent(MIME_TYPE_PLAIN_TEXT, content),
+                        source = source
+                    )
                 )
-            )
+            }
         }
+    } catch (e: Exception) {
+        log("${e.message} -> ${e.stackTrace.firstOrNull()?.let {it::class.java.name}}", "catch")
     }
 }
 
 fun getIconForContent (
     mimeType: String,
-    exists: Boolean,
     content: String
 ): String {
     val mediaType = mimeType.split("/")[0]
     val subType = mimeType.split("/")[1]
 
-    println("$mimeType for $content")
+    for (tld in urlExtensions) {
+        if (content.endsWith(tld) || content.contains("$tld/")) {
+            return WEB
+        }
+    }
 
-    return if (exists) {
-        for (url in urlExtensions) {
-            if (content.endsWith(url) || "$url/" in content) {
-                return WEB
+    return when (mediaType) {
+        "dir" -> {
+            DIRECTORY
+        }
+
+        "image" -> {
+            IMAGE
+        }
+
+        "audio" -> {
+            AUDIO
+        }
+
+        "video" -> {
+            VIDEO
+        }
+
+        "application" -> {
+            return when (subType) {
+                in setOf("zip", "7z", "gz", "rar", "java-archive", "tar.gz", "app", "zlib", "gzip") -> {
+                    ZIP
+                }
+
+                in setOf("x-bzip2", "dmg", "x-apple-diskimage", "msi", "x-ms-installer", "x-dosexec", "jar", "x-bat", "x-msdownload") -> {
+                    RUNNABLE
+                }
+
+                in setOf("json", "pdf") -> {
+                    CODE
+                }
+
+                in setOf("octet-stream") -> {
+                    BLANK
+                }
+
+                else -> {
+                    val ext = if (content.contains(".")) content.substring(content.lastIndexOf(".")) else null
+
+                    ext?.let {
+                        if (ext in runnableExtensions) {
+                            return RUNNABLE
+                        }
+                    }
+
+                    UNKNOWN
+                }
             }
         }
 
-        return when (mediaType) {
-            "dir" -> {
-                DIRECTORY
-            }
+        "text" -> {
+            if (content.endsWith(".txt")) {
+                return TEXT
+            } else {
+                val ext = if (content.contains(".")) content.substring(content.lastIndexOf(".")) else null
 
-            "image" -> {
-                IMAGE
-            }
+                ext?.let {
+                    if (ext in codeExtensions) {
+                        return CODE
+                    }
+                }
 
-            "audio" -> {
-                AUDIO
-            }
-
-            "video" -> {
-                VIDEO
-            }
-
-            "application" -> {
                 return when (subType) {
-                    in listOf("zip", "7z", "gz", "rar", "java-archive", "tar.gz", "app", "zlib") -> {
-                        ZIP
+                    in setOf ("csv") -> {
+                        TEXT
                     }
 
-                    in listOf("x-bzip2", "dmg", "x-apple-diskimage", "msi", "x-ms-installer", "x-dosexec", "jar", "x-bat") -> {
-                        RUNNABLE
-                    }
-
-                    in listOf("json") -> {
-                        CODE
-                    }
-
-                    in listOf("octet-stream") -> {
+                    in setOf ("plain") -> {
                         BLANK
+                    }
+
+                    in setOf ("x-c++src", "x-csrc", "x-java-source", "x-groovy", "x-scala", "x-kotlin", "x-python", "javascript", "x-typescript", "x-go", "x-rustsrc", "x-swift", "x-ruby", "x-php", "x-clojure", "x-haskell", "x-ocaml", "x-perl", "x-sh", "x-r-source", "vnd.dart", "x-elixir", "x-lua", "x-matlab", "x-vbasic", "x-stsrc", "x-coffeescript", "x-less", "x-yaml", "x-rst", "json", "xml", "sql", "x-pascal") -> {
+                        CODE
                     }
 
                     else -> {
@@ -163,43 +219,25 @@ fun getIconForContent (
                     }
                 }
             }
+        }
 
-            "text" -> {
-                if (content.endsWith(".txt")) {
-                    return TEXT
-                } else {
-                    for (ext in codeExtensions) {
-                        if (content.endsWith(ext)) {
-                            return CODE
-                        }
-                    }
+        else -> {
+            val ext = if (content.contains(".")) content.substring(content.lastIndexOf(".")) else null
 
-                    return when (subType) {
-                        in listOf("csv") -> {
-                            TEXT
-                        }
-
-                        in listOf("plain") -> {
-                            BLANK
-                        }
-
-                        in listOf("x-c++src", "x-csrc", "x-java-source", "x-groovy", "x-scala", "x-kotlin", "x-python", "javascript", "x-typescript", "x-go", "x-rustsrc", "x-swift", "x-ruby", "x-php", "x-clojure", "x-haskell", "x-ocaml", "x-perl", "x-sh", "x-r-source", "vnd.dart", "x-elixir", "x-lua", "x-matlab", "x-vbasic", "x-stsrc", "x-coffeescript", "x-less", "x-yaml", "x-rst", "json", "xml", "sql", "x-pascal") -> {
-                            CODE
-                        }
-
-                        else -> {
-                            UNKNOWN
-                        }
-                    }
+            ext?.let {
+                if (ext in codeExtensions) {
+                    return CODE
                 }
             }
 
-            else -> {
-                UNKNOWN
+            ext?.let {
+                if (ext in runnableExtensions) {
+                    return RUNNABLE
+                }
             }
+
+            return UNKNOWN
         }
-    } else {
-        BROKEN
     }
 }
 
@@ -216,7 +254,6 @@ fun mimeTypeToDataFlavor(mimeType: String): List<DataFlavor> {
     val mediaType = mimeType.split("/")[0]
     val subType = mimeType.split("/")[1]
 
-    //data flavor in order of richness
     return when (mediaType) {
         "text" -> {
             when(subType) {
@@ -359,7 +396,15 @@ interface CoreGraphics : Library {
     fun CFRelease(ref: Pointer)
 }
 
-val urlExtensions = listOf(
+fun getClipSource(): String? {
+    val process = ProcessBuilder(
+        "osascript", "-e",
+        "tell application \"System Events\" to get bundle identifier of (first process whose frontmost is true)"
+    ).start()
+    return process.inputStream.bufferedReader().readText().trim().ifBlank { null }
+}
+
+val urlExtensions = setOf (
     ".com",
     ".org",
     ".net",
@@ -382,7 +427,7 @@ val urlExtensions = listOf(
     ".it"
 )
 
-val codeExtensions = listOf(
+val codeExtensions = setOf (
     ".c",
     ".cpp",
     ".h",
@@ -432,6 +477,29 @@ val codeExtensions = listOf(
     ".txt",
     ".csv",
     ".tsv"
+)
+
+val runnableExtensions = listOf(
+    ".exe",
+    ".msi",
+    ".bat",
+    ".cmd",
+    ".com",
+    ".scr",
+    ".ps1",
+    ".jar",
+    ".war",
+    ".sh",
+    ".run",
+    ".bin",
+    ".app",
+    ".dmg",
+    ".pkg",
+    ".deb",
+    ".rpm",
+    ".apk",
+    ".aab",
+    ".ipa"
 )
 
 const val AUDIO = "audio"

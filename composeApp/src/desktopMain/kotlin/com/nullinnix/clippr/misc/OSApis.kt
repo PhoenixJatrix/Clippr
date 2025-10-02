@@ -8,6 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.swing.Swing
 import java.awt.Dimension
 import java.awt.Point
 import java.awt.Toolkit
@@ -85,7 +86,8 @@ fun listenForCopy(
                 }
             )
 
-            delay(300)
+//            delay(300)
+            delay(5000)
         }
     }
 }

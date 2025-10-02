@@ -15,7 +15,8 @@ data class Clip(
     val isImage: Boolean,
     val exists: Boolean,
     val pinnedAt: Long,
-    val associatedIcon: String
+    val associatedIcon: String,
+    val source: String? = null
 )
 
 data class ClipsState(

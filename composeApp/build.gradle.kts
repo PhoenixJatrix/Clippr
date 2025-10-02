@@ -34,7 +34,6 @@ kotlin {
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
-            implementation("org.apache.tika:tika-core:2.9.1")
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
             implementation("net.java.dev.jna:jna:5.17.0")
             implementation("com.github.tulskiy:jkeymaster:1.3")
@@ -58,6 +57,11 @@ compose.desktop {
                         <key>LSUIElement</key>
                         <string>true</string>
                     """.trimIndent()
+
+//                    extraKeysRawXml = """
+//                        <key>NSPasteboardUsageDescription</key>
+//                        <string>Clippr needs clipboard access to detect copied items and manage your clips.</string>
+//                    """.trimIndent()
                 }
                 appCategory = "public.app-category.productivity"
                 iconFile.set(project.file("src/desktopMain/composeResources/drawable/MyIcon.icns"))

@@ -1,0 +1,84 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "5a8bba2130c3a21e4e288459ea7b78fc",
+    "entities": [
+      {
+        "tableName": "clips",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`clipID` TEXT NOT NULL, `content` TEXT NOT NULL, `copiedAt` INTEGER NOT NULL, `isPinned` INTEGER NOT NULL, `mimeType` TEXT NOT NULL, `isImage` INTEGER NOT NULL, `exists` INTEGER NOT NULL, `pinnedAt` INTEGER NOT NULL, `associatedIcon` TEXT NOT NULL, `source` TEXT, PRIMARY KEY(`clipID`))",
+        "fields": [
+          {
+            "fieldPath": "clipID",
+            "columnName": "clipID",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "content",
+            "columnName": "content",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "copiedAt",
+            "columnName": "copiedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isPinned",
+            "columnName": "isPinned",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mimeType",
+            "columnName": "mimeType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isImage",
+            "columnName": "isImage",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exists",
+            "columnName": "exists",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pinnedAt",
+            "columnName": "pinnedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "associatedIcon",
+            "columnName": "associatedIcon",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "clipID"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5a8bba2130c3a21e4e288459ea7b78fc')"
+    ]
+  }
+}
