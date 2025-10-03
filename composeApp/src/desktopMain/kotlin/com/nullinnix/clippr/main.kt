@@ -27,7 +27,6 @@ import com.nullinnix.clippr.misc.SettingsAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.corners
-import com.nullinnix.clippr.misc.getAllApps
 import com.nullinnix.clippr.misc.isInLoginItemsChecker
 import com.nullinnix.clippr.misc.listenForCopy
 import com.nullinnix.clippr.misc.pasteWithRobot
@@ -38,6 +37,8 @@ import com.nullinnix.clippr.theme.Theme
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
+import com.nullinnix.clippr.views.App
+import com.nullinnix.clippr.views.WindowBar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -174,7 +175,7 @@ fun main() {
                         .border(1.dp, color = Color.Black.copy(0.25f), shape = corners(10.dp))
                         .background(Color.White)
                 ){
-                    WindowBar (
+                    WindowBar(
                         window = window,
                         isFocused = isFocused,
                         onToggleFullScreen = {
@@ -186,7 +187,7 @@ fun main() {
                     )
 
                     Theme {
-                        App (
+                        App(
                             isFocused = isFocused,
                             clipsViewModel = clipsViewModel,
                             settingsViewModel = settingsViewModel,

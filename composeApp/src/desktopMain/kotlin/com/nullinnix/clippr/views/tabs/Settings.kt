@@ -1,4 +1,4 @@
-package com.nullinnix.clippr
+package com.nullinnix.clippr.views.tabs
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -28,6 +28,7 @@ import com.nullinnix.clippr.misc.SettingsAction
 import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.theme.HeaderColor
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
+import com.nullinnix.clippr.views.CheckBox
 
 @Composable
 fun Settings (

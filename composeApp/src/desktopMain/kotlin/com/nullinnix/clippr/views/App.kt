@@ -1,4 +1,4 @@
-package com.nullinnix.clippr
+package com.nullinnix.clippr.views
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -24,6 +24,9 @@ import com.nullinnix.clippr.theme.White
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
+import com.nullinnix.clippr.views.tabs.Clips
+import com.nullinnix.clippr.views.tabs.ManageClips
+import com.nullinnix.clippr.views.tabs.Settings
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -39,7 +42,7 @@ fun App (
         val clipState = clipsViewModel.clipsState.collectAsState().value
         val currentTab =  clipState.currentTab
 
-        val pagerState = rememberPagerState { 2 }
+        val pagerState = rememberPagerState { 3 }
         val coroutineScope = rememberCoroutineScope()
 
         var onActualTabChanged by remember { mutableStateOf(false) }
@@ -48,7 +51,8 @@ fun App (
             pagerState.animateScrollToPage(
                 when (currentTab) {
                     Tab.ClipsTab -> 0
-                    Tab.SettingsTab -> 1
+                    Tab.ManageClipsTab -> 1
+                    Tab.SettingsTab -> 2
                 }
             )
         }
@@ -57,6 +61,7 @@ fun App (
             if (onActualTabChanged) {
                 clipsViewModel.switchTab(when (pagerState.currentPage) {
                     0 -> Tab.ClipsTab
+                    1 -> Tab.ManageClipsTab
                     else -> Tab.SettingsTab
                 })
             }
@@ -80,7 +85,8 @@ fun App (
                     pagerState.animateScrollToPage(
                         page = when (it) {
                             Tab.ClipsTab -> 0
-                            Tab.SettingsTab -> 1
+                            Tab.ManageClipsTab -> 1
+                            Tab.SettingsTab -> 2
                         }
                     )
                 }
@@ -93,14 +99,20 @@ fun App (
             ) {
                 when (currentTab) {
                     Tab.ClipsTab -> {
-                        Clips (
+                        Clips(
                             clipsViewModel = clipsViewModel,
                             miscViewModel = miscViewModel
                         )
-                    } else -> {
-                        Settings (
+                    }
+
+                    Tab.SettingsTab -> {
+                        Settings(
                             settingsViewModel = settingsViewModel
                         )
+                    }
+
+                    else -> {
+                        ManageClips()
                     }
                 }
             }

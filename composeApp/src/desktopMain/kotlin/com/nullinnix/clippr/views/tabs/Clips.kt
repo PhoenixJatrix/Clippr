@@ -1,4 +1,4 @@
-package com.nullinnix.clippr
+package com.nullinnix.clippr.views.tabs
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -52,14 +51,12 @@ import clippr.composeapp.generated.resources.Urbanist_Regular
 import clippr.composeapp.generated.resources.pin
 import com.nullinnix.clippr.misc.BROKEN
 import com.nullinnix.clippr.misc.Clip
-import com.nullinnix.clippr.misc.ClipEntity
 import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.MacApp
 import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.misc.drawableMap
 import com.nullinnix.clippr.misc.epochToReadableTime
 import com.nullinnix.clippr.misc.formatText
-import com.nullinnix.clippr.misc.loadIcns
 import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.theme.Translucent
 import com.nullinnix.clippr.theme.Transparent
@@ -220,36 +217,22 @@ fun ClipTemplate (
             Box (
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(end = 10.dp)
+                    .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
+                    .clip(corners(15.dp))
+                    .background(Color.White)
             ) {
-                Row (
+                Box (
                     modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(end = 10.dp)
-                        .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
-                        .clip(corners(15.dp))
+                        .fillMaxSize()
                         .clickable {
                             onAction(ClipAction.OnCopyToClipboard(clip))
                         }
                         .hoverable(interactionSource)
-                        .background(Color.White)
-                        .padding(start = 65.dp)
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = formatText(clip.content),
-                        color = Color.Black,
-                        overflow = TextOverflow.Ellipsis,
-                        maxLines = 2,
-                        fontSize = 13.5.sp,
-                        lineHeight = 17.sp,
-                        fontFamily = FontFamily(Font(Res.font.Urbanist_Regular)),
-                        modifier = Modifier
-                            .padding(end = 5.dp)
-                    )
+
                 }
 
-                //icon and canvas bar
                 Row(
                     modifier = Modifier
                         .height(65.dp)
@@ -282,93 +265,116 @@ fun ClipTemplate (
                     }
                 }
 
-                Row (
-                    Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 20.dp, bottom = 10.dp)
-                ){
-                    clip.source?.let {
-                        Row (
-                            modifier = Modifier
-                                .shadow(10.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(timeCopiedBackgroundAnim)
-                                .padding(horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically
-                        ){
-                            icns?.let {
-                                Image (
-                                    bitmap = it,
-                                    contentDescription = "",
-                                    modifier = Modifier
-                                        .size(17.dp)
-                                )
-                            }
-
-
-                            macApp?.let {
-                                Spacer(Modifier.width(5.dp))
-
-                                Text (
-                                    text = macApp.name,
-                                    fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                                    color = timeCopiedTextAnim,
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(Modifier.width(10.dp))
-
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(start = 65.dp)
+                        .padding(7.dp), verticalArrangement = Arrangement.SpaceBetween
+                ) {
                     Row (
                         modifier = Modifier
-                            .shadow(10.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(timeCopiedBackgroundAnim)
-                            .padding(horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically
-                    ){
-                        val lines = clip.content.lines().size
-                        if (lines > 1) {
-                            Text (
-                                text = "$lines lines",
-                                fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                                color = timeCopiedTextAnim,
-                                fontSize = 12.sp
-                            )
-
-                            Spacer(Modifier.width(5.dp))
-
-                            Canvas(
-                                modifier = Modifier
-                                    .size(5.dp)
-                            ) {
-                                drawCircle(color = timeCopiedTextAnim)
-                            }
-
-                            Spacer(Modifier.width(5.dp))
-                        }
-
-                        Text (
-                            text = "${clip.content.length} ${if (clip.content.length == 1) "char" else "chars"}",
-                            fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                            color = timeCopiedTextAnim,
-                            fontSize = 12.sp
+                            .weight(1f), verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = formatText(clip.content),
+                            color = Color.Black,
+                            overflow = TextOverflow.Ellipsis,
+                            maxLines = 2,
+                            fontSize = 12.sp,
+                            lineHeight = 12.sp,
+                            fontFamily = FontFamily(Font(Res.font.Urbanist_Regular)),
+                            modifier = Modifier
                         )
                     }
 
-                    Spacer(Modifier.width(10.dp))
+                    Row (
+                        Modifier
+                            .align(Alignment.End)
+                    ){
+                        clip.source?.let {
+                            Row (
+                                modifier = Modifier
+                                    .shadow(7.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
+                                    .clip(RoundedCornerShape(90.dp))
+                                    .background(timeCopiedBackgroundAnim)
+                                    .padding(horizontal = 7.dp), verticalAlignment = Alignment.CenterVertically
+                            ){
+                                icns?.let {
+                                    Image (
+                                        bitmap = it,
+                                        contentDescription = "",
+                                        modifier = Modifier
+                                            .size(20.dp)
 
-                    Text(
-                        text = epochToReadableTime(clip.copiedAt),
-                        modifier = Modifier
-                            .shadow(10.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(timeCopiedBackgroundAnim)
-                            .padding(horizontal = 10.dp),
-                        fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                        color = timeCopiedTextAnim,
-                        fontSize = 12.sp
-                    )
+                                    )
+                                }
+
+
+                                macApp?.let {
+                                    Spacer(Modifier.width(5.dp))
+
+                                    Text (
+                                        text = macApp.name,
+                                        fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+                                        color = timeCopiedTextAnim,
+                                        fontSize = 11.sp
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.width(7.dp))
+
+                        Row (
+                            modifier = Modifier
+                                .shadow(7.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
+                                .clip(RoundedCornerShape(90.dp))
+                                .background(timeCopiedBackgroundAnim)
+                                .padding(horizontal = 7.dp), verticalAlignment = Alignment.CenterVertically
+                        ){
+                            val lines = clip.content.lines().size
+                            if (lines > 1) {
+                                Text (
+                                    text = "$lines lines",
+                                    fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+                                    color = timeCopiedTextAnim,
+                                    fontSize = 11.sp
+                                )
+
+                                Spacer(Modifier.width(5.dp))
+
+                                Canvas(
+                                    modifier = Modifier
+                                        .size(5.dp)
+                                ) {
+                                    drawCircle(color = timeCopiedTextAnim)
+                                }
+
+                                Spacer(Modifier.width(5.dp))
+                            }
+
+                            Text (
+                                text = "${clip.content.length} ${if (clip.content.length == 1) "char" else "chars"}",
+                                fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+                                color = timeCopiedTextAnim,
+                                fontSize = 11.sp
+                            )
+                        }
+
+                        Spacer(Modifier.width(7.dp))
+
+                        Text(
+                            text = epochToReadableTime(clip.copiedAt),
+                            modifier = Modifier
+                                .shadow(7.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
+                                .clip(RoundedCornerShape(90.dp))
+                                .background(timeCopiedBackgroundAnim)
+                                .padding(horizontal = 7.dp),
+                            fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+                            color = timeCopiedTextAnim,
+                            fontSize = 11.sp
+                        )
+                    }
                 }
             }
         }

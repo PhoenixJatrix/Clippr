@@ -1,4 +1,4 @@
-package com.nullinnix.clippr
+package com.nullinnix.clippr.views
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -61,7 +61,7 @@ fun Tabs (
 ) {
     Row (
         modifier = Modifier
-            .width(200.dp)
+            .width(300.dp)
             .height(50.dp)
             .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(corners(15.dp))
@@ -71,6 +71,14 @@ fun Tabs (
             isFocused = isFocused,
             isSelected = currentTab == Tab.ClipsTab,
             tab = Tab.ClipsTab
+        ) {
+            onTabChanged(it)
+        }
+
+        TabElement(
+            isFocused = isFocused,
+            isSelected = currentTab == Tab.ManageClipsTab,
+            tab = Tab.ManageClipsTab
         ) {
             onTabChanged(it)
         }
