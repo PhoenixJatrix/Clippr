@@ -1,5 +1,6 @@
 package com.nullinnix.clippr.views.tabs
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -62,17 +63,23 @@ import com.nullinnix.clippr.theme.Translucent
 import com.nullinnix.clippr.theme.Transparent
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
+import com.nullinnix.clippr.views.CheckBox
+import com.nullinnix.clippr.views.RadioButton
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun Clips (
+    isSearching: Boolean,
     clipsViewModel: ClipsViewModel,
     miscViewModel: MiscViewModel
 ) {
     val clipState = clipsViewModel.clipsState.collectAsState().value
     val pinnedClips = clipState.pinnedClips
     val otherClips = clipState.otherClips
+
+    val selectedPinnedClips = clipState.selectedPinnedClips
+    val selectedOtherClips = clipState.selectedOtherClips
 
     val loadedIcns = miscViewModel.state.collectAsState().value.loadedIcns
     val allApps = miscViewModel.state.collectAsState().value.allApps
@@ -95,12 +102,29 @@ fun Clips (
                             .padding(10.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = "Pinned Clips",
-                            color = Color.Black,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        Row (
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AnimatedVisibility(isSearching) {
+                                RadioButton(
+                                    isSelected = pinnedClips.size == selectedPinnedClips.size
+                                ) {
+                                    if (pinnedClips.size == selectedPinnedClips.size) {
+                                        clipsViewModel.setSelectedPinnedClips(emptySet())
+                                    } else {
+                                        clipsViewModel.setSelectedPinnedClips(pinnedClips.toSet())
+                                    }
+                                }
+                            }
+
+                            Text(
+                                text = "Pinned Clips",
+                                color = Color.Black,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
 
                         if (pinnedClips.size > 5) {
                             Text(
@@ -119,7 +143,13 @@ fun Clips (
             }
 
             items(if (!allPinnedClipsExpanded && pinnedClips.size > 5) pinnedClips.subList(0, 5) else pinnedClips) { clip ->
-                ClipTemplate(clip = clip, icns = loadedIcns[clip.source ?: ""], macApp = allApps[clip.source ?: ""]) { action ->
+                ClipTemplate(
+                    clip = clip,
+                    icns = loadedIcns[clip.source ?: ""],
+                    macApp = allApps[clip.source ?: ""],
+                    isSelected = clip in selectedPinnedClips,
+                    isSearching = isSearching
+                ) { action ->
                     clipsViewModel.onAction(action)
                 }
 
@@ -135,8 +165,20 @@ fun Clips (
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(10.dp),
-                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        AnimatedVisibility(isSearching) {
+                            RadioButton(
+                                isSelected = otherClips.size == selectedOtherClips.size
+                            ) {
+                                if (otherClips.size == selectedOtherClips.size) {
+                                    clipsViewModel.setSelectedOtherClips(emptySet())
+                                } else {
+                                    clipsViewModel.setSelectedOtherClips(otherClips.toSet())
+                                }
+                            }
+                        }
+
                         Text(
                             text = "Other Clips",
                             color = Color.Black,
@@ -148,7 +190,13 @@ fun Clips (
             }
 
             items(otherClips) { clip ->
-                ClipTemplate(clip = clip, icns = loadedIcns[clip.source ?: ""], macApp = allApps[clip.source ?: ""]) { action ->
+                ClipTemplate(
+                    clip = clip,
+                    icns = loadedIcns[clip.source ?: ""],
+                    macApp = allApps[clip.source ?: ""],
+                    isSelected = clip in selectedOtherClips,
+                    isSearching = isSearching
+                ) { action ->
                     clipsViewModel.onAction(action)
                 }
 
@@ -175,6 +223,8 @@ fun Clips (
 
 @Composable
 fun ClipTemplate (
+    isSearching: Boolean,
+    isSelected: Boolean,
     clip: Clip,
     icns: ImageBitmap?,
     macApp: MacApp?,
@@ -199,18 +249,26 @@ fun ClipTemplate (
         ) {
             Spacer(Modifier.width(10.dp))
 
-            Icon(
-                painter = painterResource(Res.drawable.pin),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(30.dp)
-                    .clip(corners(90.dp))
-                    .clickable {
-                        onAction(ClipAction.OnTogglePin(clip))
-                    }
-                    .padding(5.dp),
-                tint = if (clip.isPinned) Color.Black else Color.LightGray
-            )
+            if (isSearching) {
+                RadioButton(
+                    isSelected = isSelected
+                ) {
+
+                }
+            } else {
+                Icon(
+                    painter = painterResource(Res.drawable.pin),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clip(corners(90.dp))
+                        .clickable {
+                            onAction(ClipAction.OnTogglePin(clip))
+                        }
+                        .padding(5.dp),
+                    tint = if (clip.isPinned) Color.Black else Color.LightGray
+                )
+            }
 
             Spacer(Modifier.width(10.dp))
 

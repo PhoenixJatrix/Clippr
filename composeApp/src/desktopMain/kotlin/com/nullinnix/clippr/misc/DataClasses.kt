@@ -38,7 +38,11 @@ data class ClipsState(
     val currentPinnedClipsFetchOffset: Int = 0,
     val currentOtherClipsFetchOffset: Int = 0,
     val showMainApp: Boolean = false,
-    val currentTab: Tab = Tab.ClipsTab
+    val currentTab: Tab = Tab.ClipsTab,
+    val isSearching: Boolean = false,
+    val searchParams: String = "",
+    val selectedPinnedClips: Set<Clip> = emptySet(),
+    val selectedOtherClips: Set<Clip> = emptySet(),
 )
 
 @Entity(tableName = "settings")

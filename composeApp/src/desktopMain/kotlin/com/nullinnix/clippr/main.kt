@@ -188,6 +188,7 @@ fun main() {
 
                     Theme {
                         App(
+                            window = window,
                             isFocused = isFocused,
                             clipsViewModel = clipsViewModel,
                             settingsViewModel = settingsViewModel,

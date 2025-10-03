@@ -5,6 +5,7 @@ sealed interface ClipAction {
     data class OnDelete(val clip: Clip): ClipAction
     data class OnCopyToClipboard(val clip: Clip): ClipAction
     data class OnAddClip(val clip: Clip): ClipAction
+    data class ToggleSelectClip(val clip: Clip): ClipAction
 }
 
 sealed interface Tab {

@@ -75,6 +75,10 @@ class ClipsViewModel(
                     addClip(action.clip)
                 }
             }
+
+            is ClipAction.ToggleSelectClip -> {
+                toggleSelectClip(action.clip)
+            }
         }
     }
 
@@ -137,6 +141,50 @@ class ClipsViewModel(
             log("delete all unpinned clips older than 30 days", "deleteUnpinnedOlderThan30")
 
             clipsDao.deleteUnpinnedOlderThan30(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC))
+        }
+    }
+
+    fun setIsSearching (value: Boolean) {
+        _clipsState.update {
+            it.copy(isSearching = value)
+        }
+    }
+
+    fun setSearchParams (value: String) {
+        _clipsState.update {
+            it.copy(searchParams = value)
+        }
+    }
+    
+    fun toggleSelectClip(clip: Clip) {
+        if (clip.isPinned) {
+            _clipsState.update {
+                if (clip in it.selectedPinnedClips) {
+                    it.copy(selectedPinnedClips = it.selectedPinnedClips - clip)
+                } else {
+                    it.copy(selectedPinnedClips = it.selectedPinnedClips + clip)
+                }
+            }
+        } else {
+            _clipsState.update {
+                if (clip in it.selectedOtherClips) {
+                    it.copy(selectedOtherClips = it.selectedOtherClips - clip)
+                } else {
+                    it.copy(selectedOtherClips = it.selectedOtherClips + clip)
+                }
+            }
+        }
+    }
+
+    fun setSelectedPinnedClips (value: Set<Clip>) {
+        _clipsState.update {
+            it.copy(selectedPinnedClips = value)
+        }
+    }
+
+    fun setSelectedOtherClips (value: Set<Clip>) {
+        _clipsState.update {
+            it.copy(selectedOtherClips = value)
         }
     }
 }

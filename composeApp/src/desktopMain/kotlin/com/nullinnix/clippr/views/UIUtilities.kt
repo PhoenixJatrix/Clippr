@@ -1,20 +1,26 @@
 package com.nullinnix.clippr.views
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -22,26 +28,48 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
+import androidx.compose.material.TextField
+import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import clippr.composeapp.generated.resources.Res
+import clippr.composeapp.generated.resources.back
+import clippr.composeapp.generated.resources.check
 import clippr.composeapp.generated.resources.close
+import clippr.composeapp.generated.resources.filter
 import clippr.composeapp.generated.resources.full_screen
+import clippr.composeapp.generated.resources.search
+import com.nullinnix.clippr.misc.ClipsState
+import com.nullinnix.clippr.misc.SettingsState
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.misc.name
@@ -61,7 +89,7 @@ fun Tabs (
 ) {
     Row (
         modifier = Modifier
-            .width(300.dp)
+            .width(200.dp)
             .height(50.dp)
             .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(corners(15.dp))
@@ -277,5 +305,176 @@ fun CheckBox(
         ) {
 
         }
+    }
+}
+
+@Composable
+fun SearchBar (
+    window: Window,
+    isSearching: Boolean,
+    clipState: ClipsState,
+    onSearchParamsChanged: (String) -> Unit,
+    onSearchStart: () -> Unit,
+    onExitSearch: () -> Unit
+) {
+    val widthAnim by animateDpAsState(if (isSearching) window.width.dp else 300.dp)
+    val searchParams = clipState.searchParams
+
+    val focusRequester by remember {
+        mutableStateOf(FocusRequester())
+    }
+
+    Row (
+        modifier = Modifier
+            .width(widthAnim)
+            .onPreviewKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown) {
+                    when {
+                        event.key == Key.Escape -> {
+                            onExitSearch()
+                        }
+                    }
+                }
+
+                true
+            }
+            .padding(10.dp)
+    ){
+        if (isSearching) {
+            Icon(
+                painter = painterResource(Res.drawable.back),
+                contentDescription = "",
+                tint = Color.Black,
+                modifier = Modifier
+                    .size(40.dp)
+                    .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                    .clip(corners(90.dp))
+                    .background(Color.White)
+                    .clickable {
+                        onExitSearch()
+                    }
+                    .padding(10.dp)
+            )
+        }
+
+        Spacer(Modifier.width(10.dp))
+
+        Row (
+            modifier = Modifier
+                .weight(1f)
+                .height(40.dp)
+                .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                .clip(corners(90.dp))
+                .background(HeaderColor)
+                .noGleamTaps {
+                    onSearchStart()
+                }
+                .padding(10.dp)
+                .padding(start = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
+        ) {
+            AnimatedVisibility(!isSearching) {
+                Icon(
+                    painter = painterResource(Res.drawable.search),
+                    contentDescription = "",
+                    tint = Color.Gray,
+                    modifier = Modifier
+                        .size(15.dp)
+                )
+            }
+
+            if (!isSearching) {
+                Spacer(Modifier.width(5.dp))
+
+                Text(
+                    text = "Search/filter/select",
+                    color = Color.Gray,
+                    fontSize = 14.sp
+                )
+
+                Spacer(Modifier.width(15.dp))
+            } else {
+                LaunchedEffect(Unit) {
+                    focusRequester.requestFocus()
+                }
+
+                BasicTextField(
+                    value = searchParams,
+                    onValueChange = {
+                        onSearchParamsChanged(it.replace("\n", ""))
+                    },
+                    textStyle = TextStyle(
+                        color = Color.Black,
+                        fontSize = 16.sp
+                    ),
+                    cursorBrush = SolidColor(Color.Black),
+                    decorationBox = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                        ) {
+                            if (searchParams.isEmpty()) {
+                                Text(
+                                    text = "69 ideas for Grindr dates",
+                                    color = Color.Gray,
+                                    fontSize = 14.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+
+                            it()
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .focusRequester(focusRequester),
+                    singleLine = true
+                )
+            }
+        }
+
+        Spacer(Modifier.width(10.dp))
+
+        if (isSearching) {
+            Icon(
+                painter = painterResource(Res.drawable.filter),
+                contentDescription = "",
+                tint = Color.Black,
+                modifier = Modifier
+                    .size(40.dp)
+                    .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                    .clip(corners(90.dp))
+                    .background(Color.White)
+                    .clickable {
+//                        onExitSearch()
+                    }
+                    .padding(10.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun RadioButton (
+    isSelected: Boolean,
+    onToggle: () -> Unit
+){
+    Box(
+        modifier = Modifier
+            .padding(end = 10.dp)
+            .size(20.dp)
+            .clip(corners(5.dp))
+            .background(if (isSelected) Color.Black else Color.LightGray)
+            .clickable {
+                onToggle()
+            }
+            .padding(5.dp), contentAlignment = Alignment.Center
+    ) {
+        Icon (
+            painter = painterResource(Res.drawable.check),
+            contentDescription = "",
+            modifier = Modifier,
+            tint = if (isSelected) Color.White else Color.Gray
+        )
     }
 }

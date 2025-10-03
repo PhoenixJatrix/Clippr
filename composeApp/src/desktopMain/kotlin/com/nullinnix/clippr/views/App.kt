@@ -1,5 +1,9 @@
 package com.nullinnix.clippr.views
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -28,10 +32,12 @@ import com.nullinnix.clippr.views.tabs.Clips
 import com.nullinnix.clippr.views.tabs.Settings
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import java.awt.Window
 
 @Composable
 @Preview
 fun App (
+    window: Window,
     isFocused: Boolean,
     clipsViewModel: ClipsViewModel,
     settingsViewModel: SettingsViewModel,
@@ -40,6 +46,7 @@ fun App (
     MaterialTheme {
         val clipState = clipsViewModel.clipsState.collectAsState().value
         val currentTab =  clipState.currentTab
+        val isSearching = clipState.isSearching
 
         val pagerState = rememberPagerState { 3 }
         val coroutineScope = rememberCoroutineScope()
@@ -74,28 +81,52 @@ fun App (
         ) {
             Spacer(Modifier.height(15.dp))
 
-            Tabs (
-                isFocused = isFocused,
-                currentTab = currentTab
-            ) {
-                coroutineScope.launch {
-                    pagerState.animateScrollToPage(
-                        page = when (it) {
-                            Tab.ClipsTab -> 0
-                            Tab.SettingsTab -> 2
-                        }
-                    )
+            AnimatedVisibility(!isSearching, enter = fadeIn(tween(200)) + expandHorizontally(tween(200))) {
+                Tabs (
+                    isFocused = isFocused,
+                    currentTab = currentTab
+                ) {
+                    coroutineScope.launch {
+                        pagerState.animateScrollToPage(
+                            page = when (it) {
+                                Tab.ClipsTab -> 0
+                                Tab.SettingsTab -> 2
+                            }
+                        )
+                    }
                 }
             }
 
-            Spacer(Modifier.height(10.dp))
+            if (!isSearching) {
+                Spacer(Modifier.height(15.dp))
+            }
+
+            AnimatedVisibility(currentTab == Tab.ClipsTab) {
+                SearchBar (
+                    window = window,
+                    isSearching = isSearching,
+                    clipState = clipState,
+                    onSearchStart = {
+                        clipsViewModel.setIsSearching(true)
+                    },
+                    onSearchParamsChanged = {
+                        clipsViewModel.setSearchParams(it)
+                    },
+                    onExitSearch = {
+                        clipsViewModel.setIsSearching(false)
+                    }
+                )
+
+                Spacer(Modifier.height(10.dp))
+            }
 
             HorizontalPager (
                 state = pagerState
             ) {
                 when (currentTab) {
                     Tab.ClipsTab -> {
-                        Clips(
+                        Clips (
+                            isSearching = isSearching,
                             clipsViewModel = clipsViewModel,
                             miscViewModel = miscViewModel
                         )
