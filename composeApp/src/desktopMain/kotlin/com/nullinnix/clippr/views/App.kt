@@ -25,7 +25,6 @@ import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
 import com.nullinnix.clippr.views.tabs.Clips
-import com.nullinnix.clippr.views.tabs.ManageClips
 import com.nullinnix.clippr.views.tabs.Settings
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -51,7 +50,6 @@ fun App (
             pagerState.animateScrollToPage(
                 when (currentTab) {
                     Tab.ClipsTab -> 0
-                    Tab.ManageClipsTab -> 1
                     Tab.SettingsTab -> 2
                 }
             )
@@ -61,7 +59,6 @@ fun App (
             if (onActualTabChanged) {
                 clipsViewModel.switchTab(when (pagerState.currentPage) {
                     0 -> Tab.ClipsTab
-                    1 -> Tab.ManageClipsTab
                     else -> Tab.SettingsTab
                 })
             }
@@ -85,7 +82,6 @@ fun App (
                     pagerState.animateScrollToPage(
                         page = when (it) {
                             Tab.ClipsTab -> 0
-                            Tab.ManageClipsTab -> 1
                             Tab.SettingsTab -> 2
                         }
                     )
@@ -109,10 +105,6 @@ fun App (
                         Settings(
                             settingsViewModel = settingsViewModel
                         )
-                    }
-
-                    else -> {
-                        ManageClips()
                     }
                 }
             }

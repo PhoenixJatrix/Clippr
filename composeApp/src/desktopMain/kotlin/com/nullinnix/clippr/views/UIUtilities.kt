@@ -77,14 +77,6 @@ fun Tabs (
 
         TabElement(
             isFocused = isFocused,
-            isSelected = currentTab == Tab.ManageClipsTab,
-            tab = Tab.ManageClipsTab
-        ) {
-            onTabChanged(it)
-        }
-
-        TabElement(
-            isFocused = isFocused,
             isSelected = currentTab == Tab.SettingsTab,
             tab = Tab.SettingsTab
         ) {
