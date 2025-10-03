@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nullinnix.clippr.database.clips.ClipsDao
 import com.nullinnix.clippr.misc.Clip
+import com.nullinnix.clippr.misc.ClipEntity
 import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.ClipsState
 import com.nullinnix.clippr.misc.Tab
@@ -11,6 +12,8 @@ import com.nullinnix.clippr.misc.focusWindow
 import com.nullinnix.clippr.misc.log
 import com.nullinnix.clippr.misc.monitorOldClips
 import com.nullinnix.clippr.misc.onCopyToClipboard
+import com.nullinnix.clippr.misc.toClip
+import com.nullinnix.clippr.misc.toClipEntity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,7 +41,7 @@ class ClipsViewModel(
             .getOtherClips(clipsState.value.currentOtherClipsFetchOffset + FETCH_OFFSET)
             .onEach {
                 _clipsState.update { state ->
-                    state.copy(currentOtherClipsFetchOffset = state.currentOtherClipsFetchOffset + FETCH_OFFSET, otherClips = it)
+                    state.copy(currentOtherClipsFetchOffset = state.currentOtherClipsFetchOffset + FETCH_OFFSET, otherClips = it.toClip())
                 }
             }
             .launchIn(viewModelScope)
@@ -47,7 +50,7 @@ class ClipsViewModel(
             .getPinnedClips(clipsState.value.currentPinnedClipsFetchOffset + FETCH_OFFSET)
             .onEach {
                 _clipsState.update { state ->
-                    state.copy(currentPinnedClipsFetchOffset = state.currentPinnedClipsFetchOffset + FETCH_OFFSET, pinnedClips = it)
+                    state.copy(currentPinnedClipsFetchOffset = state.currentPinnedClipsFetchOffset + FETCH_OFFSET, pinnedClips = it.toClip())
                 }
             }
             .launchIn(viewModelScope)
@@ -77,13 +80,13 @@ class ClipsViewModel(
 
     fun addClip(clip: Clip) {
         viewModelScope.launch {
-            clipsDao.upsert(clip)
+            clipsDao.upsert(clip.toClipEntity())
         }
     }
 
     fun deleteClip(clip: Clip) {
         viewModelScope.launch {
-            clipsDao.delete(clip)
+            clipsDao.delete(clip.toClipEntity())
         }
     }
 

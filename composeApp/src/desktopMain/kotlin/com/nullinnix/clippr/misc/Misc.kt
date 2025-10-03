@@ -262,3 +262,45 @@ fun log(content: String, from: String) {
     val file = File(System.getProperty("user.home"), "Library/Application Support/Clippr/log.txt")
     file.appendText(fullMessage)
 }
+
+fun ClipEntity.toClip(): Clip {
+    return Clip (
+        clipID = this.clipID,
+        content = this.content,
+        copiedAt = this.copiedAt,
+        isPinned = this.isPinned,
+        mimeType = this.mimeType,
+        isImage = this.isImage,
+        exists = this.exists,
+        pinnedAt = this.pinnedAt,
+        associatedIcon = this.associatedIcon,
+        source = this.source
+    )
+}
+
+fun Clip.toClipEntity(): ClipEntity {
+    return ClipEntity (
+        clipID = this.clipID,
+        content = this.content,
+        copiedAt = this.copiedAt,
+        isPinned = this.isPinned,
+        mimeType = this.mimeType,
+        isImage = this.isImage,
+        exists = this.exists,
+        pinnedAt = this.pinnedAt,
+        associatedIcon = this.associatedIcon,
+        source = this.source
+    )
+}
+
+fun List<ClipEntity>.toClip(): List<Clip> {
+    return this.map {
+        it.toClip()
+    }
+}
+
+fun List<Clip>.toClipEntity(): List<ClipEntity> {
+    return this.map {
+        it.toClipEntity()
+    }
+}

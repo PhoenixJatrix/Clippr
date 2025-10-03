@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
@@ -51,25 +52,33 @@ import clippr.composeapp.generated.resources.Urbanist_Regular
 import clippr.composeapp.generated.resources.pin
 import com.nullinnix.clippr.misc.BROKEN
 import com.nullinnix.clippr.misc.Clip
+import com.nullinnix.clippr.misc.ClipEntity
 import com.nullinnix.clippr.misc.ClipAction
+import com.nullinnix.clippr.misc.MacApp
 import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.misc.drawableMap
 import com.nullinnix.clippr.misc.epochToReadableTime
 import com.nullinnix.clippr.misc.formatText
+import com.nullinnix.clippr.misc.loadIcns
 import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.theme.Translucent
 import com.nullinnix.clippr.theme.Transparent
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
+import com.nullinnix.clippr.viewmodels.MiscViewModel
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun Clips (
-    clipsViewModel: ClipsViewModel
+    clipsViewModel: ClipsViewModel,
+    miscViewModel: MiscViewModel
 ) {
     val clipState = clipsViewModel.clipsState.collectAsState().value
     val pinnedClips = clipState.pinnedClips
     val otherClips = clipState.otherClips
+
+    val loadedIcns = miscViewModel.state.collectAsState().value.loadedIcns
+    val allApps = miscViewModel.state.collectAsState().value.allApps
 
     val showAllInteractionSource = remember { MutableInteractionSource() }
     val isHovered by showAllInteractionSource.collectIsHoveredAsState()
@@ -113,7 +122,7 @@ fun Clips (
             }
 
             items(if (!allPinnedClipsExpanded && pinnedClips.size > 5) pinnedClips.subList(0, 5) else pinnedClips) { clip ->
-                ClipTemplate(clip = clip) { action ->
+                ClipTemplate(clip = clip, icns = loadedIcns[clip.source ?: ""], macApp = allApps[clip.source ?: ""]) { action ->
                     clipsViewModel.onAction(action)
                 }
 
@@ -142,7 +151,7 @@ fun Clips (
             }
 
             items(otherClips) { clip ->
-                ClipTemplate(clip = clip) { action ->
+                ClipTemplate(clip = clip, icns = loadedIcns[clip.source ?: ""], macApp = allApps[clip.source ?: ""]) { action ->
                     clipsViewModel.onAction(action)
                 }
 
@@ -170,6 +179,8 @@ fun Clips (
 @Composable
 fun ClipTemplate (
     clip: Clip,
+    icns: ImageBitmap?,
+    macApp: MacApp?,
     onAction: (ClipAction) -> Unit
 ) {
     Column (
@@ -229,27 +240,12 @@ fun ClipTemplate (
                         text = formatText(clip.content),
                         color = Color.Black,
                         overflow = TextOverflow.Ellipsis,
-                        maxLines = 3,
+                        maxLines = 2,
                         fontSize = 13.5.sp,
                         lineHeight = 17.sp,
                         fontFamily = FontFamily(Font(Res.font.Urbanist_Regular)),
                         modifier = Modifier
                             .padding(end = 5.dp)
-                            .weight(1f)
-                    )
-                    //transparent time text to force text weight
-                    Text (
-                        text = epochToReadableTime(clip.copiedAt),
-                        modifier = Modifier
-                            .align(Alignment.Bottom)
-//                            .weight(1f)
-                            .padding(end = 10.dp, bottom = 10.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(timeCopiedBackgroundAnim)
-                            .padding(horizontal = 10.dp),
-                        fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                        color = Transparent,
-                        fontSize = 12.sp
                     )
                 }
 
@@ -259,7 +255,7 @@ fun ClipTemplate (
                         .height(65.dp)
                         .align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Image(
+                    Image (
                         painter = painterResource(drawableMap[if (clip.exists) clip.associatedIcon else BROKEN]!!),
                         contentDescription = "",
                         modifier = Modifier
@@ -286,20 +282,94 @@ fun ClipTemplate (
                     }
                 }
 
-                //time copied
-                Text(
-                    text = epochToReadableTime(clip.copiedAt),
-                    modifier = Modifier
+                Row (
+                    Modifier
                         .align(Alignment.BottomEnd)
                         .padding(end = 20.dp, bottom = 10.dp)
-                        .shadow(10.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(timeCopiedBackgroundAnim)
-                        .padding(horizontal = 10.dp),
-                    fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                    color = timeCopiedTextAnim,
-                    fontSize = 12.sp
-                )
+                ){
+                    clip.source?.let {
+                        Row (
+                            modifier = Modifier
+                                .shadow(10.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(timeCopiedBackgroundAnim)
+                                .padding(horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically
+                        ){
+                            icns?.let {
+                                Image (
+                                    bitmap = it,
+                                    contentDescription = "",
+                                    modifier = Modifier
+                                        .size(17.dp)
+                                )
+                            }
+
+
+                            macApp?.let {
+                                Spacer(Modifier.width(5.dp))
+
+                                Text (
+                                    text = macApp.name,
+                                    fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+                                    color = timeCopiedTextAnim,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.width(10.dp))
+
+                    Row (
+                        modifier = Modifier
+                            .shadow(10.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(timeCopiedBackgroundAnim)
+                            .padding(horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically
+                    ){
+                        val lines = clip.content.lines().size
+                        if (lines > 1) {
+                            Text (
+                                text = "$lines lines",
+                                fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+                                color = timeCopiedTextAnim,
+                                fontSize = 12.sp
+                            )
+
+                            Spacer(Modifier.width(5.dp))
+
+                            Canvas(
+                                modifier = Modifier
+                                    .size(5.dp)
+                            ) {
+                                drawCircle(color = timeCopiedTextAnim)
+                            }
+
+                            Spacer(Modifier.width(5.dp))
+                        }
+
+                        Text (
+                            text = "${clip.content.length} ${if (clip.content.length == 1) "char" else "chars"}",
+                            fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+                            color = timeCopiedTextAnim,
+                            fontSize = 12.sp
+                        )
+                    }
+
+                    Spacer(Modifier.width(10.dp))
+
+                    Text(
+                        text = epochToReadableTime(clip.copiedAt),
+                        modifier = Modifier
+                            .shadow(10.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(timeCopiedBackgroundAnim)
+                            .padding(horizontal = 10.dp),
+                        fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+                        color = timeCopiedTextAnim,
+                        fontSize = 12.sp
+                    )
+                }
             }
         }
     }

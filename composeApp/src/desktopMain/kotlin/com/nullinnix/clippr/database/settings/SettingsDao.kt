@@ -1,12 +1,9 @@
 package com.nullinnix.clippr.database.settings
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Upsert
-import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.SettingsClass
-import com.nullinnix.clippr.misc.SettingsState
 import kotlinx.coroutines.flow.Flow
 
 @Dao

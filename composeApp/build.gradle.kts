@@ -37,6 +37,7 @@ kotlin {
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
             implementation("net.java.dev.jna:jna:5.17.0")
             implementation("com.github.tulskiy:jkeymaster:1.3")
+            implementation("com.twelvemonkeys.imageio:imageio-icns:3.10.1")
         }
     }
 }

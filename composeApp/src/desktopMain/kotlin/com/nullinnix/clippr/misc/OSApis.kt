@@ -1,5 +1,7 @@
 package com.nullinnix.clippr.misc
 
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.Pointer
@@ -8,11 +10,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.swing.Swing
 import java.awt.Dimension
 import java.awt.Point
 import java.awt.Toolkit
 import java.awt.Window
+import java.io.File
+import javax.imageio.ImageIO
 import javax.swing.KeyStroke
 
 var size = Dimension(300, 200)
@@ -86,7 +89,6 @@ fun listenForCopy(
                 }
             )
 
-//            delay(300)
             delay(5000)
         }
     }
@@ -137,5 +139,74 @@ fun isInLoginItemsChecker (
             delay(5000)
             onDone(isInLoginItems())
         }
+    }
+}
+
+fun getAllApps(
+    onDone: (Map<String, MacApp>) -> Unit
+) {
+    CoroutineScope(Dispatchers.IO).launch {
+        val appDirs = listOf(
+            File("/Applications"),
+            File(System.getProperty("user.home"), "Applications"),
+            File("/System/Applications")
+        )
+
+        val apps = mutableMapOf<String, MacApp>()
+
+        appDirs.forEach { dir ->
+            dir.listFiles { f -> f.extension == "app" }?.mapNotNull { app ->
+                val infoPlist = File(app, "Contents/Info.plist")
+                if (!infoPlist.exists()) return@mapNotNull null
+
+                val bundleId = runCommand("defaults", "read", infoPlist.absolutePath, "CFBundleIdentifier") ?: return@mapNotNull null
+                val name = runCommand("defaults", "read", infoPlist.absolutePath, "CFBundleName")
+                    ?: app.nameWithoutExtension
+
+                val iconFile = runCommand("defaults", "read", infoPlist.absolutePath, "CFBundleIconFile")
+                val iconPath = iconFile?.let {
+                    val clean = if (it.endsWith(".icns")) it else "$it.icns"
+                    File(app, "Contents/Resources/$clean").absolutePath
+                }
+
+                apps[bundleId] = MacApp(name, bundleId, iconPath)
+            }
+        }
+
+        onDone(apps)
+    }
+}
+
+
+fun runCommand(vararg cmd: String): String? {
+    return try {
+        val proc = ProcessBuilder(*cmd).redirectErrorStream(true).start()
+        proc.inputStream.bufferedReader().readText().trim().ifBlank { null }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
+fun loadIcns(apps: List<MacApp>, onDone: (Map<String, ImageBitmap>) -> Unit){
+    CoroutineScope(Dispatchers.IO).launch {
+        val loadedIcns = mutableMapOf<String, ImageBitmap>()
+
+        apps.forEach { app ->
+            if (app.iconPath != null) {
+                val file = File(app.iconPath)
+
+                if (file.exists()) {
+                    try {
+                        val img = ImageIO.read(file).toComposeImageBitmap()
+                        loadedIcns[app.bundleId] = img
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        }
+
+        onDone(loadedIcns)
     }
 }

@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.theme.White
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
+import com.nullinnix.clippr.viewmodels.MiscViewModel
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -31,7 +32,8 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 fun App (
     isFocused: Boolean,
     clipsViewModel: ClipsViewModel,
-    settingsViewModel: SettingsViewModel
+    settingsViewModel: SettingsViewModel,
+    miscViewModel: MiscViewModel
 ) {
     MaterialTheme {
         val clipState = clipsViewModel.clipsState.collectAsState().value
@@ -92,7 +94,8 @@ fun App (
                 when (currentTab) {
                     Tab.ClipsTab -> {
                         Clips (
-                            clipsViewModel = clipsViewModel
+                            clipsViewModel = clipsViewModel,
+                            miscViewModel = miscViewModel
                         )
                     } else -> {
                         Settings (

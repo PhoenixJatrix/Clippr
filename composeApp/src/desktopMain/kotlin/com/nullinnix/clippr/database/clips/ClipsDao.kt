@@ -4,22 +4,22 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Upsert
-import com.nullinnix.clippr.misc.Clip
+import com.nullinnix.clippr.misc.ClipEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ClipsDao {
     @Upsert
-    suspend fun upsert(clip: Clip)
+    suspend fun upsert(clip: ClipEntity)
 
     @Delete
-    suspend fun delete(clip: Clip)
+    suspend fun delete(clip: ClipEntity)
 
     @Query("SELECT * FROM clips WHERE not isPinned ORDER BY copiedAt DESC LIMIT :limit OFFSET 0")
-    fun getOtherClips(limit: Int): Flow<List<Clip>>
+    fun getOtherClips(limit: Int): Flow<List<ClipEntity>>
 
     @Query("SELECT * FROM clips WHERE isPinned ORDER BY pinnedAt DESC LIMIT :limit OFFSET 0")
-    fun getPinnedClips(limit: Int): Flow<List<Clip>>
+    fun getPinnedClips(limit: Int): Flow<List<ClipEntity>>
 
     @Query("DELETE FROM clips WHERE NOT isPinned")
     suspend fun deleteAllUnpinned()

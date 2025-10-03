@@ -1,10 +1,10 @@
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.nullinnix.clippr.database.clips.ClipsDao
-import com.nullinnix.clippr.misc.Clip
+import com.nullinnix.clippr.misc.ClipEntity
 
 @Database(
-    entities = [Clip::class],
+    entities = [ClipEntity::class],
     version = 2,
     exportSchema = true
 )

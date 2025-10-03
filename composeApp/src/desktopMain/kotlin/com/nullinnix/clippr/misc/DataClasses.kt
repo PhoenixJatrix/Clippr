@@ -1,12 +1,12 @@
 package com.nullinnix.clippr.misc
 
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlinx.serialization.Serializable
-import org.jetbrains.compose.resources.DrawableResource
 
 @Entity(tableName = "clips")
-data class Clip(
+data class ClipEntity (
     @PrimaryKey val clipID: String,
     val content: String,
     val copiedAt: Long,
@@ -17,6 +17,19 @@ data class Clip(
     val pinnedAt: Long,
     val associatedIcon: String,
     val source: String? = null
+)
+
+data class Clip (
+    val clipID: String,
+    val content: String,
+    val copiedAt: Long,
+    var isPinned: Boolean,
+    val mimeType: String,
+    val isImage: Boolean,
+    val exists: Boolean,
+    val pinnedAt: Long,
+    val associatedIcon: String,
+    val source: String? = null,
 )
 
 data class ClipsState(
@@ -42,6 +55,17 @@ data class SettingsState (
     val enableMetaShiftVPopup: Boolean = false,
     val deleteUnpinnedClipsAfter30Days: Boolean = false,
     val startAtLogin: Boolean = false
+)
+
+data class MiscViewModelState (
+    val allApps: Map<String, MacApp> = emptyMap(),
+    val loadedIcns: Map<String, ImageBitmap> = emptyMap()
+)
+
+data class MacApp(
+    val name: String,
+    val bundleId: String,
+    val iconPath: String?
 )
 
 const val CLIP_ID = "clipID"

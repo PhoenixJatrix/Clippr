@@ -27,6 +27,7 @@ import com.nullinnix.clippr.misc.SettingsAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.corners
+import com.nullinnix.clippr.misc.getAllApps
 import com.nullinnix.clippr.misc.isInLoginItemsChecker
 import com.nullinnix.clippr.misc.listenForCopy
 import com.nullinnix.clippr.misc.pasteWithRobot
@@ -35,6 +36,7 @@ import com.nullinnix.clippr.misc.showMacConfirmDialog
 import com.nullinnix.clippr.misc.toggleFullscreen
 import com.nullinnix.clippr.theme.Theme
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
+import com.nullinnix.clippr.viewmodels.MiscViewModel
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,6 +50,7 @@ fun main() {
     val settingsDatabase = SettingsDatabaseFactory().create()
     val settingsViewModel = SettingsViewModel(settingsDatabase.settingsDao())
     val clipsViewModel = ClipsViewModel(clipsDatabase.clipsDao(), settingsViewModel)
+    val miscViewModel = MiscViewModel()
 
     val composeWindowStateRaw = MutableStateFlow<Window?>(null)
 
@@ -186,7 +189,8 @@ fun main() {
                         App (
                             isFocused = isFocused,
                             clipsViewModel = clipsViewModel,
-                            settingsViewModel = settingsViewModel
+                            settingsViewModel = settingsViewModel,
+                            miscViewModel = miscViewModel
                         )
                     }
                 }
