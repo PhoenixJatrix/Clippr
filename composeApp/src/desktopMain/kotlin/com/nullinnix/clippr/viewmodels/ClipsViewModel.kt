@@ -157,6 +157,7 @@ class ClipsViewModel(
     }
     
     fun toggleSelectClip(clip: Clip) {
+        println("red")
         if (clip.isPinned) {
             _clipsState.update {
                 if (clip in it.selectedPinnedClips) {

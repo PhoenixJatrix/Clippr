@@ -139,6 +139,8 @@ fun App (
                     }
                 }
             }
+
+            Spacer(Modifier.height(100.dp))
         }
     }
 }

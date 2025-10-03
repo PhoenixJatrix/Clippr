@@ -1,5 +1,6 @@
 package com.nullinnix.clippr.misc
 
+import androidx.compose.ui.graphics.Color
 import clippr.composeapp.generated.resources.Res
 import clippr.composeapp.generated.resources.audio
 import clippr.composeapp.generated.resources.blank
@@ -51,7 +52,8 @@ fun getClipboard (
                         val path = paths[index] as File
                         val source = getClipSource()
 
-                        log("dir ${path.path} to ${Files.probeContentType(Paths.get(path.path))} from $source", "")
+                        log("dir ${path.path} to dir from $source", "")
+                        println("dir ${path.path} to dir from $source")
 //                        log("dir ${path.path} to red", "")
 //                        println("file ${path.path} to ${Files.probeContentType(Paths.get(path.path))}")
 
@@ -72,12 +74,12 @@ fun getClipboard (
                     } else {
                         val path = paths[index] as File
                         val source = getClipSource()
+                        val mimeType = Files.probeContentType(Paths.get(path.path))
 
-                        log("file ${path.path} to ${Files.probeContentType(Paths.get(path.path))} from $source", "")
+                        log("file ${path.path} to $mimeType from $source", "")
+                        println("file ${path.path} to $mimeType from $source")
 //                        log("dir ${path.path} to red", "")
 //                        println("file ${path.path} to ${Files.probeContentType(Paths.get(path.path))}")
-
-                        val mimeType = Files.probeContentType(Paths.get(path.path))
 
                         onCopy(
                             Clip(
@@ -105,6 +107,7 @@ fun getClipboard (
                 val source = getClipSource()
 
                 log("str $content from $source", "")
+                println("str $content from $source")
 
                 onCopy(
                     Clip(
@@ -529,3 +532,37 @@ val drawableMap: Map<String, DrawableResource> = mapOf(
     WEB to Res.drawable.web,
     ZIP to Res.drawable.zip,
 )
+
+fun clipTypeToDesc(type: String): String {
+    return when (type) {
+        AUDIO -> "Audio file"
+        BLANK -> "Plain text"
+        BROKEN -> "Missing file"
+        CODE -> "Source code"
+        DIRECTORY -> "Folder"
+        IMAGE -> "Image file"
+        RUNNABLE -> "App/Executable"
+        TEXT -> "Text file"
+        UNKNOWN -> "Unknown type"
+        VIDEO -> "Video file"
+        WEB -> "Web link/URL"
+        else -> "Zip/Compressed"
+    }
+}
+
+fun clipTypeToColor(type: String): Color {
+    return when (type) {
+        AUDIO -> Color(0xFF4CAF50)
+        BLANK -> Color(0xFF9E9E9E)
+        BROKEN -> Color(0xFFF44336)
+        CODE -> Color(0xFF3F51B5)
+        DIRECTORY -> Color(0xFFFF9800)
+        IMAGE -> Color(0xFFE91E63)
+        RUNNABLE -> Color(0xFF009688)
+        TEXT -> Color(0xFF2196F3)
+        UNKNOWN -> Color(0xFF795548)
+        VIDEO -> Color(0xFF9C27B0)
+        WEB -> Color(0xFF00BCD4)
+        else -> Color(0xFF607D8B)
+    }
+}
