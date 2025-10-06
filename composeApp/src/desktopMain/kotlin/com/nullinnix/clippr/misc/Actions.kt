@@ -6,6 +6,7 @@ sealed interface ClipAction {
     data class OnCopyToClipboard(val clip: Clip): ClipAction
     data class OnAddClip(val clip: Clip): ClipAction
     data class ToggleSelectClip(val clip: Clip): ClipAction
+    data class Search(val searchParams: String): ClipAction
 }
 
 sealed interface Tab {
@@ -58,7 +59,7 @@ sealed interface SettingsAction {
 }
 
 sealed interface Filter {
-    data class ByType(val type: ClipType): Filter
+    data class ByType(val clipTypes: List<ClipType>): Filter
     data class BySource(val source: String): Filter
     data class ByCopyTime(val copyTime: Long): Filter
     data class ByPinState(val state: Boolean): Filter

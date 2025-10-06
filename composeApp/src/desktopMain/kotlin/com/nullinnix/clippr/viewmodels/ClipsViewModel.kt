@@ -12,6 +12,7 @@ import com.nullinnix.clippr.misc.focusWindow
 import com.nullinnix.clippr.misc.log
 import com.nullinnix.clippr.misc.monitorOldClips
 import com.nullinnix.clippr.misc.onCopyToClipboard
+import com.nullinnix.clippr.misc.search
 import com.nullinnix.clippr.misc.toClip
 import com.nullinnix.clippr.misc.toClipEntity
 import kotlinx.coroutines.delay
@@ -78,6 +79,10 @@ class ClipsViewModel(
 
             is ClipAction.ToggleSelectClip -> {
                 toggleSelectClip(action.clip)
+            }
+
+            is ClipAction.Search -> {
+                searchAndFilter(action.searchParams)
             }
         }
     }
@@ -150,6 +155,12 @@ class ClipsViewModel(
         }
     }
 
+    fun setIsMultiSelecting (value: Boolean) {
+        _clipsState.update {
+            it.copy(isMultiSelecting = value)
+        }
+    }
+
     fun setSearchParams (value: String) {
         _clipsState.update {
             it.copy(searchParams = value)
@@ -186,6 +197,26 @@ class ClipsViewModel(
     fun setSelectedOtherClips (value: Set<Clip>) {
         _clipsState.update {
             it.copy(selectedOtherClips = value)
+        }
+    }
+
+    fun searchAndFilter (searchParams: String?) {
+        viewModelScope.launch {
+            if (searchParams != null) {
+                if (searchParams.count { it == ' ' } != searchParams.length) {
+                    val searchResults = search(searchParams = searchParams, filters = clipsState.value.filters, pinnedClips = clipsState.value.pinnedClips, otherClips = clipsState.value.otherClips)
+
+                    _clipsState.update {
+                        it.copy(searchResults = searchResults)
+                    }
+                }
+            } else {
+                val searchResults = search(searchParams = "", filters = clipsState.value.filters, pinnedClips = clipsState.value.pinnedClips, otherClips = clipsState.value.otherClips)
+
+                _clipsState.update {
+                    it.copy(searchResults = searchResults)
+                }
+            }
         }
     }
 }

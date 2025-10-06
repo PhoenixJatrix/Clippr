@@ -5,7 +5,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalScrollbarStyle
-import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -41,12 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -57,35 +52,38 @@ import clippr.composeapp.generated.resources.Baloo2_Regular
 import clippr.composeapp.generated.resources.Res
 import clippr.composeapp.generated.resources.Urbanist_Regular
 import clippr.composeapp.generated.resources.pin
-import com.nullinnix.clippr.misc.BROKEN
 import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipAction
+import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.MacApp
 import com.nullinnix.clippr.misc.clipTypeToColor
 import com.nullinnix.clippr.misc.clipTypeToDesc
 import com.nullinnix.clippr.misc.corners
-import com.nullinnix.clippr.misc.drawableMap
 import com.nullinnix.clippr.misc.epochToReadableTime
 import com.nullinnix.clippr.misc.formatText
 import com.nullinnix.clippr.misc.noGleamTaps
-import com.nullinnix.clippr.theme.Translucent
+import com.nullinnix.clippr.misc.toClipType
 import com.nullinnix.clippr.theme.Transparent
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
-import com.nullinnix.clippr.views.CheckBox
 import com.nullinnix.clippr.views.RadioButton
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun Clips (
-    isSearching: Boolean,
     clipsViewModel: ClipsViewModel,
     miscViewModel: MiscViewModel
 ) {
     val clipState = clipsViewModel.clipsState.collectAsState().value
     val pinnedClips = clipState.pinnedClips
     val otherClips = clipState.otherClips
+
+    val pinnedSearchResults = clipState.searchResults.first
+    val otherSearchResults = clipState.searchResults.second
+
+    val isSearching = clipState.isSearching
+    val isMultiSelecting = clipState.isMultiSelecting
 
     val selectedPinnedClips = clipState.selectedPinnedClips
     val selectedOtherClips = clipState.selectedOtherClips
@@ -99,152 +97,221 @@ fun Clips (
 
     val scrollState = rememberLazyListState()
 
-    if (pinnedClips.isNotEmpty() || otherClips.isNotEmpty()) {
-        Box (
+    if (!isSearching) {
+        if (pinnedClips.isNotEmpty() || otherClips.isNotEmpty()) {
+            Box {
+                LazyColumn (
+                    state = scrollState,
+                    modifier = Modifier
+                        .padding(end = 15.dp)
+                ){
+                    item {
+                        Spacer(Modifier.height(15.dp))
+                    }
 
-        ) {
-            LazyColumn (
-                state = scrollState,
-                modifier = Modifier
-                    .padding(end = 15.dp)
-            ){
-                item {
-                    Spacer(Modifier.height(15.dp))
-                }
+                    item {
+                        if (pinnedClips.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row (
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    AnimatedVisibility(isSearching) {
+                                        RadioButton(
+                                            isSelected = pinnedClips.size == selectedPinnedClips.size
+                                        ) {
+                                            if (pinnedClips.size == selectedPinnedClips.size) {
+                                                clipsViewModel.setSelectedPinnedClips(emptySet())
+                                            } else {
+                                                clipsViewModel.setSelectedPinnedClips(pinnedClips.toSet())
+                                            }
+                                        }
+                                    }
 
-                item {
-                    if (pinnedClips.isNotEmpty()) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(10.dp),
-                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row (
+                                    Text(
+                                        text = "Pinned Clips",
+                                        color = Color.Black,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+
+
+                                if (pinnedClips.size > 5 && !isMultiSelecting) {
+                                    Text(
+                                        text = if (!allPinnedClipsExpanded) "Show All (${pinnedClips.size})" else "Show Less",
+                                        color = Color.Gray,
+                                        modifier = Modifier
+                                            .noGleamTaps {
+                                                allPinnedClipsExpanded = !allPinnedClipsExpanded
+                                            }
+                                            .hoverable(showAllInteractionSource),
+                                        textDecoration = if (isHovered) TextDecoration.Underline else TextDecoration.None
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    items(if ((!allPinnedClipsExpanded && !isMultiSelecting) && pinnedClips.size > 5) pinnedClips.subList(0, 5) else pinnedClips) { clip ->
+                        ClipTemplate (
+                            clip = clip,
+                            icns = loadedIcns[clip.source ?: ""],
+                            macApp = allApps[clip.source ?: ""],
+                            isSelected = clip in selectedPinnedClips,
+                            isSearching = isSearching,
+                            isMultiSelecting = isMultiSelecting
+                        ) { action ->
+                            clipsViewModel.onAction(action)
+                        }
+
+                        Spacer(Modifier.height(20.dp))
+                    }
+
+                    item {
+                        if (pinnedClips.isNotEmpty()) {
+                            Spacer(Modifier.height(10.dp))
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 AnimatedVisibility(isSearching) {
                                     RadioButton(
-                                        isSelected = pinnedClips.size == selectedPinnedClips.size
+                                        isSelected = otherClips.size == selectedOtherClips.size
                                     ) {
-                                        if (pinnedClips.size == selectedPinnedClips.size) {
-                                            clipsViewModel.setSelectedPinnedClips(emptySet())
+                                        if (otherClips.size == selectedOtherClips.size) {
+                                            clipsViewModel.setSelectedOtherClips(emptySet())
                                         } else {
-                                            clipsViewModel.setSelectedPinnedClips(pinnedClips.toSet())
+                                            clipsViewModel.setSelectedOtherClips(otherClips.toSet())
                                         }
                                     }
                                 }
 
                                 Text(
-                                    text = "Pinned Clips",
+                                    text = "Other Clips",
                                     color = Color.Black,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
-
-
-                            if (pinnedClips.size > 5 && !isSearching) {
-                                Text(
-                                    text = if (!allPinnedClipsExpanded) "Show All (${pinnedClips.size})" else "Show Less",
-                                    color = Color.Gray,
-                                    modifier = Modifier
-                                        .noGleamTaps {
-                                            allPinnedClipsExpanded = !allPinnedClipsExpanded
-                                        }
-                                        .hoverable(showAllInteractionSource),
-                                    textDecoration = if (isHovered) TextDecoration.Underline else TextDecoration.None
-                                )
-                            }
                         }
                     }
-                }
 
-                items(if ((!allPinnedClipsExpanded && !isSearching) && pinnedClips.size > 5) pinnedClips.subList(0, 5) else pinnedClips) { clip ->
-                    ClipTemplate (
-                        clip = clip,
-                        icns = loadedIcns[clip.source ?: ""],
-                        macApp = allApps[clip.source ?: ""],
-                        isSelected = clip in selectedPinnedClips,
-                        isSearching = isSearching
-                    ) { action ->
-                        clipsViewModel.onAction(action)
-                    }
-
-                    Spacer(Modifier.height(20.dp))
-                }
-
-
-                item {
-                    if (pinnedClips.isNotEmpty()) {
-                        Spacer(Modifier.height(10.dp))
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            AnimatedVisibility(isSearching) {
-                                RadioButton(
-                                    isSelected = otherClips.size == selectedOtherClips.size
-                                ) {
-                                    if (otherClips.size == selectedOtherClips.size) {
-                                        clipsViewModel.setSelectedOtherClips(emptySet())
-                                    } else {
-                                        clipsViewModel.setSelectedOtherClips(otherClips.toSet())
-                                    }
-                                }
-                            }
-
-                            Text(
-                                text = "Other Clips",
-                                color = Color.Black,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                    items(otherClips) { clip ->
+                        ClipTemplate(
+                            clip = clip,
+                            icns = loadedIcns[clip.source ?: ""],
+                            macApp = allApps[clip.source ?: ""],
+                            isSelected = clip in selectedOtherClips,
+                            isSearching = isSearching,
+                            isMultiSelecting = isMultiSelecting
+                        ) { action ->
+                            clipsViewModel.onAction(action)
                         }
+
+                        Spacer(Modifier.height(20.dp))
+                    }
+
+                    item {
+                        Spacer(Modifier.height(15.dp))
                     }
                 }
 
-                items(otherClips) { clip ->
-                    ClipTemplate(
-                        clip = clip,
-                        icns = loadedIcns[clip.source ?: ""],
-                        macApp = allApps[clip.source ?: ""],
-                        isSelected = clip in selectedOtherClips,
-                        isSearching = isSearching
-                    ) { action ->
-                        clipsViewModel.onAction(action)
-                    }
-
-                    Spacer(Modifier.height(20.dp))
-                }
-
-                item {
-                    Spacer(Modifier.height(15.dp))
-                }
+                VerticalScrollbar (
+                    adapter = rememberScrollbarAdapter(scrollState),
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .fillMaxHeight()
+                        .padding(end = 10.dp, bottom = 15.dp, top = 25.dp),
+                    style = LocalScrollbarStyle.current.copy(minimalHeight = 35.dp)
+                )
             }
-
-            VerticalScrollbar (
-                adapter = rememberScrollbarAdapter(scrollState),
+        } else {
+            Box(
                 modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .fillMaxHeight()
-                    .padding(end = 10.dp, bottom = 15.dp, top = 25.dp),
-                style = LocalScrollbarStyle.current.copy(minimalHeight = 35.dp)
-            )
+                    .fillMaxSize(), contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Try copying something...",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 25.sp
+                )
+            }
         }
     } else {
-        Box(
-            modifier = Modifier
-                .fillMaxSize(), contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Try copying something...",
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 25.sp
-            )
+        if (pinnedSearchResults.isNotEmpty() || otherSearchResults.isNotEmpty()) {
+            Box {
+                LazyColumn (
+                    state = scrollState,
+                    modifier = Modifier
+                        .padding(end = 15.dp)
+                ){
+                    item {
+                        Spacer(Modifier.height(15.dp))
+                    }
+
+                    items(pinnedSearchResults) { clip ->
+                        ClipTemplate (
+                            clip = clip,
+                            icns = loadedIcns[clip.source ?: ""],
+                            macApp = allApps[clip.source ?: ""],
+                            isSelected = clip in selectedPinnedClips,
+                            isSearching = isSearching,
+                            isMultiSelecting = isMultiSelecting
+                        ) { action ->
+                            clipsViewModel.onAction(action)
+                        }
+
+                        Spacer(Modifier.height(20.dp))
+                    }
+
+                    items(otherSearchResults) { clip ->
+                        ClipTemplate(
+                            clip = clip,
+                            icns = loadedIcns[clip.source ?: ""],
+                            macApp = allApps[clip.source ?: ""],
+                            isSelected = clip in selectedOtherClips,
+                            isSearching = isSearching,
+                            isMultiSelecting = isMultiSelecting
+                        ) { action ->
+                            clipsViewModel.onAction(action)
+                        }
+
+                        Spacer(Modifier.height(20.dp))
+                    }
+
+                    item {
+                        Spacer(Modifier.height(15.dp))
+                    }
+                }
+
+                VerticalScrollbar (
+                    adapter = rememberScrollbarAdapter(scrollState),
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .fillMaxHeight()
+                        .padding(end = 10.dp, bottom = 15.dp, top = 25.dp),
+                    style = LocalScrollbarStyle.current.copy(minimalHeight = 35.dp)
+                )
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(), contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No clips match keywords",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 25.sp
+                )
+            }
         }
     }
 }
@@ -252,6 +319,7 @@ fun Clips (
 @Composable
 fun ClipTemplate (
     isSearching: Boolean,
+    isMultiSelecting: Boolean,
     isSelected: Boolean,
     clip: Clip,
     icns: ImageBitmap?,
@@ -277,7 +345,7 @@ fun ClipTemplate (
         ) {
             Spacer(Modifier.width(10.dp))
 
-            if (isSearching) {
+            if (isMultiSelecting || isSearching) {
                 RadioButton(
                     isSelected = isSelected
                 ) {
@@ -405,44 +473,46 @@ fun ClipTemplate (
 
                         Spacer(Modifier.width(7.dp))
 
-                        Row (
-                            modifier = Modifier
-                                .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
-                                .clip(RoundedCornerShape(90.dp))
-                                .height(22.dp)
-                                .background(timeCopiedBackgroundAnim)
-                                .padding(horizontal = 7.dp), verticalAlignment = Alignment.CenterVertically
-                        ){
-                            val lines = clip.content.lines().size
-                            if (lines > 1) {
+                        if (clip.associatedIcon.toClipType() == ClipType.BLANK) {
+                            Row (
+                                modifier = Modifier
+                                    .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
+                                    .clip(RoundedCornerShape(90.dp))
+                                    .height(22.dp)
+                                    .background(timeCopiedBackgroundAnim)
+                                    .padding(horizontal = 7.dp), verticalAlignment = Alignment.CenterVertically
+                            ){
+                                val lines = clip.content.lines().size
+                                if (lines > 1) {
+                                    Text (
+                                        text = "$lines lines",
+                                        fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+                                        color = timeCopiedTextAnim,
+                                        fontSize = 11.sp
+                                    )
+
+                                    Spacer(Modifier.width(5.dp))
+
+                                    Canvas(
+                                        modifier = Modifier
+                                            .size(5.dp)
+                                    ) {
+                                        drawCircle(color = timeCopiedTextAnim)
+                                    }
+
+                                    Spacer(Modifier.width(5.dp))
+                                }
+
                                 Text (
-                                    text = "$lines lines",
+                                    text = "${clip.content.length} ${if (clip.content.length == 1) "char" else "chars"}",
                                     fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
                                     color = timeCopiedTextAnim,
                                     fontSize = 11.sp
                                 )
-
-                                Spacer(Modifier.width(5.dp))
-
-                                Canvas(
-                                    modifier = Modifier
-                                        .size(5.dp)
-                                ) {
-                                    drawCircle(color = timeCopiedTextAnim)
-                                }
-
-                                Spacer(Modifier.width(5.dp))
                             }
 
-                            Text (
-                                text = "${clip.content.length} ${if (clip.content.length == 1) "char" else "chars"}",
-                                fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                                color = timeCopiedTextAnim,
-                                fontSize = 11.sp
-                            )
+                            Spacer(Modifier.width(7.dp))
                         }
-
-                        Spacer(Modifier.width(7.dp))
 
                         Text(
                             text = epochToReadableTime(clip.copiedAt),

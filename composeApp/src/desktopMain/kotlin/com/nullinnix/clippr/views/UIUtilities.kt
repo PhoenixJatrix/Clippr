@@ -386,7 +386,7 @@ fun SearchBar (
                 Spacer(Modifier.width(5.dp))
 
                 Text(
-                    text = "Search/filter/select",
+                    text = "Search/filter",
                     color = Color.Gray,
                     fontSize = 14.sp
                 )

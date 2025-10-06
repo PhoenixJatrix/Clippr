@@ -553,6 +553,31 @@ fun clipTypeToColor(type: String): Color {
     }
 }
 
+suspend fun search(searchParams: String, filters: Set<Filter>, pinnedClips: List<Clip>, otherClips: List<Clip>): Pair<List<Clip>, List<Clip>> = withContext(Dispatchers.Default) {
+    val tempPinned = mutableListOf<Clip>()
+    val tempOther = mutableListOf<Clip>()
+
+    if (searchParams.isNotEmpty()) {
+        for (clip in pinnedClips) {
+            if ((searchParams.lowercase() in clip.content.lowercase()) || (searchParams.lowercase() in (clip.source?.lowercase() ?: "")) || (searchParams.lowercase() in clip.associatedIcon.lowercase())) {
+                tempPinned.add(clip)
+            }
+        }
+
+        for (clip in otherClips) {
+            if ((searchParams.lowercase() in clip.content.lowercase()) || (searchParams.lowercase() in (clip.source?.lowercase() ?: "")) || (searchParams.lowercase() in clip.associatedIcon.lowercase())) {
+                tempOther.add(clip)
+            }
+        }
+    } else {
+        tempPinned.addAll(pinnedClips)
+        tempOther.addAll(otherClips)
+    }
+
+
+    return@withContext filterClips(filters = filters, pinnedClips = tempPinned, otherClips = tempOther)
+}
+
 suspend fun filterClips(filters: Set<Filter>, pinnedClips: List<Clip>, otherClips: List<Clip>): Pair<List<Clip>, List<Clip>> = withContext(Dispatchers.Default) {
     var pinnedMatches = pinnedClips
     var otherMatches = otherClips
@@ -629,13 +654,13 @@ suspend fun filterClips(filters: Set<Filter>, pinnedClips: List<Clip>, otherClip
                 val tempOther = mutableListOf<Clip>()
 
                 for (clip in pinnedMatches) {
-                    if (clip.associatedIcon.toClipType() == filter.type) {
+                    if (clip.associatedIcon.toClipType() in filter.clipTypes) {
                         tempPinned.add(clip)
                     }
                 }
 
                 for (clip in otherMatches) {
-                    if (clip.associatedIcon.toClipType() == filter.type) {
+                    if (clip.associatedIcon.toClipType() in filter.clipTypes) {
                         tempOther.add(clip)
                     }
                 }
