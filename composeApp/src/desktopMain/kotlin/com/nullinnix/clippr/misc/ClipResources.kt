@@ -17,6 +17,8 @@ import clippr.composeapp.generated.resources.zip
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.Pointer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.DrawableResource
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
@@ -67,7 +69,7 @@ fun getClipboard (
                                 isImage = false,
                                 exists = path.exists(),
                                 pinnedAt = 0L,
-                                associatedIcon = DIRECTORY,
+                                associatedIcon = ClipType.DIRECTORY.id,
                                 source = source
                             )
                         )
@@ -139,43 +141,43 @@ fun getIconForContent (
 
     for (tld in urlExtensions) {
         if (content.endsWith(tld) || content.contains("$tld/")) {
-            return WEB
+            return ClipType.WEB.id
         }
     }
 
     return when (mediaType) {
         "dir" -> {
-            DIRECTORY
+            ClipType.DIRECTORY.id
         }
 
         "image" -> {
-            IMAGE
+            ClipType.IMAGE.id
         }
 
         "audio" -> {
-            AUDIO
+            ClipType.AUDIO.id
         }
 
         "video" -> {
-            VIDEO
+            ClipType.VIDEO.id
         }
 
         "application" -> {
             return when (subType) {
                 in setOf("zip", "7z", "gz", "rar", "java-archive", "tar.gz", "app", "zlib", "gzip") -> {
-                    ZIP
+                    ClipType.ZIP.id
                 }
 
                 in setOf("x-bzip2", "dmg", "x-apple-diskimage", "msi", "x-ms-installer", "x-dosexec", "jar", "x-bat", "x-msdownload") -> {
-                    RUNNABLE
+                    ClipType.RUNNABLE.id
                 }
 
                 in setOf("json", "pdf") -> {
-                    CODE
+                    ClipType.CODE.id
                 }
 
                 in setOf("octet-stream") -> {
-                    BLANK
+                    ClipType.BLANK.id
                 }
 
                 else -> {
@@ -183,42 +185,42 @@ fun getIconForContent (
 
                     ext?.let {
                         if (ext in runnableExtensions) {
-                            return RUNNABLE
+                            return ClipType.RUNNABLE.id
                         }
                     }
 
-                    UNKNOWN
+                    ClipType.UNKNOWN.id
                 }
             }
         }
 
         "text" -> {
             if (content.endsWith(".txt")) {
-                return TEXT
+                return ClipType.TEXT.id
             } else {
                 val ext = if (content.contains(".")) content.substring(content.lastIndexOf(".")) else null
 
                 ext?.let {
                     if (ext in codeExtensions) {
-                        return CODE
+                        return ClipType.CODE.id
                     }
                 }
 
                 return when (subType) {
                     in setOf ("csv") -> {
-                        TEXT
+                        ClipType.TEXT.id
                     }
 
                     in setOf ("plain") -> {
-                        BLANK
+                        ClipType.BLANK.id
                     }
 
                     in setOf ("x-c++src", "x-csrc", "x-java-source", "x-groovy", "x-scala", "x-kotlin", "x-python", "javascript", "x-typescript", "x-go", "x-rustsrc", "x-swift", "x-ruby", "x-php", "x-clojure", "x-haskell", "x-ocaml", "x-perl", "x-sh", "x-r-source", "vnd.dart", "x-elixir", "x-lua", "x-matlab", "x-vbasic", "x-stsrc", "x-coffeescript", "x-less", "x-yaml", "x-rst", "json", "xml", "sql", "x-pascal") -> {
-                        CODE
+                        ClipType.CODE.id
                     }
 
                     else -> {
-                        UNKNOWN
+                        ClipType.UNKNOWN.id
                     }
                 }
             }
@@ -229,17 +231,17 @@ fun getIconForContent (
 
             ext?.let {
                 if (ext in codeExtensions) {
-                    return CODE
+                    return ClipType.CODE.id
                 }
             }
 
             ext?.let {
                 if (ext in runnableExtensions) {
-                    return RUNNABLE
+                    return ClipType.RUNNABLE.id
                 }
             }
 
-            return UNKNOWN
+            return ClipType.UNKNOWN.id
         }
     }
 }
@@ -476,10 +478,7 @@ val codeExtensions = setOf (
     ".cfg",
     ".conf",
     ".md",
-    ".markdown",
-    ".txt",
-    ".csv",
-    ".tsv"
+    ".markdown"
 )
 
 val runnableExtensions = listOf(
@@ -505,64 +504,147 @@ val runnableExtensions = listOf(
     ".ipa"
 )
 
-const val AUDIO = "audio"
-const val BLANK = "blank"
-const val BROKEN = "broken"
-const val CODE = "code"
-const val DIRECTORY = "directory"
-const val IMAGE = "image"
-const val RUNNABLE = "runnable"
-const val TEXT = "text"
-const val UNKNOWN = "unknown"
-const val VIDEO = "video"
-const val WEB = "web"
-const val ZIP = "zip"
-
 val drawableMap: Map<String, DrawableResource> = mapOf(
-    AUDIO to Res.drawable.audio,
-    BLANK to Res.drawable.blank,
-    BROKEN to Res.drawable.broken,
-    CODE to Res.drawable.code,
-    DIRECTORY to Res.drawable.directory,
-    IMAGE to Res.drawable.image,
-    RUNNABLE to Res.drawable.runnable,
-    TEXT to Res.drawable.text,
-    UNKNOWN to Res.drawable.unknown,
-    VIDEO to Res.drawable.video,
-    WEB to Res.drawable.web,
-    ZIP to Res.drawable.zip,
+    ClipType.AUDIO.id to Res.drawable.audio,
+    ClipType.BLANK.id to Res.drawable.blank,
+    ClipType.BROKEN.id to Res.drawable.broken,
+    ClipType.CODE.id to Res.drawable.code,
+    ClipType.DIRECTORY.id to Res.drawable.directory,
+    ClipType.IMAGE.id to Res.drawable.image,
+    ClipType.RUNNABLE.id to Res.drawable.runnable,
+    ClipType.TEXT.id to Res.drawable.text,
+    ClipType.UNKNOWN.id to Res.drawable.unknown,
+    ClipType.VIDEO.id to Res.drawable.video,
+    ClipType.WEB.id to Res.drawable.web,
+    ClipType.ZIP.id to Res.drawable.zip,
 )
 
 fun clipTypeToDesc(type: String): String {
-    return when (type) {
-        AUDIO -> "Audio file"
-        BLANK -> "Plain text"
-        BROKEN -> "Missing file"
-        CODE -> "Source code"
-        DIRECTORY -> "Folder"
-        IMAGE -> "Image file"
-        RUNNABLE -> "App/Executable"
-        TEXT -> "Text file"
-        UNKNOWN -> "Unknown type"
-        VIDEO -> "Video file"
-        WEB -> "Web link/URL"
+    return when (type.toClipType()) {
+        ClipType.AUDIO -> "Audio file"
+        ClipType.BLANK -> "Plain text"
+        ClipType.BROKEN -> "Missing file"
+        ClipType.CODE -> "Source code"
+        ClipType.DIRECTORY -> "Folder"
+        ClipType.IMAGE -> "Image file"
+        ClipType.RUNNABLE -> "App/Executable"
+        ClipType.TEXT -> "Text file"
+        ClipType.UNKNOWN -> "Unknown type"
+        ClipType.VIDEO -> "Video file"
+        ClipType.WEB -> "Web link/URL"
         else -> "Zip/Compressed"
     }
 }
 
 fun clipTypeToColor(type: String): Color {
-    return when (type) {
-        AUDIO -> Color(0xFF4CAF50)
-        BLANK -> Color(0xFF9E9E9E)
-        BROKEN -> Color(0xFFF44336)
-        CODE -> Color(0xFF3F51B5)
-        DIRECTORY -> Color(0xFFFF9800)
-        IMAGE -> Color(0xFFE91E63)
-        RUNNABLE -> Color(0xFF009688)
-        TEXT -> Color(0xFF2196F3)
-        UNKNOWN -> Color(0xFF795548)
-        VIDEO -> Color(0xFF9C27B0)
-        WEB -> Color(0xFF00BCD4)
+    return when (type.toClipType()) {
+        ClipType.AUDIO -> Color(0xFF4CAF50)
+        ClipType.BLANK -> Color(0xFF9E9E9E)
+        ClipType.BROKEN -> Color(0xFFF44336)
+        ClipType.CODE -> Color(0xFF3F51B5)
+        ClipType.DIRECTORY -> Color(0xFFFF9800)
+        ClipType.IMAGE -> Color(0xFFE91E63)
+        ClipType.RUNNABLE -> Color(0xFF009688)
+        ClipType.TEXT -> Color(0xFF2196F3)
+        ClipType.UNKNOWN -> Color(0xFF795548)
+        ClipType.VIDEO -> Color(0xFF9C27B0)
+        ClipType.WEB -> Color(0xFF00BCD4)
         else -> Color(0xFF607D8B)
     }
+}
+
+suspend fun filterClips(filters: Set<Filter>, pinnedClips: List<Clip>, otherClips: List<Clip>): Pair<List<Clip>, List<Clip>> = withContext(Dispatchers.Default) {
+    var pinnedMatches = pinnedClips
+    var otherMatches = otherClips
+
+    for (filter in filters) {
+        when (filter) {
+            is Filter.ByCopyTime -> {
+                val tempPinned = mutableListOf<Clip>()
+                val tempOther = mutableListOf<Clip>()
+                val dateTime = LocalDateTime.ofEpochSecond(filter.copyTime, 0, ZoneOffset.UTC).startOfDay()
+
+                for (clip in pinnedMatches) {
+                    if (dateTime.toEpochSecond(ZoneOffset.UTC) == LocalDateTime.ofEpochSecond(clip.copiedAt, 0, ZoneOffset.UTC).startOfDay().toEpochSecond(ZoneOffset.UTC)) {
+                        tempPinned.add(clip)
+                    }
+                }
+
+                for (clip in otherMatches) {
+                    if (dateTime.toEpochSecond(ZoneOffset.UTC) == LocalDateTime.ofEpochSecond(clip.copiedAt, 0, ZoneOffset.UTC).startOfDay().toEpochSecond(ZoneOffset.UTC)) {
+                        tempOther.add(clip)
+                    }
+                }
+
+                pinnedMatches = tempPinned
+                otherMatches = tempOther
+            }
+            is Filter.ByLineCount -> {
+                val tempPinned = mutableListOf<Clip>()
+                val tempOther = mutableListOf<Clip>()
+
+                for (clip in pinnedMatches) {
+                    if (filter.count == clip.content.lines().size) {
+                        tempPinned.add(clip)
+                    }
+                }
+
+                for (clip in otherMatches) {
+                    if (filter.count == clip.content.lines().size) {
+                        tempOther.add(clip)
+                    }
+                }
+
+                pinnedMatches = tempPinned
+                otherMatches = tempOther
+            }
+            is Filter.ByPinState -> {
+                if (filter.state) {
+                    otherMatches = emptyList()
+                } else {
+                    pinnedMatches = emptyList()
+                }
+            }
+            is Filter.BySource -> {
+                val tempPinned = mutableListOf<Clip>()
+                val tempOther = mutableListOf<Clip>()
+
+                for (clip in pinnedMatches) {
+                    if (clip.source == filter.source) {
+                        tempPinned.add(clip)
+                    }
+                }
+
+                for (clip in otherMatches) {
+                    if (clip.source == filter.source) {
+                        tempOther.add(clip)
+                    }
+                }
+
+                pinnedMatches = tempPinned
+                otherMatches = tempOther
+            }
+            is Filter.ByType -> {
+                val tempPinned = mutableListOf<Clip>()
+                val tempOther = mutableListOf<Clip>()
+
+                for (clip in pinnedMatches) {
+                    if (clip.associatedIcon.toClipType() == filter.type) {
+                        tempPinned.add(clip)
+                    }
+                }
+
+                for (clip in otherMatches) {
+                    if (clip.associatedIcon.toClipType() == filter.type) {
+                        tempOther.add(clip)
+                    }
+                }
+
+                pinnedMatches = tempPinned
+                otherMatches = tempOther
+            }
+        }
+    }
+
+    return@withContext Pair(pinnedMatches, otherMatches)
 }

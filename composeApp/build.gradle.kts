@@ -58,14 +58,10 @@ compose.desktop {
                         <key>LSUIElement</key>
                         <string>true</string>
                     """.trimIndent()
-
-//                    extraKeysRawXml = """
-//                        <key>NSPasteboardUsageDescription</key>
-//                        <string>Clippr needs clipboard access to detect copied items and manage your clips.</string>
-//                    """.trimIndent()
                 }
                 appCategory = "public.app-category.productivity"
                 iconFile.set(project.file("src/desktopMain/composeResources/drawable/MyIcon.icns"))
+                jvmArgs("-Dapple.awt.enableTemplateImages=true")
             }
         }
     }

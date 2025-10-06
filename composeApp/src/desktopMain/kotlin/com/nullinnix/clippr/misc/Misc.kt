@@ -10,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.nullinnix.clippr.database.clips.ClipsDao
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -55,7 +54,7 @@ fun JsonObject.getData(key: String): String {
 }
 
 fun formatText(string: String): String {
-    return string.replace("\n", " ")
+    return string.replace("\n", " ").trimIndent().trimMargin()
 }
 
 fun formatMillisToTime(millis: Long, returnEmptyStrIfNoUsage: Boolean = true, includeSeconds: Boolean = false): String {
@@ -303,4 +302,12 @@ fun List<Clip>.toClipEntity(): List<ClipEntity> {
     return this.map {
         it.toClipEntity()
     }
+}
+
+fun String.toClipType(): ClipType {
+    return ClipType.entries.find { it.id == this } ?: ClipType.UNKNOWN
+}
+
+fun LocalDateTime.startOfDay(): LocalDateTime {
+    return LocalDateTime.of(this.year, this.month, this.dayOfMonth, 0, 0, 0)
 }

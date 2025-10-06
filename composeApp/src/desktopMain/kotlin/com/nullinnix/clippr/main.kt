@@ -111,7 +111,6 @@ fun main() {
 
                 for (clip in pinned) {
                     Item(clip.content.trimIndent().trimMargin().coerce(50)) {
-                        println("pasted new...")
                         pasteWithRobot(clip)
                     }
                 }
@@ -119,7 +118,7 @@ fun main() {
                 Separator()
 
                 for (clip in others) {
-                    Item(clip.content.trimIndent().coerce(50)) {
+                    Item(clip.content.trimIndent().trimMargin().coerce(50)) {
                         pasteWithRobot(clip)
                     }
                 }
