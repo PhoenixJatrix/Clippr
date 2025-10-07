@@ -2,6 +2,7 @@ package com.nullinnix.clippr
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -11,7 +12,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
@@ -76,25 +84,103 @@ fun main() {
     }
 
     application {
-        val trayState = rememberTrayState()
-        val clipsState = clipsViewModel.clipsState.collectAsState().value
+        if (showMain.collectAsState().value) {
+            val windowState = rememberWindowState()
 
-        val showMain = clipsState.showMainApp
-        val windowState = rememberWindowState()
+            Window (
+                transparent = true,
+                undecorated = true,
+                state = windowState,
+                onCloseRequest = {
+                    clipsViewModel.setShowMainApp(false)
+                },
+                title = "Clippr",
+            ) {
+                var isFocused by remember { mutableStateOf(true) }
+                val composeWindowState = composeWindowStateRaw.collectAsState().value
+                val focusRequester = remember { FocusRequester() }
 
-        val composeWindowState = composeWindowStateRaw.collectAsState().value
+                LaunchedEffect(composeWindowState) {
+                    while (true) {
+                        if (!clipsViewModel.clipsState.value.isSearching) {
+                            focusRequester.requestFocus()
+                        }
 
-        var isFocused by remember { mutableStateOf(true) }
+                        if (composeWindowState != null) {
+                            isFocused = composeWindowState.isFocused
+                        }
 
-        LaunchedEffect(composeWindowState) {
-            while (true) {
-                if (composeWindowState != null) {
-                    isFocused = composeWindowState.isFocused
+                        delay(100)
+                    }
                 }
 
-                delay(100)
+                LaunchedEffect(Unit) {
+                    this@Window.window.minimumSize = Dimension(300, 300)
+
+                    composeWindowStateRaw.update {
+                        this@Window.window
+                    }
+                }
+
+                Column (
+                    modifier = Modifier
+                        .clip(corners(10.dp))
+                        .border(1.dp, color = Color.Black.copy(0.25f), shape = corners(10.dp))
+                        .background(Color.White)
+                        .focusRequester(focusRequester)
+                        .focusable()
+                        .onPreviewKeyEvent {event ->
+                            println("event = ${event.key}")
+
+                            if (event.type == KeyEventType.KeyDown) {
+                                when (event.key) {
+                                    Key.MetaLeft, Key.MetaRight -> {
+                                        clipsViewModel.setIsMultiSelecting(true)
+                                    }
+
+                                    Key.Escape -> {
+                                        if (clipsViewModel.clipsState.value.isSearching) {
+                                            clipsViewModel.setIsSearching(false)
+                                        }
+                                    }
+                                }
+                            } else if (event.type == KeyEventType.KeyUp) {
+                                when (event.key) {
+                                    Key.MetaLeft, Key.MetaRight -> {
+                                        clipsViewModel.setIsMultiSelecting(false)
+                                    }
+                                }
+                            }
+
+                            !clipsViewModel.clipsState.value.isSearching
+                        }
+                ){
+                    WindowBar(
+                        window = window,
+                        isFocused = isFocused,
+                        onToggleFullScreen = {
+                            toggleFullscreen(window)
+                        },
+                        onHideMainApp = {
+                            clipsViewModel.setShowMainApp(false)
+                        }
+                    )
+
+                    Theme {
+                        App(
+                            window = window,
+                            isFocused = isFocused,
+                            clipsViewModel = clipsViewModel,
+                            settingsViewModel = settingsViewModel,
+                            miscViewModel = miscViewModel
+                        )
+                    }
+                }
             }
         }
+
+        val trayState = rememberTrayState()
+        val clipsState = clipsViewModel.clipsState.collectAsState().value
 
         Tray (
             state = trayState,
@@ -149,53 +235,7 @@ fun main() {
             },
             tooltip = "this is tool tip"
         )
-
-        if (showMain) {
-            Window (
-                transparent = true,
-                undecorated = true,
-                state = windowState,
-                onCloseRequest = {
-                    clipsViewModel.setShowMainApp(false)
-                },
-                title = "Clippr",
-            ) {
-                LaunchedEffect(Unit) {
-                    this@Window.window.minimumSize = Dimension(300, 300)
-
-                    composeWindowStateRaw.update {
-                        this@Window.window
-                    }
-                }
-
-                Column (
-                    modifier = Modifier
-                        .clip(corners(10.dp))
-                        .border(1.dp, color = Color.Black.copy(0.25f), shape = corners(10.dp))
-                        .background(Color.White)
-                ){
-                    WindowBar(
-                        window = window,
-                        isFocused = isFocused,
-                        onToggleFullScreen = {
-                            toggleFullscreen(window)
-                        },
-                        onHideMainApp = {
-                            clipsViewModel.setShowMainApp(false)
-                        }
-                    )
-
-                    Theme {
-                        App(
-                            window = window,
-                            isFocused = isFocused,
-                            clipsViewModel = clipsViewModel,
-                            settingsViewModel = settingsViewModel,
-                            miscViewModel = miscViewModel
-                        )
-                    }
-                }
-            }
-        }
     }
 }
+
+val showMain = MutableStateFlow(false)

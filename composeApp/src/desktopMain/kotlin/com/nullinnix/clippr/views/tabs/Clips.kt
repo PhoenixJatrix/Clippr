@@ -473,7 +473,7 @@ fun ClipTemplate (
 
                         Spacer(Modifier.width(7.dp))
 
-                        if (clip.associatedIcon.toClipType() == ClipType.BLANK) {
+                        if (clip.associatedIcon.toClipType() == ClipType.PLAIN_TEXT) {
                             Row (
                                 modifier = Modifier
                                     .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)

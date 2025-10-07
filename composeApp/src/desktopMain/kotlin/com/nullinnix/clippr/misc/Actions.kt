@@ -29,10 +29,10 @@ sealed interface Tab {
 
 enum class ClipType(val id: String) {
     AUDIO("audio"),
-    BLANK("blank"),
+    PLAIN_TEXT("plain_text"),
     BROKEN("broken"),
     CODE("code"),
-    DIRECTORY("directory"),
+    FOLDER("folder"),
     IMAGE("image"),
     RUNNABLE("runnable"),
     TEXT("text"),
@@ -56,12 +56,4 @@ sealed interface SettingsAction {
     object ToggleDeleteUnpinnedAfter30: SettingsAction
     object ToggleStartAtLogin: SettingsAction
     data class SetStartAtLogin(val value: Boolean): SettingsAction
-}
-
-sealed interface Filter {
-    data class ByType(val clipTypes: List<ClipType>): Filter
-    data class BySource(val source: String): Filter
-    data class ByCopyTime(val copyTime: Long): Filter
-    data class ByPinState(val state: Boolean): Filter
-    data class ByLineCount(val count: Int): Filter
 }

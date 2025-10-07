@@ -22,13 +22,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.theme.White
@@ -60,10 +53,6 @@ fun App (
 
         var onActualTabChanged by remember { mutableStateOf(false) }
 
-        val focusRequester by remember {
-            mutableStateOf(FocusRequester())
-        }
-
         LaunchedEffect(currentTab) {
             pagerState.animateScrollToPage(
                 when (currentTab) {
@@ -84,33 +73,10 @@ fun App (
             onActualTabChanged = true
         }
 
-        LaunchedEffect(Unit) {
-            focusRequester.requestFocus()
-        }
-
         Column (
             modifier = Modifier
                 .fillMaxSize()
-                .background(White)
-                .focusRequester(focusRequester)
-                .onPreviewKeyEvent { event ->
-                    if (event.type == KeyEventType.KeyDown) {
-                        println("event = ${event.key}")
-                        when {
-                            event.key == Key.MetaLeft || event.key == Key.MetaRight -> {
-                                clipsViewModel.setIsMultiSelecting(true)
-                            }
-                        }
-                    } else if (event.type == KeyEventType.KeyUp) {
-                        when {
-                            event.key == Key.MetaLeft || event.key == Key.MetaRight -> {
-                                clipsViewModel.setIsMultiSelecting(false)
-                            }
-                        }
-                    }
-
-                    true
-                },
+                .background(White),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.height(15.dp))

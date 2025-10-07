@@ -31,6 +31,7 @@ import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
+import java.util.logging.Filter
 import javax.swing.JOptionPane
 
 var lastCopiedItemHash = ""
@@ -69,7 +70,7 @@ fun getClipboard (
                                 isImage = false,
                                 exists = path.exists(),
                                 pinnedAt = 0L,
-                                associatedIcon = ClipType.DIRECTORY.id,
+                                associatedIcon = ClipType.FOLDER.id,
                                 source = source
                             )
                         )
@@ -147,7 +148,7 @@ fun getIconForContent (
 
     return when (mediaType) {
         "dir" -> {
-            ClipType.DIRECTORY.id
+            ClipType.FOLDER.id
         }
 
         "image" -> {
@@ -177,7 +178,7 @@ fun getIconForContent (
                 }
 
                 in setOf("octet-stream") -> {
-                    ClipType.BLANK.id
+                    ClipType.PLAIN_TEXT.id
                 }
 
                 else -> {
@@ -212,7 +213,7 @@ fun getIconForContent (
                     }
 
                     in setOf ("plain") -> {
-                        ClipType.BLANK.id
+                        ClipType.PLAIN_TEXT.id
                     }
 
                     in setOf ("x-c++src", "x-csrc", "x-java-source", "x-groovy", "x-scala", "x-kotlin", "x-python", "javascript", "x-typescript", "x-go", "x-rustsrc", "x-swift", "x-ruby", "x-php", "x-clojure", "x-haskell", "x-ocaml", "x-perl", "x-sh", "x-r-source", "vnd.dart", "x-elixir", "x-lua", "x-matlab", "x-vbasic", "x-stsrc", "x-coffeescript", "x-less", "x-yaml", "x-rst", "json", "xml", "sql", "x-pascal") -> {
@@ -506,10 +507,10 @@ val runnableExtensions = listOf(
 
 val drawableMap: Map<String, DrawableResource> = mapOf(
     ClipType.AUDIO.id to Res.drawable.audio,
-    ClipType.BLANK.id to Res.drawable.blank,
+    ClipType.PLAIN_TEXT.id to Res.drawable.blank,
     ClipType.BROKEN.id to Res.drawable.broken,
     ClipType.CODE.id to Res.drawable.code,
-    ClipType.DIRECTORY.id to Res.drawable.directory,
+    ClipType.FOLDER.id to Res.drawable.directory,
     ClipType.IMAGE.id to Res.drawable.image,
     ClipType.RUNNABLE.id to Res.drawable.runnable,
     ClipType.TEXT.id to Res.drawable.text,
@@ -522,10 +523,10 @@ val drawableMap: Map<String, DrawableResource> = mapOf(
 fun clipTypeToDesc(type: String): String {
     return when (type.toClipType()) {
         ClipType.AUDIO -> "Audio file"
-        ClipType.BLANK -> "Plain text"
+        ClipType.PLAIN_TEXT -> "Plain text"
         ClipType.BROKEN -> "Missing file"
         ClipType.CODE -> "Source code"
-        ClipType.DIRECTORY -> "Folder"
+        ClipType.FOLDER -> "Folder"
         ClipType.IMAGE -> "Image file"
         ClipType.RUNNABLE -> "App/Executable"
         ClipType.TEXT -> "Text file"
@@ -539,10 +540,10 @@ fun clipTypeToDesc(type: String): String {
 fun clipTypeToColor(type: String): Color {
     return when (type.toClipType()) {
         ClipType.AUDIO -> Color(0xFF4CAF50)
-        ClipType.BLANK -> Color(0xFF9E9E9E)
+        ClipType.PLAIN_TEXT -> Color(0xFF9E9E9E)
         ClipType.BROKEN -> Color(0xFFF44336)
         ClipType.CODE -> Color(0xFF3F51B5)
-        ClipType.DIRECTORY -> Color(0xFFFF9800)
+        ClipType.FOLDER -> Color(0xFFFF9800)
         ClipType.IMAGE -> Color(0xFFE91E63)
         ClipType.RUNNABLE -> Color(0xFF009688)
         ClipType.TEXT -> Color(0xFF2196F3)
@@ -553,7 +554,7 @@ fun clipTypeToColor(type: String): Color {
     }
 }
 
-suspend fun search(searchParams: String, filters: Set<Filter>, pinnedClips: List<Clip>, otherClips: List<Clip>): Pair<List<Clip>, List<Clip>> = withContext(Dispatchers.Default) {
+suspend fun search(searchParams: String, filters: Filters, pinnedClips: List<Clip>, otherClips: List<Clip>): Pair<List<Clip>, List<Clip>> = withContext(Dispatchers.Default) {
     val tempPinned = mutableListOf<Clip>()
     val tempOther = mutableListOf<Clip>()
 
@@ -578,96 +579,101 @@ suspend fun search(searchParams: String, filters: Set<Filter>, pinnedClips: List
     return@withContext filterClips(filters = filters, pinnedClips = tempPinned, otherClips = tempOther)
 }
 
-suspend fun filterClips(filters: Set<Filter>, pinnedClips: List<Clip>, otherClips: List<Clip>): Pair<List<Clip>, List<Clip>> = withContext(Dispatchers.Default) {
+suspend fun filterClips(filters: Filters, pinnedClips: List<Clip>, otherClips: List<Clip>): Pair<List<Clip>, List<Clip>> = withContext(Dispatchers.Default) {
     var pinnedMatches = pinnedClips
     var otherMatches = otherClips
 
-    for (filter in filters) {
-        when (filter) {
-            is Filter.ByCopyTime -> {
-                val tempPinned = mutableListOf<Clip>()
-                val tempOther = mutableListOf<Clip>()
-                val dateTime = LocalDateTime.ofEpochSecond(filter.copyTime, 0, ZoneOffset.UTC).startOfDay()
+    //by type
+    for (type in filters.types) {
+        val tempPinned = mutableListOf<Clip>()
+        val tempOther = mutableListOf<Clip>()
 
-                for (clip in pinnedMatches) {
-                    if (dateTime.toEpochSecond(ZoneOffset.UTC) == LocalDateTime.ofEpochSecond(clip.copiedAt, 0, ZoneOffset.UTC).startOfDay().toEpochSecond(ZoneOffset.UTC)) {
-                        tempPinned.add(clip)
-                    }
-                }
-
-                for (clip in otherMatches) {
-                    if (dateTime.toEpochSecond(ZoneOffset.UTC) == LocalDateTime.ofEpochSecond(clip.copiedAt, 0, ZoneOffset.UTC).startOfDay().toEpochSecond(ZoneOffset.UTC)) {
-                        tempOther.add(clip)
-                    }
-                }
-
-                pinnedMatches = tempPinned
-                otherMatches = tempOther
+        for (clip in pinnedMatches) {
+            if (clip.associatedIcon.toClipType() == type) {
+                tempPinned.add(clip)
             }
-            is Filter.ByLineCount -> {
-                val tempPinned = mutableListOf<Clip>()
-                val tempOther = mutableListOf<Clip>()
+        }
 
-                for (clip in pinnedMatches) {
-                    if (filter.count == clip.content.lines().size) {
-                        tempPinned.add(clip)
-                    }
-                }
-
-                for (clip in otherMatches) {
-                    if (filter.count == clip.content.lines().size) {
-                        tempOther.add(clip)
-                    }
-                }
-
-                pinnedMatches = tempPinned
-                otherMatches = tempOther
+        for (clip in otherMatches) {
+            if (clip.associatedIcon.toClipType() == type) {
+                tempOther.add(clip)
             }
-            is Filter.ByPinState -> {
-                if (filter.state) {
-                    otherMatches = emptyList()
-                } else {
-                    pinnedMatches = emptyList()
-                }
+        }
+
+        pinnedMatches = tempPinned
+        otherMatches = tempOther
+    }
+
+    // by sources
+    for (source in filters.sources) {
+        val tempPinned = mutableListOf<Clip>()
+        val tempOther = mutableListOf<Clip>()
+
+        for (clip in pinnedMatches) {
+            if (clip.source == source) {
+                tempPinned.add(clip)
             }
-            is Filter.BySource -> {
-                val tempPinned = mutableListOf<Clip>()
-                val tempOther = mutableListOf<Clip>()
+        }
 
-                for (clip in pinnedMatches) {
-                    if (clip.source == filter.source) {
-                        tempPinned.add(clip)
-                    }
-                }
-
-                for (clip in otherMatches) {
-                    if (clip.source == filter.source) {
-                        tempOther.add(clip)
-                    }
-                }
-
-                pinnedMatches = tempPinned
-                otherMatches = tempOther
+        for (clip in otherMatches) {
+            if (clip.source == source) {
+                tempOther.add(clip)
             }
-            is Filter.ByType -> {
-                val tempPinned = mutableListOf<Clip>()
-                val tempOther = mutableListOf<Clip>()
+        }
 
-                for (clip in pinnedMatches) {
-                    if (clip.associatedIcon.toClipType() in filter.clipTypes) {
-                        tempPinned.add(clip)
-                    }
-                }
+        pinnedMatches = tempPinned
+        otherMatches = tempOther
+    }
 
-                for (clip in otherMatches) {
-                    if (clip.associatedIcon.toClipType() in filter.clipTypes) {
-                        tempOther.add(clip)
-                    }
-                }
+    //by copy time
+    if (filters.copyTime != null) {
+        val tempPinned = mutableListOf<Clip>()
+        val tempOther = mutableListOf<Clip>()
+        val dateTime = LocalDateTime.ofEpochSecond(filters.copyTime, 0, ZoneOffset.UTC).startOfDay()
 
-                pinnedMatches = tempPinned
-                otherMatches = tempOther
+        for (clip in pinnedMatches) {
+            if (dateTime.toEpochSecond(ZoneOffset.UTC) == LocalDateTime.ofEpochSecond(clip.copiedAt, 0, ZoneOffset.UTC).startOfDay().toEpochSecond(ZoneOffset.UTC)) {
+                tempPinned.add(clip)
             }
+        }
+
+        for (clip in otherMatches) {
+            if (dateTime.toEpochSecond(ZoneOffset.UTC) == LocalDateTime.ofEpochSecond(clip.copiedAt, 0, ZoneOffset.UTC).startOfDay().toEpochSecond(ZoneOffset.UTC)) {
+                tempOther.add(clip)
+            }
+        }
+
+        pinnedMatches = tempPinned
+        otherMatches = tempOther
+    }
+
+    //by line count
+    if (filters.lineCount != null) {
+        val tempPinned = mutableListOf<Clip>()
+        val tempOther = mutableListOf<Clip>()
+
+        for (clip in pinnedMatches) {
+            if (filters.lineCount == clip.content.lines().size) {
+                tempPinned.add(clip)
+            }
+        }
+
+        for (clip in otherMatches) {
+            if (filters.lineCount == clip.content.lines().size) {
+                tempOther.add(clip)
+            }
+        }
+
+        pinnedMatches = tempPinned
+        otherMatches = tempOther
+    }
+
+    //by pin state
+    if (filters.pinState != null) {
+        if (filters.pinState) {
+            otherMatches = emptyList()
+        } else {
+            pinnedMatches = emptyList()
         }
     }
 

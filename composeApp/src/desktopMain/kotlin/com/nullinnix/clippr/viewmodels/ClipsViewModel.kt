@@ -15,6 +15,7 @@ import com.nullinnix.clippr.misc.onCopyToClipboard
 import com.nullinnix.clippr.misc.search
 import com.nullinnix.clippr.misc.toClip
 import com.nullinnix.clippr.misc.toClipEntity
+import com.nullinnix.clippr.showMain
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -104,23 +105,19 @@ class ClipsViewModel(
     }
 
     fun setShowMainApp(value: Boolean) {
-        _clipsState.update {
-            it.copy(showMainApp = value)
+        showMain.update {
+            value
         }
     }
 
     fun forceShowMainApp() {
         viewModelScope.launch {
             log("force show app", "forceShowMainApp")
-            _clipsState.update {
-                it.copy(showMainApp = false)
-            }
+            setShowMainApp(false)
 
             delay(100)
 
-            _clipsState.update {
-                it.copy(showMainApp = true)
-            }
+            setShowMainApp(true)
 
             delay(100)
 

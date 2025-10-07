@@ -37,15 +37,22 @@ data class ClipsState(
     val otherClips: List<Clip> = emptyList(),
     val currentPinnedClipsFetchOffset: Int = 0,
     val currentOtherClipsFetchOffset: Int = 0,
-    val showMainApp: Boolean = false,
     val currentTab: Tab = Tab.ClipsTab,
     val isSearching: Boolean = false,
     val isMultiSelecting: Boolean = false,
     val searchParams: String = "",
     val selectedPinnedClips: Set<Clip> = emptySet(),
     val selectedOtherClips: Set<Clip> = emptySet(),
-    val filters: Set<Filter> = defaultFilters,
+    val filters: Filters = Filters(),
     val searchResults: Pair<List<Clip>, List<Clip>> = Pair(emptyList(), emptyList())
+)
+
+data class Filters (
+    val types: Set<ClipType> = ClipType.entries.toSet(),
+    val sources: Set<String> = emptySet(),
+    val copyTime: Long? = null,
+    val pinState: Boolean? = null,
+    val lineCount: Int? = null,
 )
 
 @Entity(tableName = "settings")
@@ -80,22 +87,3 @@ const val MIME_TYPE = "mimeType"
 
 const val MIME_TYPE_PLAIN_TEXT = "text/plain"
 const val MIME_TYPE_DIR = "dir/folder"
-
-val defaultFilters = setOf(
-    Filter.ByType(
-        listOf(
-            ClipType.AUDIO,
-            ClipType.BLANK,
-            ClipType.BROKEN,
-            ClipType.CODE,
-            ClipType.DIRECTORY,
-            ClipType.IMAGE,
-            ClipType.RUNNABLE,
-            ClipType.TEXT,
-            ClipType.UNKNOWN,
-            ClipType.VIDEO,
-            ClipType.WEB,
-            ClipType.ZIP
-        )
-    ),
-)

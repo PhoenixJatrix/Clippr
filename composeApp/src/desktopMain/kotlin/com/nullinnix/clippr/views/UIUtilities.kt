@@ -2,7 +2,6 @@ package com.nullinnix.clippr.views
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
@@ -11,6 +10,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -31,8 +31,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
-import androidx.compose.material.TextField
-import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,17 +48,18 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,7 +71,6 @@ import clippr.composeapp.generated.resources.filter
 import clippr.composeapp.generated.resources.full_screen
 import clippr.composeapp.generated.resources.search
 import com.nullinnix.clippr.misc.ClipsState
-import com.nullinnix.clippr.misc.SettingsState
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.misc.name
@@ -77,6 +78,7 @@ import com.nullinnix.clippr.misc.noGleamCombinedClickable
 import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.theme.HeaderColor
 import com.nullinnix.clippr.theme.Transparent
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
 import java.awt.MouseInfo
 import java.awt.Window
@@ -327,17 +329,6 @@ fun SearchBar (
     Row (
         modifier = Modifier
             .width(widthAnim)
-            .onPreviewKeyEvent { event ->
-                if (event.type == KeyEventType.KeyDown) {
-                    when {
-                        event.key == Key.Escape -> {
-                            onExitSearch()
-                        }
-                    }
-                }
-
-                true
-            }
             .padding(10.dp)
     ){
         if (isSearching) {
@@ -427,7 +418,8 @@ fun SearchBar (
                     },
                     modifier = Modifier
                         .fillMaxSize()
-                        .focusRequester(focusRequester),
+                        .focusRequester(focusRequester)
+                    ,
                     singleLine = true
                 )
             }
@@ -446,7 +438,7 @@ fun SearchBar (
                     .clip(corners(90.dp))
                     .background(Color.White)
                     .clickable {
-//                        onExitSearch()
+
                     }
                     .padding(10.dp)
             )
@@ -476,5 +468,58 @@ fun RadioButton (
             modifier = Modifier,
             tint = if (isSelected) Color.White else Color.Gray
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CustomBottomSheet(
+    containerColor: Color = Color.White,
+    backgroundColor: Color = Color.Black.copy(0.75f),
+    closeFromParent: Boolean = false,
+    onDismiss: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = false,
+        confirmValueChange = { new ->
+            true
+        }
+    )
+
+    LaunchedEffect(closeFromParent) {
+        if (closeFromParent) {
+            sheetState.hide()
+            delay(300)
+            onDismiss()
+        }
+    }
+
+    ModalBottomSheet(
+        shape = RoundedCornerShape(20.dp),
+        onDismissRequest = { onDismiss() },
+        sheetState = sheetState,
+        containerColor = containerColor,
+        contentColor = Color.White,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(width = 1.dp, brush = Brush.verticalGradient(listOf(Color.Black.copy(0.2f), Color.Transparent)), shape = RoundedCornerShape(20.dp))
+                    .padding(vertical = 15.dp), contentAlignment = Alignment.Center
+            ) {
+                Canvas (
+                    modifier = Modifier
+                        .height(10.dp)
+                        .width(30.dp)
+                ) {
+                    drawLine(color = Color.Black, start = Offset.Zero, end = Offset(y = 0f, x = this.size.width), cap = StrokeCap.Round, strokeWidth = this.size.height)
+                }
+            }
+        },
+        scrimColor = backgroundColor,
+        tonalElevation = 15.dp
+    ) {
+        content()
     }
 }
