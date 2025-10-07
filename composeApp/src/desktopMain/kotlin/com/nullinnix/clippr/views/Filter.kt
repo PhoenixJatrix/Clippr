@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -27,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nullinnix.clippr.misc.ClipType
+import com.nullinnix.clippr.misc.clipTypeToColor
+import com.nullinnix.clippr.misc.clipTypeToDesc
 import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.theme.HeaderColor
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
@@ -54,15 +57,26 @@ fun FilterView (
                     title = "Type"
                 ) {
                     LazyColumn {
-                        items (ClipType.entries.toTypedArray()) {
-                            Row(
-
+                        items (ClipType.entries.toTypedArray()) {clipType ->
+                            Row (
+                                modifier = Modifier, verticalAlignment = Alignment.CenterVertically
                             ) {
                                 RadioButton(
-                                    isSelected = filters.types.contains(it)
+                                    isSelected = filters.types.contains(clipType)
                                 ) {
 
                                 }
+
+                                Canvas(
+                                    modifier = Modifier
+                                        .size(7.dp)
+                                ) {
+                                    drawCircle(color = clipTypeToColor(clipType.id))
+                                }
+
+                                Text(
+                                    text = clipTypeToDesc(clipType.id)
+                                )
                             }
                         }
                     }

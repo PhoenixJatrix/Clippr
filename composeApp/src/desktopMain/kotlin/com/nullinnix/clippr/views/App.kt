@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.nullinnix.clippr.misc.SearchAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.theme.White
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
@@ -47,6 +48,7 @@ fun App (
         val clipState = clipsViewModel.clipsState.collectAsState().value
         val currentTab =  clipState.currentTab
         val isSearching = clipState.isSearching
+        val showFilters = clipState.showFilters
 
         val pagerState = rememberPagerState { 3 }
         val coroutineScope = rememberCoroutineScope()
@@ -106,14 +108,21 @@ fun App (
                     window = window,
                     isSearching = isSearching,
                     clipState = clipState,
-                    onSearchStart = {
-                        clipsViewModel.setIsSearching(true)
-                    },
-                    onSearchParamsChanged = {
-                        clipsViewModel.setSearchParams(it)
-                    },
-                    onExitSearch = {
-                        clipsViewModel.setIsSearching(false)
+                    onAction = { action ->
+                        when (action) {
+                            SearchAction.Filter -> {
+                                clipsViewModel.setShowFilters(true)
+                            }
+                            SearchAction.OnExit -> {
+                                clipsViewModel.setIsSearching(false)
+                            }
+                            SearchAction.OnSearchStart -> {
+                                clipsViewModel.setIsSearching(true)
+                            }
+                            is SearchAction.SearchParamsChanged -> {
+                                clipsViewModel.setSearchParams(action.params)
+                            }
+                        }
                     }
                 )
 
@@ -140,6 +149,12 @@ fun App (
             }
 
             Spacer(Modifier.height(100.dp))
+        }
+
+        if (showFilters) {
+            FilterView(
+                clipsViewModel = clipsViewModel
+            )
         }
     }
 }

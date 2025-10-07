@@ -10,7 +10,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -52,12 +51,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -71,6 +65,7 @@ import clippr.composeapp.generated.resources.filter
 import clippr.composeapp.generated.resources.full_screen
 import clippr.composeapp.generated.resources.search
 import com.nullinnix.clippr.misc.ClipsState
+import com.nullinnix.clippr.misc.SearchAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.misc.name
@@ -315,9 +310,7 @@ fun SearchBar (
     window: Window,
     isSearching: Boolean,
     clipState: ClipsState,
-    onSearchParamsChanged: (String) -> Unit,
-    onSearchStart: () -> Unit,
-    onExitSearch: () -> Unit
+    onAction: (SearchAction) -> Unit
 ) {
     val widthAnim by animateDpAsState(if (isSearching) window.width.dp else 300.dp)
     val searchParams = clipState.searchParams
@@ -342,7 +335,7 @@ fun SearchBar (
                     .clip(corners(90.dp))
                     .background(Color.White)
                     .clickable {
-                        onExitSearch()
+                        onAction(SearchAction.OnExit)
                     }
                     .padding(10.dp)
             )
@@ -358,7 +351,7 @@ fun SearchBar (
                 .clip(corners(90.dp))
                 .background(HeaderColor)
                 .noGleamTaps {
-                    onSearchStart()
+                    onAction(SearchAction.OnSearchStart)
                 }
                 .padding(10.dp)
                 .padding(start = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
@@ -391,7 +384,7 @@ fun SearchBar (
                 BasicTextField(
                     value = searchParams,
                     onValueChange = {
-                        onSearchParamsChanged(it.replace("\n", ""))
+                        onAction(SearchAction.SearchParamsChanged(it.replace("\n", "")))
                     },
                     textStyle = TextStyle(
                         color = Color.Black,
@@ -438,7 +431,7 @@ fun SearchBar (
                     .clip(corners(90.dp))
                     .background(Color.White)
                     .clickable {
-
+                        onAction(SearchAction.Filter)
                     }
                     .padding(10.dp)
             )

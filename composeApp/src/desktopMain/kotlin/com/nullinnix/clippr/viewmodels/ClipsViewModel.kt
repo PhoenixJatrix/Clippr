@@ -152,6 +152,12 @@ class ClipsViewModel(
         }
     }
 
+    fun setShowFilters (value: Boolean) {
+        _clipsState.update {
+            it.copy(showFilters = value)
+        }
+    }
+
     fun setIsMultiSelecting (value: Boolean) {
         _clipsState.update {
             it.copy(isMultiSelecting = value)

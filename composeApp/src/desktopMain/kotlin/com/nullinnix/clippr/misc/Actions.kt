@@ -14,19 +14,6 @@ sealed interface Tab {
     object SettingsTab: Tab
 }
 
-//const val AUDIO = "audio"
-//const val BLANK = "blank"
-//const val BROKEN = "broken"
-//const val CODE = "code"
-//const val DIRECTORY = "directory"
-//const val IMAGE = "image"
-//const val RUNNABLE = "runnable"
-//const val TEXT = "text"
-//const val UNKNOWN = "unknown"
-//const val VIDEO = "video"
-//const val WEB = "web"
-//const val ZIP = "zip"
-
 enum class ClipType(val id: String) {
     AUDIO("audio"),
     PLAIN_TEXT("plain_text"),
@@ -56,4 +43,11 @@ sealed interface SettingsAction {
     object ToggleDeleteUnpinnedAfter30: SettingsAction
     object ToggleStartAtLogin: SettingsAction
     data class SetStartAtLogin(val value: Boolean): SettingsAction
+}
+
+sealed interface SearchAction {
+    data class SearchParamsChanged(val params: String): SearchAction
+    object OnExit: SearchAction
+    object Filter: SearchAction
+    object OnSearchStart: SearchAction
 }

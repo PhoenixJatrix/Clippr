@@ -32,7 +32,7 @@ data class Clip (
     val source: String? = null,
 )
 
-data class ClipsState(
+data class ClipsState (
     val pinnedClips: List<Clip> = emptyList(),
     val otherClips: List<Clip> = emptyList(),
     val currentPinnedClipsFetchOffset: Int = 0,
@@ -44,7 +44,8 @@ data class ClipsState(
     val selectedPinnedClips: Set<Clip> = emptySet(),
     val selectedOtherClips: Set<Clip> = emptySet(),
     val filters: Filters = Filters(),
-    val searchResults: Pair<List<Clip>, List<Clip>> = Pair(emptyList(), emptyList())
+    val searchResults: Pair<List<Clip>, List<Clip>> = Pair(emptyList(), emptyList()),
+    val showFilters: Boolean = false
 )
 
 data class Filters (
