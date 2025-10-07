@@ -24,13 +24,13 @@ class MiscViewModel: ViewModel() {
     }
 
     fun setAllApps (apps: Map<String, MacApp>) {
-        _state.update() {
+        _state.update {
             it.copy(allApps = apps)
         }
     }
 
     fun setLoadedIcns (icns: Map<String, ImageBitmap>) {
-        _state.update() {
+        _state.update {
             it.copy(loadedIcns = icns)
         }
     }

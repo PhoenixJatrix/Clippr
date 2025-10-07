@@ -43,9 +43,11 @@ data class ClipsState (
     val searchParams: String = "",
     val selectedPinnedClips: Set<Clip> = emptySet(),
     val selectedOtherClips: Set<Clip> = emptySet(),
-    val filters: Filters = Filters(),
+    val protoFilters: Filters = Filters(),
+    val searchFilter: Filters = Filters(),
     val searchResults: Pair<List<Clip>, List<Clip>> = Pair(emptyList(), emptyList()),
-    val showFilters: Boolean = false
+    val showFilters: Boolean = false,
+    val isOnGoingSearch: Boolean = false
 )
 
 data class Filters (

@@ -6,7 +6,7 @@ sealed interface ClipAction {
     data class OnCopyToClipboard(val clip: Clip): ClipAction
     data class OnAddClip(val clip: Clip): ClipAction
     data class ToggleSelectClip(val clip: Clip): ClipAction
-    data class Search(val searchParams: String): ClipAction
+    object Search: ClipAction
 }
 
 sealed interface Tab {
@@ -50,4 +50,9 @@ sealed interface SearchAction {
     object OnExit: SearchAction
     object Filter: SearchAction
     object OnSearchStart: SearchAction
+}
+
+enum class EscPriorityConsumers {
+    FilterEsc,
+    SearchEsc
 }

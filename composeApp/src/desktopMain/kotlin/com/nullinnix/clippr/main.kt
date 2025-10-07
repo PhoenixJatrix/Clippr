@@ -3,7 +3,9 @@ package com.nullinnix.clippr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -31,6 +33,7 @@ import clippr.composeapp.generated.resources.clippr_status_icon
 import com.nullinnix.clippr.database.clips.ClipsDatabaseFactory
 import com.nullinnix.clippr.database.settings.SettingsDatabaseFactory
 import com.nullinnix.clippr.misc.ClipAction
+import com.nullinnix.clippr.misc.EscPriorityConsumers
 import com.nullinnix.clippr.misc.SettingsAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.coerce
@@ -122,7 +125,13 @@ fun main() {
                     }
                 }
 
-                Column (
+                LaunchedEffect(miscViewModel.state.collectAsState().value) {
+                    if (clipsViewModel.clipsState.value.protoFilters.sources.isEmpty()) {
+                        clipsViewModel.setFilters(clipsViewModel.clipsState.value.protoFilters.copy(sources = miscViewModel.state.value.allApps.keys.toSet()))
+                    }
+                }
+
+                Box (
                     modifier = Modifier
                         .clip(corners(10.dp))
                         .border(1.dp, color = Color.Black.copy(0.25f), shape = corners(10.dp))
@@ -139,9 +148,27 @@ fun main() {
                                     }
 
                                     Key.Escape -> {
-                                        if (clipsViewModel.clipsState.value.isSearching) {
-                                            clipsViewModel.setIsSearching(false)
+                                        for (consumer in EscPriorityConsumers.entries) {
+                                            when (consumer) {
+                                                EscPriorityConsumers.FilterEsc -> {
+                                                    if (clipsViewModel.clipsState.value.showFilters) {
+                                                        clipsViewModel.setShowFilters(false)
+                                                        break
+                                                    }
+                                                }
+
+                                                EscPriorityConsumers.SearchEsc -> {
+                                                    if (clipsViewModel.clipsState.value.isSearching) {
+                                                        clipsViewModel.setIsSearching(false)
+                                                        break
+                                                    }
+                                                }
+                                            }
                                         }
+                                    }
+
+                                    Key.Enter -> {
+                                        clipsViewModel.searchAndFilter()
                                     }
                                 }
                             } else if (event.type == KeyEventType.KeyUp) {
@@ -152,10 +179,26 @@ fun main() {
                                 }
                             }
 
-                            !clipsViewModel.clipsState.value.isSearching
+                            !clipsViewModel.clipsState.value.isSearching && !clipsViewModel.clipsState.value.showFilters
                         }
                 ){
-                    WindowBar(
+                    Theme {
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 60.dp)
+                                .fillMaxSize()
+                        ) {
+                            App(
+                                window = window,
+                                isFocused = isFocused,
+                                clipsViewModel = clipsViewModel,
+                                settingsViewModel = settingsViewModel,
+                                miscViewModel = miscViewModel
+                            )
+                        }
+                    }
+
+                    WindowBar (
                         window = window,
                         isFocused = isFocused,
                         onToggleFullScreen = {
@@ -165,16 +208,6 @@ fun main() {
                             clipsViewModel.setShowMainApp(false)
                         }
                     )
-
-                    Theme {
-                        App(
-                            window = window,
-                            isFocused = isFocused,
-                            clipsViewModel = clipsViewModel,
-                            settingsViewModel = settingsViewModel,
-                            miscViewModel = miscViewModel
-                        )
-                    }
                 }
             }
         }

@@ -5,10 +5,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +24,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.nullinnix.clippr.misc.SearchAction
 import com.nullinnix.clippr.misc.Tab
@@ -55,6 +58,8 @@ fun App (
 
         var onActualTabChanged by remember { mutableStateOf(false) }
 
+        val miscViewModelState = miscViewModel.state.collectAsState().value
+
         LaunchedEffect(currentTab) {
             pagerState.animateScrollToPage(
                 when (currentTab) {
@@ -75,86 +80,93 @@ fun App (
             onActualTabChanged = true
         }
 
-        Column (
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(White),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(15.dp))
-
-            AnimatedVisibility(!isSearching, enter = fadeIn(tween(200)) + expandHorizontally(tween(200))) {
-                Tabs (
-                    isFocused = isFocused,
-                    currentTab = currentTab
-                ) {
-                    coroutineScope.launch {
-                        pagerState.animateScrollToPage(
-                            page = when (it) {
-                                Tab.ClipsTab -> 0
-                                Tab.SettingsTab -> 2
-                            }
-                        )
-                    }
-                }
-            }
-
-            if (!isSearching) {
+            Column (
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.White),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Spacer(Modifier.height(15.dp))
-            }
 
-            AnimatedVisibility(currentTab == Tab.ClipsTab) {
-                SearchBar (
-                    window = window,
-                    isSearching = isSearching,
-                    clipState = clipState,
-                    onAction = { action ->
-                        when (action) {
-                            SearchAction.Filter -> {
-                                clipsViewModel.setShowFilters(true)
-                            }
-                            SearchAction.OnExit -> {
-                                clipsViewModel.setIsSearching(false)
-                            }
-                            SearchAction.OnSearchStart -> {
-                                clipsViewModel.setIsSearching(true)
-                            }
-                            is SearchAction.SearchParamsChanged -> {
-                                clipsViewModel.setSearchParams(action.params)
-                            }
+                AnimatedVisibility(!isSearching, enter = fadeIn(tween(200)) + expandHorizontally(tween(200))) {
+                    Tabs (
+                        isFocused = isFocused,
+                        currentTab = currentTab
+                    ) {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(
+                                page = when (it) {
+                                    Tab.ClipsTab -> 0
+                                    Tab.SettingsTab -> 2
+                                }
+                            )
                         }
                     }
-                )
+                }
 
-                Spacer(Modifier.height(10.dp))
-            }
+                if (!isSearching) {
+                    Spacer(Modifier.height(15.dp))
+                }
 
-            HorizontalPager (
-                state = pagerState
-            ) {
-                when (currentTab) {
-                    Tab.ClipsTab -> {
-                        Clips (
-                            clipsViewModel = clipsViewModel,
-                            miscViewModel = miscViewModel
-                        )
-                    }
+                AnimatedVisibility(currentTab == Tab.ClipsTab) {
+                    SearchBar (
+                        window = window,
+                        isSearching = isSearching,
+                        clipState = clipState,
+                        onAction = { action ->
+                            when (action) {
+                                SearchAction.Filter -> {
+                                    clipsViewModel.setShowFilters(true)
+                                }
+                                SearchAction.OnExit -> {
+                                    clipsViewModel.setIsSearching(false)
+                                }
+                                SearchAction.OnSearchStart -> {
+                                    clipsViewModel.setIsSearching(true)
+                                }
+                                is SearchAction.SearchParamsChanged -> {
+                                    clipsViewModel.setSearchParams(action.params)
+                                }
+                            }
+                        }
+                    )
 
-                    Tab.SettingsTab -> {
-                        Settings(
-                            settingsViewModel = settingsViewModel
-                        )
+                    Spacer(Modifier.height(10.dp))
+                }
+
+                HorizontalPager (
+                    state = pagerState
+                ) {
+                    when (currentTab) {
+                        Tab.ClipsTab -> {
+                            Clips (
+                                clipsViewModel = clipsViewModel,
+                                miscViewModel = miscViewModel
+                            )
+                        }
+
+                        Tab.SettingsTab -> {
+                            Settings(
+                                settingsViewModel = settingsViewModel
+                            )
+                        }
                     }
                 }
+
+                Spacer(Modifier.height(100.dp))
             }
 
-            Spacer(Modifier.height(100.dp))
-        }
-
-        if (showFilters) {
-            FilterView(
-                clipsViewModel = clipsViewModel
-            )
+            if (showFilters) {
+                FilterView(
+                    clipsViewModel = clipsViewModel,
+                    allApps = miscViewModelState.allApps,
+                    loadedIcns = miscViewModelState.loadedIcns
+                )
+            }
         }
     }
 }

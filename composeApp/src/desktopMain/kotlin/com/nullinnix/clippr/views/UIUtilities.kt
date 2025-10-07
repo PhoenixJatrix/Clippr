@@ -16,6 +16,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -73,7 +74,10 @@ import com.nullinnix.clippr.misc.noGleamCombinedClickable
 import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.theme.HeaderColor
 import com.nullinnix.clippr.theme.Transparent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import java.awt.MouseInfo
 import java.awt.Window
@@ -464,55 +468,77 @@ fun RadioButton (
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomBottomSheet(
-    containerColor: Color = Color.White,
-    backgroundColor: Color = Color.Black.copy(0.75f),
-    closeFromParent: Boolean = false,
-    onDismiss: () -> Unit,
+fun PopupMenu (
+    background: Color = Transparent,
+    closeFromChild: Boolean = false,
+    showStartAnim: Boolean = true,
+    showEndAnim: Boolean = true,
+    showAfterAnimate: Boolean = false,
+    durationStart: Int = 300,
+    durationEnd: Int = 300,
+    onClose: () -> Unit,
     content: @Composable () -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = false,
-        confirmValueChange = { new ->
-            true
-        }
+    var showMenu by remember {
+        mutableStateOf(false)
+    }
+
+    val menuAnim by animateDpAsState(
+        targetValue =
+            if (showMenu)
+                0.dp
+            else
+                1000.dp,
+        label = "",
+        animationSpec = tween(
+            if (showMenu)
+                if (showStartAnim)
+                    durationStart
+                else
+                    0
+            else
+                if (showEndAnim)
+                    durationEnd
+                else
+                    0
+        )
     )
 
-    LaunchedEffect(closeFromParent) {
-        if (closeFromParent) {
-            sheetState.hide()
-            delay(300)
-            onDismiss()
+    val bg by animateColorAsState(targetValue = if(showMenu) background else Transparent, label = "")
+
+    if (closeFromChild) {
+        LaunchedEffect(key1 = Unit) {
+            showMenu = false
+            delay(durationEnd.toLong())
+            onClose()
         }
     }
 
-    ModalBottomSheet(
-        shape = RoundedCornerShape(20.dp),
-        onDismissRequest = { onDismiss() },
-        sheetState = sheetState,
-        containerColor = containerColor,
-        contentColor = Color.White,
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(width = 1.dp, brush = Brush.verticalGradient(listOf(Color.Black.copy(0.2f), Color.Transparent)), shape = RoundedCornerShape(20.dp))
-                    .padding(vertical = 15.dp), contentAlignment = Alignment.Center
-            ) {
-                Canvas (
-                    modifier = Modifier
-                        .height(10.dp)
-                        .width(30.dp)
-                ) {
-                    drawLine(color = Color.Black, start = Offset.Zero, end = Offset(y = 0f, x = this.size.width), cap = StrokeCap.Round, strokeWidth = this.size.height)
-                }
+    LaunchedEffect(key1 = Unit) {
+        showMenu = true
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .noGleamTaps {
+
             }
-        },
-        scrimColor = backgroundColor,
-        tonalElevation = 15.dp
+            .background(bg)
     ) {
-        content()
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset(y = menuAnim)
+        ) {
+            if (showAfterAnimate) {
+                if (menuAnim == 0.dp) {
+                    content()
+                }
+            } else {
+                content()
+            }
+        }
     }
 }

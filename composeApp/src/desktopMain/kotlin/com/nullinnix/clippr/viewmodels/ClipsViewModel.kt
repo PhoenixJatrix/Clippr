@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nullinnix.clippr.database.clips.ClipsDao
 import com.nullinnix.clippr.misc.Clip
-import com.nullinnix.clippr.misc.ClipEntity
 import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.ClipsState
+import com.nullinnix.clippr.misc.Filters
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.focusWindow
 import com.nullinnix.clippr.misc.log
@@ -83,7 +83,7 @@ class ClipsViewModel(
             }
 
             is ClipAction.Search -> {
-                searchAndFilter(action.searchParams)
+                searchAndFilter()
             }
         }
     }
@@ -171,7 +171,6 @@ class ClipsViewModel(
     }
     
     fun toggleSelectClip(clip: Clip) {
-        println("red")
         if (clip.isPinned) {
             _clipsState.update {
                 if (clip in it.selectedPinnedClips) {
@@ -203,23 +202,25 @@ class ClipsViewModel(
         }
     }
 
-    fun searchAndFilter (searchParams: String?) {
+    fun searchAndFilter () {
         viewModelScope.launch {
-            if (searchParams != null) {
-                if (searchParams.count { it == ' ' } != searchParams.length) {
-                    val searchResults = search(searchParams = searchParams, filters = clipsState.value.filters, pinnedClips = clipsState.value.pinnedClips, otherClips = clipsState.value.otherClips)
+            _clipsState.update {
+                it.copy(searchFilter = it.protoFilters, showFilters = false, isOnGoingSearch = true)
+            }
 
-                    _clipsState.update {
-                        it.copy(searchResults = searchResults)
-                    }
-                }
-            } else {
-                val searchResults = search(searchParams = "", filters = clipsState.value.filters, pinnedClips = clipsState.value.pinnedClips, otherClips = clipsState.value.otherClips)
+            if (clipsState.value.searchParams.count { it == ' ' } != clipsState.value.searchParams.length) {
+                val searchResults = search(searchParams = clipsState.value.searchParams, filters = clipsState.value.searchFilter, pinnedClips = clipsState.value.pinnedClips, otherClips = clipsState.value.otherClips)
 
                 _clipsState.update {
-                    it.copy(searchResults = searchResults)
+                    it.copy(searchResults = searchResults, isOnGoingSearch = false)
                 }
             }
+        }
+    }
+
+    fun setFilters(filters: Filters) {
+        _clipsState.update {
+            it.copy(protoFilters = filters)
         }
     }
 }
