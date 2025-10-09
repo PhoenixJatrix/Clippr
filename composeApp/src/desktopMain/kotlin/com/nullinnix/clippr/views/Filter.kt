@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import clippr.composeapp.generated.resources.Res
 import clippr.composeapp.generated.resources.back
+import clippr.composeapp.generated.resources.finder
 import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.MacApp
 import com.nullinnix.clippr.misc.clipTypeToColor
@@ -62,7 +63,11 @@ fun FilterView (
 ) {
     val state = rememberScrollState()
     val clipState = clipsViewModel.clipsState.collectAsState().value
-    val filters = clipState.searchFilter
+    val filters = clipState.protoFilters
+
+    LaunchedEffect(Unit) {
+        clipsViewModel.setFilters(clipState.searchFilter)
+    }
 
     PopupMenu (
         onClose = {
@@ -119,7 +124,7 @@ fun FilterView (
                                 .background(Color.Black)
                                 .padding(horizontal = 15.dp)
                                 .clickable {
-
+                                    clipsViewModel.searchAndFilter(true)
                                 }, contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -128,8 +133,6 @@ fun FilterView (
                             )
                         }
                     }
-
-//                    Spacer(Modifier.height(20.dp))
 
                     Column (
                         modifier = Modifier
@@ -292,22 +295,32 @@ fun FilterView (
                                             }
                                         }
 
-                                        if (app.value.iconPath != null && loadedIcns[app.key] != null && showIcon) {
+                                        if (app.value.bundleId == "com.apple.finder") {
                                             Image(
-                                                bitmap = loadedIcns[app.key]!!,
+                                                painter = painterResource(Res.drawable.finder),
                                                 contentDescription = "",
                                                 modifier = Modifier
                                                     .size(25.dp)
-                                                    .clip(corners(7.dp))
+                                                    .padding(2.dp)
                                             )
                                         } else {
-                                            Canvas(
-                                                modifier = Modifier
-                                                    .size(25.dp)
-                                                    .padding(3.dp)
-                                                    .clip(corners(5.dp))
-                                            ) {
-                                                drawRoundRect(color = Color.DarkGray)
+                                            if (app.value.iconPath != null && loadedIcns[app.key] != null && showIcon) {
+                                                Image(
+                                                    bitmap = loadedIcns[app.key]!!,
+                                                    contentDescription = "",
+                                                    modifier = Modifier
+                                                        .size(25.dp)
+                                                        .clip(corners(7.dp))
+                                                )
+                                            } else {
+                                                Canvas(
+                                                    modifier = Modifier
+                                                        .size(25.dp)
+                                                        .padding(3.dp)
+                                                        .clip(corners(5.dp))
+                                                ) {
+                                                    drawRoundRect(color = if (app.key == "unknown") Color.Yellow else Color.DarkGray)
+                                                }
                                             }
                                         }
 

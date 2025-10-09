@@ -8,6 +8,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
@@ -310,4 +314,92 @@ fun String.toClipType(): ClipType {
 
 fun LocalDateTime.startOfDay(): LocalDateTime {
     return LocalDateTime.of(this.year, this.month, this.dayOfMonth, 0, 0, 0)
+}
+
+fun buildHighlightedAnnotatedString(
+    text: String,
+    keywords: List<String>,
+    caseSensitive: Boolean = false,
+    wholeWords: Boolean = false,
+    highlightColor: Color = Color.Red
+): AnnotatedString {
+    val builder = AnnotatedString.Builder()
+
+    if (text.isEmpty() || keywords.isEmpty()) {
+        builder.append(text)
+        return builder.toAnnotatedString()
+    }
+
+    val normalizedKeywords = keywords
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .distinct()
+        .ifEmpty {
+            builder.append(text)
+            return builder.toAnnotatedString()
+        }
+
+    val source = if (caseSensitive) text else text.lowercase()
+    val keywordsNorm = if (caseSensitive) normalizedKeywords else normalizedKeywords.map { it.lowercase() }
+
+    val ranges = mutableListOf<IntRange>()
+    for (kw in keywordsNorm) {
+        var searchStart = 0
+        while (true) {
+            val idx = source.indexOf(kw, startIndex = searchStart)
+            if (idx < 0) break
+
+            val end = idx + kw.length
+            val ok = if (wholeWords) {
+                val beforeOk = idx == 0 || !source[idx - 1].isLetterOrDigit() && source[idx - 1] != '_'
+                val afterOk = end == source.length || !source[end].isLetterOrDigit() && source[end] != '_'
+                beforeOk && afterOk
+            } else true
+
+            if (ok) ranges.add(idx until end + 1)
+            searchStart = idx + 1
+        }
+    }
+
+    if (ranges.isEmpty()) {
+        builder.append(text)
+        return builder.toAnnotatedString()
+    }
+
+    val merged = ranges
+        .sortedWith(compareBy<IntRange> { it.first }.thenByDescending { it.last })
+        .fold(mutableListOf<IntRange>()) { acc, r ->
+            if (acc.isEmpty()) acc.add(r)
+            else {
+                val last = acc.last()
+                if (r.first <= last.last) {
+                    acc[acc.lastIndex] = last.first..maxOf(last.last, r.last)
+                } else acc.add(r)
+            }
+            acc
+        }
+
+    val firstMatchStart = merged.first().first
+    val startOffset = firstMatchStart.coerceAtLeast(0)
+    val visibleText = text.substring(startOffset)
+    val prefix = if (startOffset > 0) "… " else ""
+
+    builder.append(prefix)
+    builder.append(visibleText)
+
+    val offsetDelta = prefix.length - startOffset
+
+    for (range in merged) {
+        val start = range.first + offsetDelta
+        val end = range.last + offsetDelta
+        if (start < builder.length && end > 0) {
+            builder.addStyle(
+                SpanStyle(color = highlightColor),
+                start.coerceAtLeast(0),
+                end.coerceAtMost(builder.length)
+            )
+        }
+    }
+
+    return builder.toAnnotatedString()
 }

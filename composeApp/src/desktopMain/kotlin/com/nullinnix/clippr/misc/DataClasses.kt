@@ -39,7 +39,6 @@ data class ClipsState (
     val currentOtherClipsFetchOffset: Int = 0,
     val currentTab: Tab = Tab.ClipsTab,
     val isSearching: Boolean = false,
-    val isMultiSelecting: Boolean = false,
     val searchParams: String = "",
     val selectedPinnedClips: Set<Clip> = emptySet(),
     val selectedOtherClips: Set<Clip> = emptySet(),

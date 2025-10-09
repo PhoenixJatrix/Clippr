@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.nullinnix.clippr.misc.MacApp
 import com.nullinnix.clippr.misc.SearchAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.theme.White
@@ -163,7 +164,7 @@ fun App (
             if (showFilters) {
                 FilterView(
                     clipsViewModel = clipsViewModel,
-                    allApps = miscViewModelState.allApps,
+                    allApps = miscViewModel.state.value.allApps,
                     loadedIcns = miscViewModelState.loadedIcns
                 )
             }

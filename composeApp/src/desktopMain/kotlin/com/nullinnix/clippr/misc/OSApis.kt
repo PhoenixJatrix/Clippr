@@ -2,6 +2,7 @@ package com.nullinnix.clippr.misc
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.res.loadImageBitmap
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.Pointer
@@ -11,11 +12,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.awt.Dimension
+import java.awt.Image
 import java.awt.Point
 import java.awt.Toolkit
 import java.awt.Window
 import java.io.File
 import javax.imageio.ImageIO
+import javax.imageio.stream.ImageInputStream
 import javax.swing.KeyStroke
 
 var size = Dimension(300, 200)
@@ -152,7 +155,7 @@ fun getAllApps(
             File("/System/Applications")
         )
 
-        val apps = mutableMapOf<String, MacApp>()
+        val apps = mutableMapOf(Pair("com.apple.finder", MacApp("Finder", "com.apple.finder", "composeResources/drawable/finder_icns.webp")))
 
         appDirs.forEach { dir ->
             dir.listFiles { f -> f.extension == "app" }?.mapNotNull { app ->
@@ -173,7 +176,15 @@ fun getAllApps(
             }
         }
 
-        onDone(apps)
+        val sorted = mutableMapOf(Pair("unknown", MacApp("Unknown sources", "unknown", null)))
+
+        apps.values.sortedBy {
+            it.name
+        }.forEach {
+            sorted[it.bundleId] = it
+        }
+
+        onDone(sorted)
     }
 }
 
@@ -196,13 +207,15 @@ fun loadIcns(apps: List<MacApp>, onDone: (Map<String, ImageBitmap>) -> Unit){
             if (app.iconPath != null) {
                 val file = File(app.iconPath)
 
-                if (file.exists()) {
-                    try {
+                try {
+                    if (file.exists()) {
                         val img = ImageIO.read(file).toComposeImageBitmap()
                         loadedIcns[app.bundleId] = img
-                    } catch (e: Exception) {
-                        e.printStackTrace()
+                    } else {
+                        println("${app.bundleId} = $file doesn't exist")
                     }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
         }

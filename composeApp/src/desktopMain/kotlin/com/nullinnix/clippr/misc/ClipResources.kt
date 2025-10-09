@@ -71,7 +71,7 @@ fun getClipboard (
                                 exists = path.exists(),
                                 pinnedAt = 0L,
                                 associatedIcon = ClipType.FOLDER.id,
-                                source = source
+                                source = source ?: "unknown"
                             )
                         )
                     } else {
@@ -95,7 +95,7 @@ fun getClipboard (
                                 exists = path.exists(),
                                 pinnedAt = 0L,
                                 associatedIcon = getIconForContent(mimeType, path.path.lowercase()),
-                                source = source
+                                source = source ?: "unknown"
                             )
                         )
                     }
@@ -123,7 +123,7 @@ fun getClipboard (
                         exists = true,
                         pinnedAt = 0L,
                         associatedIcon = getIconForContent(MIME_TYPE_PLAIN_TEXT, content),
-                        source = source
+                        source = source ?: "unknown"
                     )
                 )
             }
@@ -554,19 +554,43 @@ fun clipTypeToColor(type: String): Color {
     }
 }
 
-suspend fun search(searchParams: String, filters: Filters, pinnedClips: List<Clip>, otherClips: List<Clip>): Pair<List<Clip>, List<Clip>> = withContext(Dispatchers.Default) {
-    val tempPinned = mutableListOf<Clip>()
-    val tempOther = mutableListOf<Clip>()
+suspend fun search(searchParams: String, filters: Filters, pinnedClips: List<Clip>, otherClips: List<Clip>, allApps: Map<String, MacApp>): Pair<List<Clip>, List<Clip>> = withContext(Dispatchers.Default) {
+    val tempPinned = mutableSetOf<Clip>()
+    val tempOther = mutableSetOf<Clip>()
 
     if (searchParams.isNotEmpty()) {
+        //content search
         for (clip in pinnedClips) {
-            if ((searchParams.lowercase() in clip.content.lowercase()) || (searchParams.lowercase() in (clip.source?.lowercase() ?: "")) || (searchParams.lowercase() in clip.associatedIcon.lowercase())) {
+            if ((searchParams.lowercase() in clip.content.lowercase())) {
                 tempPinned.add(clip)
             }
         }
-
         for (clip in otherClips) {
-            if ((searchParams.lowercase() in clip.content.lowercase()) || (searchParams.lowercase() in (clip.source?.lowercase() ?: "")) || (searchParams.lowercase() in clip.associatedIcon.lowercase())) {
+            if (searchParams.lowercase() in clip.content.lowercase()) {
+                tempOther.add(clip)
+            }
+        }
+
+        //source search
+        for (clip in pinnedClips) {
+            if (searchParams.lowercase() in (allApps[clip.source]?.name?.lowercase() ?: "")) {
+                tempPinned.add(clip)
+            }
+        }
+        for (clip in otherClips) {
+            if (searchParams.lowercase() in (allApps[clip.source]?.name?.lowercase() ?: "")) {
+                tempOther.add(clip)
+            }
+        }
+
+        //clip type search
+        for (clip in pinnedClips) {
+            if (searchParams.lowercase() in clipTypeToDesc(clip.associatedIcon).lowercase()) {
+                tempPinned.add(clip)
+            }
+        }
+        for (clip in otherClips) {
+            if (searchParams.lowercase() in clipTypeToDesc(clip.associatedIcon).lowercase()) {
                 tempOther.add(clip)
             }
         }
@@ -575,27 +599,30 @@ suspend fun search(searchParams: String, filters: Filters, pinnedClips: List<Cli
         tempOther.addAll(otherClips)
     }
 
+    val r = filterClips(filters = filters, pinnedClips = tempPinned, otherClips = tempOther)
 
-    return@withContext filterClips(filters = filters, pinnedClips = tempPinned, otherClips = tempOther)
+    println("filters = $filters, f = ${r.first.size}")
+
+    return@withContext r
 }
 
-suspend fun filterClips(filters: Filters, pinnedClips: List<Clip>, otherClips: List<Clip>): Pair<List<Clip>, List<Clip>> = withContext(Dispatchers.Default) {
+suspend fun filterClips(filters: Filters, pinnedClips: Set<Clip>, otherClips: Set<Clip>): Pair<List<Clip>, List<Clip>> = withContext(Dispatchers.Default) {
     var pinnedMatches = pinnedClips
     var otherMatches = otherClips
 
     //by type
-    for (type in filters.types) {
-        val tempPinned = mutableListOf<Clip>()
-        val tempOther = mutableListOf<Clip>()
+    run {
+        val tempPinned = mutableSetOf<Clip>()
+        val tempOther = mutableSetOf<Clip>()
 
-        for (clip in pinnedMatches) {
-            if (clip.associatedIcon.toClipType() == type) {
+        for (clip in pinnedClips) {
+            if (clip.associatedIcon.toClipType() in filters.types) {
                 tempPinned.add(clip)
             }
         }
 
-        for (clip in otherMatches) {
-            if (clip.associatedIcon.toClipType() == type) {
+        for (clip in otherClips) {
+            if (clip.associatedIcon.toClipType() in filters.types) {
                 tempOther.add(clip)
             }
         }
@@ -603,20 +630,22 @@ suspend fun filterClips(filters: Filters, pinnedClips: List<Clip>, otherClips: L
         pinnedMatches = tempPinned
         otherMatches = tempOther
     }
+
+    println("filters = $filters, fh1 = ${pinnedMatches.size}")
 
     // by sources
-    for (source in filters.sources) {
-        val tempPinned = mutableListOf<Clip>()
-        val tempOther = mutableListOf<Clip>()
+    run {
+        val tempPinned = mutableSetOf<Clip>()
+        val tempOther = mutableSetOf<Clip>()
 
         for (clip in pinnedMatches) {
-            if (clip.source == source) {
+            if (clip.source in filters.sources || (clip.source == null && filters.sources.contains("unknown"))) {
                 tempPinned.add(clip)
             }
         }
 
         for (clip in otherMatches) {
-            if (clip.source == source) {
+            if (clip.source in filters.sources || (clip.source == null && filters.sources.contains("unknown"))) {
                 tempOther.add(clip)
             }
         }
@@ -624,11 +653,13 @@ suspend fun filterClips(filters: Filters, pinnedClips: List<Clip>, otherClips: L
         pinnedMatches = tempPinned
         otherMatches = tempOther
     }
+
+    println("filters = $filters, fh2 = ${pinnedMatches.size}")
 
     //by copy time
     if (filters.copyTime != null) {
-        val tempPinned = mutableListOf<Clip>()
-        val tempOther = mutableListOf<Clip>()
+        val tempPinned = mutableSetOf<Clip>()
+        val tempOther = mutableSetOf<Clip>()
         val dateTime = LocalDateTime.ofEpochSecond(filters.copyTime, 0, ZoneOffset.UTC).startOfDay()
 
         for (clip in pinnedMatches) {
@@ -649,8 +680,8 @@ suspend fun filterClips(filters: Filters, pinnedClips: List<Clip>, otherClips: L
 
     //by line count
     if (filters.lineCount != null) {
-        val tempPinned = mutableListOf<Clip>()
-        val tempOther = mutableListOf<Clip>()
+        val tempPinned = mutableSetOf<Clip>()
+        val tempOther = mutableSetOf<Clip>()
 
         for (clip in pinnedMatches) {
             if (filters.lineCount == clip.content.lines().size) {
@@ -671,11 +702,11 @@ suspend fun filterClips(filters: Filters, pinnedClips: List<Clip>, otherClips: L
     //by pin state
     if (filters.pinState != null) {
         if (filters.pinState) {
-            otherMatches = emptyList()
+            otherMatches = emptySet()
         } else {
-            pinnedMatches = emptyList()
+            pinnedMatches = emptySet()
         }
     }
 
-    return@withContext Pair(pinnedMatches, otherMatches)
+    return@withContext Pair(pinnedMatches.toList(), otherMatches.toList())
 }

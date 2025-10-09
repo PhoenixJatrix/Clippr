@@ -61,8 +61,8 @@ fun main() {
     val clipsDatabase = ClipsDatabaseFactory().create()
     val settingsDatabase = SettingsDatabaseFactory().create()
     val settingsViewModel = SettingsViewModel(settingsDatabase.settingsDao())
-    val clipsViewModel = ClipsViewModel(clipsDatabase.clipsDao(), settingsViewModel)
     val miscViewModel = MiscViewModel()
+    val clipsViewModel = ClipsViewModel(clipsDatabase.clipsDao(), settingsViewModel, miscViewModel)
 
     val composeWindowStateRaw = MutableStateFlow<Window?>(null)
 
@@ -128,6 +128,7 @@ fun main() {
                 LaunchedEffect(miscViewModel.state.collectAsState().value) {
                     if (clipsViewModel.clipsState.value.protoFilters.sources.isEmpty()) {
                         clipsViewModel.setFilters(clipsViewModel.clipsState.value.protoFilters.copy(sources = miscViewModel.state.value.allApps.keys.toSet()))
+                        clipsViewModel.setSearchFilters(clipsViewModel.clipsState.value.protoFilters.copy(sources = miscViewModel.state.value.allApps.keys.toSet()))
                     }
                 }
 
@@ -144,7 +145,7 @@ fun main() {
                             if (event.type == KeyEventType.KeyDown) {
                                 when (event.key) {
                                     Key.MetaLeft, Key.MetaRight -> {
-                                        clipsViewModel.setIsMultiSelecting(true)
+
                                     }
 
                                     Key.Escape -> {
@@ -168,13 +169,13 @@ fun main() {
                                     }
 
                                     Key.Enter -> {
-                                        clipsViewModel.searchAndFilter()
+                                        clipsViewModel.searchAndFilter(true)
                                     }
                                 }
                             } else if (event.type == KeyEventType.KeyUp) {
                                 when (event.key) {
                                     Key.MetaLeft, Key.MetaRight -> {
-                                        clipsViewModel.setIsMultiSelecting(false)
+
                                     }
                                 }
                             }

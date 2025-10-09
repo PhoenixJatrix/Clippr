@@ -30,7 +30,8 @@ const val FETCH_OFFSET = 100
 
 class ClipsViewModel(
     private val clipsDao: ClipsDao,
-    private val settingsViewModel: SettingsViewModel
+    private val settingsViewModel: SettingsViewModel,
+    private val miscViewModel: MiscViewModel
 ): ViewModel() {
     private val _clipsState = MutableStateFlow(ClipsState())
     val clipsState = _clipsState.asStateFlow()
@@ -90,7 +91,7 @@ class ClipsViewModel(
 
     fun addClip(clip: Clip) {
         viewModelScope.launch {
-            clipsDao.upsert(clip.toClipEntity())
+            clipsDao.upsert(clip.toClipEntity().copy(source = if (clip.source in miscViewModel.state.value.allApps.keys) clip.source else null))
         }
     }
 
@@ -150,6 +151,20 @@ class ClipsViewModel(
         _clipsState.update {
             it.copy(isSearching = value)
         }
+
+        if (!value) {
+            _clipsState.update {
+                it.copy(
+                    searchParams = "",
+                    selectedOtherClips = setOf(),
+                    selectedPinnedClips = setOf(),
+                    isOnGoingSearch = false,
+                    protoFilters = Filters(sources = miscViewModel.state.value.allApps.keys),
+                    searchFilter = Filters(sources = miscViewModel.state.value.allApps.keys),
+                    searchResults = Pair(emptyList(), emptyList())
+                )
+            }
+        }
     }
 
     fun setShowFilters (value: Boolean) {
@@ -158,16 +173,12 @@ class ClipsViewModel(
         }
     }
 
-    fun setIsMultiSelecting (value: Boolean) {
-        _clipsState.update {
-            it.copy(isMultiSelecting = value)
-        }
-    }
-
     fun setSearchParams (value: String) {
         _clipsState.update {
-            it.copy(searchParams = value)
+            it.copy(searchParams = value, searchResults = if (value.isBlank()) Pair(emptyList(), emptyList()) else it.searchResults)
         }
+
+        searchAndFilter()
     }
     
     fun toggleSelectClip(clip: Clip) {
@@ -202,18 +213,27 @@ class ClipsViewModel(
         }
     }
 
-    fun searchAndFilter () {
+    fun searchAndFilter (searchWithFilters: Boolean = false) {
         viewModelScope.launch {
             _clipsState.update {
-                it.copy(searchFilter = it.protoFilters, showFilters = false, isOnGoingSearch = true)
+                it.copy(searchFilter = it.protoFilters, showFilters = false)
             }
 
-            if (clipsState.value.searchParams.count { it == ' ' } != clipsState.value.searchParams.length) {
-                val searchResults = search(searchParams = clipsState.value.searchParams, filters = clipsState.value.searchFilter, pinnedClips = clipsState.value.pinnedClips, otherClips = clipsState.value.otherClips)
+            if (clipsState.value.searchParams.isNotEmpty() || searchWithFilters) {
+                println("searching start")
+
+                _clipsState.update {
+                    it.copy(isOnGoingSearch = true)
+                }
+                val searchResults = search(searchParams = clipsState.value.searchParams, filters = clipsState.value.searchFilter, pinnedClips = clipsState.value.pinnedClips, otherClips = clipsState.value.otherClips, allApps = miscViewModel.state.value.allApps)
+
+                delay(300)
 
                 _clipsState.update {
                     it.copy(searchResults = searchResults, isOnGoingSearch = false)
                 }
+
+                println("searching end")
             }
         }
     }
@@ -221,6 +241,12 @@ class ClipsViewModel(
     fun setFilters(filters: Filters) {
         _clipsState.update {
             it.copy(protoFilters = filters)
+        }
+    }
+
+    fun setSearchFilters(filters: Filters) {
+        _clipsState.update {
+            it.copy(searchFilter = filters)
         }
     }
 }

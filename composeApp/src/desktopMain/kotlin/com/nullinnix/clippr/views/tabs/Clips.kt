@@ -8,6 +8,7 @@ import androidx.compose.foundation.LocalScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -29,12 +30,16 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
+import androidx.compose.material.ProgressIndicatorDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,11 +56,13 @@ import androidx.compose.ui.unit.sp
 import clippr.composeapp.generated.resources.Baloo2_Regular
 import clippr.composeapp.generated.resources.Res
 import clippr.composeapp.generated.resources.Urbanist_Regular
+import clippr.composeapp.generated.resources.finder
 import clippr.composeapp.generated.resources.pin
 import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.MacApp
+import com.nullinnix.clippr.misc.buildHighlightedAnnotatedString
 import com.nullinnix.clippr.misc.clipTypeToColor
 import com.nullinnix.clippr.misc.clipTypeToDesc
 import com.nullinnix.clippr.misc.corners
@@ -67,6 +74,7 @@ import com.nullinnix.clippr.theme.Transparent
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
 import com.nullinnix.clippr.views.RadioButton
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
 
@@ -83,7 +91,6 @@ fun Clips (
     val otherSearchResults = clipState.searchResults.second
 
     val isSearching = clipState.isSearching
-    val isMultiSelecting = clipState.isMultiSelecting
 
     val selectedPinnedClips = clipState.selectedPinnedClips
     val selectedOtherClips = clipState.selectedOtherClips
@@ -96,6 +103,8 @@ fun Clips (
     var allPinnedClipsExpanded by remember { mutableStateOf(false) }
 
     val scrollState = rememberLazyListState()
+    val searchScrollState = rememberLazyListState()
+    val coroutine = rememberCoroutineScope()
 
     if (!isSearching) {
         if (pinnedClips.isNotEmpty() || otherClips.isNotEmpty()) {
@@ -141,7 +150,7 @@ fun Clips (
                                 }
 
 
-                                if (pinnedClips.size > 5 && !isMultiSelecting) {
+                                if (pinnedClips.size > 5) {
                                     Text(
                                         text = if (!allPinnedClipsExpanded) "Show All (${pinnedClips.size})" else "Show Less",
                                         color = Color.Gray,
@@ -157,14 +166,14 @@ fun Clips (
                         }
                     }
 
-                    items(if ((!allPinnedClipsExpanded && !isMultiSelecting) && pinnedClips.size > 5) pinnedClips.subList(0, 5) else pinnedClips) { clip ->
+                    items(if ((!allPinnedClipsExpanded) && pinnedClips.size > 5) pinnedClips.subList(0, 5) else pinnedClips) { clip ->
                         ClipTemplate (
                             clip = clip,
                             icns = loadedIcns[clip.source ?: ""],
                             macApp = allApps[clip.source ?: ""],
                             isSelected = clip in selectedPinnedClips,
                             isSearching = isSearching,
-                            isMultiSelecting = isMultiSelecting
+                            searchParams = clipState.searchParams
                         ) { action ->
                             clipsViewModel.onAction(action)
                         }
@@ -211,7 +220,7 @@ fun Clips (
                             macApp = allApps[clip.source ?: ""],
                             isSelected = clip in selectedOtherClips,
                             isSearching = isSearching,
-                            isMultiSelecting = isMultiSelecting
+                            searchParams = clipState.searchParams
                         ) { action ->
                             clipsViewModel.onAction(action)
                         }
@@ -246,71 +255,97 @@ fun Clips (
             }
         }
     } else {
-        if (pinnedSearchResults.isNotEmpty() || otherSearchResults.isNotEmpty()) {
-            Box {
-                LazyColumn (
-                    state = scrollState,
-                    modifier = Modifier
-                        .padding(end = 15.dp)
-                ){
-                    item {
-                        Spacer(Modifier.height(15.dp))
-                    }
-
-                    items(pinnedSearchResults) { clip ->
-                        ClipTemplate (
-                            clip = clip,
-                            icns = loadedIcns[clip.source ?: ""],
-                            macApp = allApps[clip.source ?: ""],
-                            isSelected = clip in selectedPinnedClips,
-                            isSearching = isSearching,
-                            isMultiSelecting = isMultiSelecting
-                        ) { action ->
-                            clipsViewModel.onAction(action)
-                        }
-
-                        Spacer(Modifier.height(20.dp))
-                    }
-
-                    items(otherSearchResults) { clip ->
-                        ClipTemplate(
-                            clip = clip,
-                            icns = loadedIcns[clip.source ?: ""],
-                            macApp = allApps[clip.source ?: ""],
-                            isSelected = clip in selectedOtherClips,
-                            isSearching = isSearching,
-                            isMultiSelecting = isMultiSelecting
-                        ) { action ->
-                            clipsViewModel.onAction(action)
-                        }
-
-                        Spacer(Modifier.height(20.dp))
-                    }
-
-                    item {
-                        Spacer(Modifier.height(15.dp))
+        if (clipState.isOnGoingSearch) {
+            Column (
+                modifier = Modifier
+                    .fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                LaunchedEffect(Unit) {
+                    coroutine.launch {
+                        searchScrollState.scrollToItem(0)
                     }
                 }
 
-                VerticalScrollbar (
-                    adapter = rememberScrollbarAdapter(scrollState),
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .fillMaxHeight()
-                        .padding(end = 10.dp, bottom = 15.dp, top = 25.dp),
-                    style = LocalScrollbarStyle.current.copy(minimalHeight = 35.dp)
-                )
-            }
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(), contentAlignment = Alignment.Center
-            ) {
                 Text(
-                    text = "No clips match keywords",
+                    text = "Searching all clips...",
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 25.sp
                 )
+
+                CircularProgressIndicator(
+                    strokeWidth = 10.dp,
+                    color = Color.Black,
+                    modifier = Modifier
+                        .size(70.dp)
+                )
+            }
+        } else {
+            if (pinnedSearchResults.isNotEmpty() || otherSearchResults.isNotEmpty()) {
+                Box {
+                    LazyColumn (
+                        state = searchScrollState,
+                        modifier = Modifier
+                            .padding(end = 15.dp)
+                    ){
+                        item {
+                            Spacer(Modifier.height(15.dp))
+                        }
+
+                        items(pinnedSearchResults) { clip ->
+                            ClipTemplate (
+                                clip = clip,
+                                icns = loadedIcns[clip.source ?: ""],
+                                macApp = allApps[clip.source ?: ""],
+                                isSelected = clip in selectedPinnedClips,
+                                isSearching = isSearching,
+                                searchParams = clipState.searchParams
+                            ) { action ->
+                                clipsViewModel.onAction(action)
+                            }
+
+                            Spacer(Modifier.height(20.dp))
+                        }
+
+                        items(otherSearchResults) { clip ->
+                            ClipTemplate(
+                                clip = clip,
+                                icns = loadedIcns[clip.source ?: ""],
+                                macApp = allApps[clip.source ?: ""],
+                                isSelected = clip in selectedOtherClips,
+                                isSearching = isSearching,
+                                searchParams = clipState.searchParams
+                            ) { action ->
+                                clipsViewModel.onAction(action)
+                            }
+
+                            Spacer(Modifier.height(20.dp))
+                        }
+
+                        item {
+                            Spacer(Modifier.height(15.dp))
+                        }
+                    }
+
+                    VerticalScrollbar (
+                        adapter = rememberScrollbarAdapter(searchScrollState),
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .fillMaxHeight()
+                            .padding(end = 10.dp, bottom = 15.dp, top = 25.dp),
+                        style = LocalScrollbarStyle.current.copy(minimalHeight = 35.dp)
+                    )
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize(), contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No clips match keywords",
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 25.sp
+                    )
+                }
             }
         }
     }
@@ -319,8 +354,8 @@ fun Clips (
 @Composable
 fun ClipTemplate (
     isSearching: Boolean,
-    isMultiSelecting: Boolean,
     isSelected: Boolean,
+    searchParams: String,
     clip: Clip,
     icns: ImageBitmap?,
     macApp: MacApp?,
@@ -345,7 +380,7 @@ fun ClipTemplate (
         ) {
             Spacer(Modifier.width(10.dp))
 
-            if (isMultiSelecting || isSearching) {
+            if (isSearching) {
                 RadioButton(
                     isSelected = isSelected
                 ) {
@@ -396,7 +431,7 @@ fun ClipTemplate (
                         modifier = Modifier, verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = formatText(clip.content),
+                            text = buildHighlightedAnnotatedString(formatText(clip.content), listOf(searchParams)),
                             color = Color.Black,
                             overflow = TextOverflow.Ellipsis,
                             maxLines = 1,
@@ -411,7 +446,7 @@ fun ClipTemplate (
                         Modifier
                             .align(Alignment.End)
                     ){
-                        if (icns != null || macApp != null) {
+                        if (macApp != null) {
                             clip.source?.let {
                                 Row (
                                     modifier = Modifier
@@ -420,26 +455,32 @@ fun ClipTemplate (
                                         .height(22.dp)
                                         .background(timeCopiedBackgroundAnim)
                                         .padding(horizontal = 7.dp), verticalAlignment = Alignment.CenterVertically
-                                ){
-                                    icns?.let {
-                                        Image (
-                                            bitmap = it,
+                                ) {
+                                    if (icns != null) {
+                                        Image(
+                                            bitmap = icns,
                                             contentDescription = "",
                                             modifier = Modifier
                                                 .size(20.dp)
                                         )
-                                    }
-
-                                    macApp?.let {
-                                        Spacer(Modifier.width(5.dp))
-
-                                        Text (
-                                            text = macApp.name,
-                                            fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                                            color = timeCopiedTextAnim,
-                                            fontSize = 11.sp
+                                    } else if (clip.source == "com.apple.finder") {
+                                        Image(
+                                            painter = painterResource(Res.drawable.finder),
+                                            contentDescription = "",
+                                            modifier = Modifier
+                                                .size(20.dp)
+                                                .padding(2.dp)
                                         )
                                     }
+
+                                    Spacer(Modifier.width(5.dp))
+
+                                    Text (
+                                        text = buildHighlightedAnnotatedString(macApp.name, listOf(searchParams)),
+                                        fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+                                        color = timeCopiedTextAnim,
+                                        fontSize = 11.sp
+                                    )
                                 }
 
                                 Spacer(Modifier.width(7.dp))
@@ -464,7 +505,7 @@ fun ClipTemplate (
                             Spacer(Modifier.width(5.dp))
 
                             Text (
-                                text = clipTypeToDesc(clip.associatedIcon),
+                                text = buildHighlightedAnnotatedString(clipTypeToDesc(clip.associatedIcon), listOf(searchParams)),
                                 fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
                                 color = timeCopiedTextAnim,
                                 fontSize = 11.sp
