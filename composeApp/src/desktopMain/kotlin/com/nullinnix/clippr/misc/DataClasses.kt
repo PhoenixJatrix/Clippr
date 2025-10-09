@@ -70,7 +70,9 @@ data class SettingsState (
     val maximumRememberableUnpinnedClips: Int = 1000,
     val enableMetaShiftVPopup: Boolean = false,
     val deleteUnpinnedClipsAfter30Days: Boolean = false,
-    val startAtLogin: Boolean = false
+    val startAtLogin: Boolean = false,
+    val sourcesExceptions: Set<String> = emptySet(),
+    val clipTypesExceptions: Set<ClipType> = emptySet(),
 )
 
 data class MiscViewModelState (

@@ -81,6 +81,18 @@ class SettingsViewModel (
                     it.copy(startAtLogin = action.value)
                 }
             }
+
+            is SettingsAction.SetClipTypes -> {
+                _settings.update {
+                    it.copy(clipTypesExceptions = action.value)
+                }
+            }
+
+            is SettingsAction.SetSourceExceptions -> {
+                _settings.update {
+                    it.copy(sourcesExceptions = action.value)
+                }
+            }
         }
 
         save()

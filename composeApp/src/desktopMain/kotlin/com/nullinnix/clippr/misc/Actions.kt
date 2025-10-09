@@ -1,5 +1,7 @@
 package com.nullinnix.clippr.misc
 
+import kotlinx.serialization.Serializable
+
 sealed interface ClipAction {
     data class OnTogglePin(val clip: Clip): ClipAction
     data class OnDelete(val clip: Clip): ClipAction
@@ -16,6 +18,7 @@ sealed interface Tab {
     object SettingsTab: Tab
 }
 
+@Serializable
 enum class ClipType(val id: String) {
     AUDIO("audio"),
     PLAIN_TEXT("plain_text"),
@@ -45,6 +48,8 @@ sealed interface SettingsAction {
     object ToggleDeleteUnpinnedAfter30: SettingsAction
     object ToggleStartAtLogin: SettingsAction
     data class SetStartAtLogin(val value: Boolean): SettingsAction
+    data class SetClipTypes(val value: Set<ClipType>): SettingsAction
+    data class SetSourceExceptions(val value: Set<String>): SettingsAction
 }
 
 sealed interface SearchAction {
