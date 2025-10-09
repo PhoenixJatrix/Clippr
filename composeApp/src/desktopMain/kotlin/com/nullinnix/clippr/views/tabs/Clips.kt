@@ -53,18 +53,19 @@ import androidx.compose.ui.unit.sp
 import clippr.composeapp.generated.resources.Baloo2_Regular
 import clippr.composeapp.generated.resources.Res
 import clippr.composeapp.generated.resources.Urbanist_Regular
+import clippr.composeapp.generated.resources.clippr_status_icon_thicker
 import clippr.composeapp.generated.resources.finder
-import clippr.composeapp.generated.resources.pin
 import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.MacApp
-import com.nullinnix.clippr.misc.buildHighlightedAnnotatedString
 import com.nullinnix.clippr.misc.clipTypeToColor
 import com.nullinnix.clippr.misc.clipTypeToDesc
+import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.misc.epochToReadableTime
 import com.nullinnix.clippr.misc.formatText
+import com.nullinnix.clippr.misc.highlightedAnnotatedString
 import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.misc.toClipType
 import com.nullinnix.clippr.theme.Transparent
@@ -88,8 +89,7 @@ fun Clips (
 
     val isSearching = clipState.isSearching
 
-    val selectedPinnedClips = clipState.selectedPinnedClips
-    val selectedOtherClips = clipState.selectedOtherClips
+    val selectedClips = clipState.selectedClips
 
     val loadedIcns = miscViewModel.state.collectAsState().value.loadedIcns
     val allApps = miscViewModel.state.collectAsState().value.allApps
@@ -125,16 +125,6 @@ fun Clips (
                                 Row (
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    RadioButton(
-                                        isSelected = pinnedClips.size == selectedPinnedClips.size
-                                    ) {
-                                        if (pinnedClips.size == selectedPinnedClips.size) {
-                                            clipsViewModel.setSelectedPinnedClips(emptySet())
-                                        } else {
-                                            clipsViewModel.setSelectedPinnedClips(pinnedClips.toSet())
-                                        }
-                                    }
-
                                     Text(
                                         text = "Pinned Clips",
                                         color = Color.Black,
@@ -142,7 +132,6 @@ fun Clips (
                                         fontWeight = FontWeight.SemiBold
                                     )
                                 }
-
 
                                 if (pinnedClips.size > 5) {
                                     Text(
@@ -165,7 +154,7 @@ fun Clips (
                             clip = clip,
                             icns = loadedIcns[clip.source ?: ""],
                             macApp = allApps[clip.source ?: ""],
-                            isSelected = clip in selectedPinnedClips,
+                            isSelected = clip in selectedClips,
                             isSearching = false,
                             searchParams = clipState.searchParams
                         ) { action ->
@@ -185,16 +174,6 @@ fun Clips (
                                     .padding(10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                RadioButton(
-                                    isSelected = otherClips.size == selectedOtherClips.size
-                                ) {
-                                    if (otherClips.size == selectedOtherClips.size) {
-                                        clipsViewModel.setSelectedOtherClips(emptySet())
-                                    } else {
-                                        clipsViewModel.setSelectedOtherClips(otherClips.toSet())
-                                    }
-                                }
-
                                 Text(
                                     text = "Other Clips",
                                     color = Color.Black,
@@ -210,7 +189,7 @@ fun Clips (
                             clip = clip,
                             icns = loadedIcns[clip.source ?: ""],
                             macApp = allApps[clip.source ?: ""],
-                            isSelected = clip in selectedOtherClips,
+                            isSelected = clip in selectedClips,
                             isSearching = false,
                             searchParams = clipState.searchParams
                         ) { action ->
@@ -283,12 +262,29 @@ fun Clips (
                             Spacer(Modifier.height(15.dp))
                         }
 
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .padding(10.dp)
+                            ) {
+                                RadioButton(
+                                    isSelected = searchResults.size == selectedClips.size
+                                ) {
+                                    if (searchResults.size == selectedClips.size) {
+                                        clipsViewModel.setSelectedClips(emptySet())
+                                    } else {
+                                        clipsViewModel.setSelectedClips(searchResults.toSet())
+                                    }
+                                }
+                            }
+                        }
+
                         items(searchResults) { clip ->
                             ClipTemplate (
                                 clip = clip,
                                 icns = loadedIcns[clip.source ?: ""],
                                 macApp = allApps[clip.source ?: ""],
-                                isSelected = clip in selectedPinnedClips,
+                                isSelected = clip in selectedClips,
                                 isSearching = true,
                                 searchParams = clipState.searchParams
                             ) { action ->
@@ -342,7 +338,6 @@ fun ClipTemplate (
         modifier = Modifier
     ) {
         val interactionSource = remember { MutableInteractionSource() }
-//        val isHovered by interactionSource.collectIsHoveredAsState()
         val isHovered = false
 
         val timeCopiedTextAnim by animateColorAsState(if (isHovered) Transparent else Color.Gray)
@@ -365,7 +360,7 @@ fun ClipTemplate (
                 }
             } else {
                 Icon(
-                    painter = painterResource(Res.drawable.pin),
+                    painter = painterResource(Res.drawable.clippr_status_icon_thicker),
                     contentDescription = null,
                     modifier = Modifier
                         .size(30.dp)
@@ -408,7 +403,7 @@ fun ClipTemplate (
                         modifier = Modifier, verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = buildHighlightedAnnotatedString(formatText(clip.content), listOf(searchParams)),
+                            text = highlightedAnnotatedString(formatText(clip.content), listOf(searchParams)),
                             color = Color.Black,
                             overflow = TextOverflow.Ellipsis,
                             maxLines = 1,
@@ -423,6 +418,29 @@ fun ClipTemplate (
                         Modifier
                             .align(Alignment.End)
                     ){
+                        if (isSearching && clip.isPinned) {
+                            Row (
+                                modifier = Modifier
+                                    .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
+                                    .clip(RoundedCornerShape(90.dp))
+                                    .height(22.dp)
+                                    .background(Color.Black)
+                                    .clickable(false) {}
+                                    .padding(horizontal = 15.dp), verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(Res.drawable.clippr_status_icon_thicker),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .height(16.dp)
+                                        .clip(corners(90.dp)),
+                                    tint = Color.White
+                                )
+                            }
+
+                            Spacer(Modifier.width(7.dp))
+                        }
+
                         if (macApp != null) {
                             clip.source?.let {
                                 Row (
@@ -431,6 +449,9 @@ fun ClipTemplate (
                                         .clip(RoundedCornerShape(90.dp))
                                         .height(22.dp)
                                         .background(timeCopiedBackgroundAnim)
+                                        .clickable(!isSearching) {
+                                            onAction(ClipAction.FilterBySource(clip.source))
+                                        }
                                         .padding(horizontal = 7.dp), verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     if (icns != null) {
@@ -453,7 +474,7 @@ fun ClipTemplate (
                                     Spacer(Modifier.width(5.dp))
 
                                     Text (
-                                        text = buildHighlightedAnnotatedString(macApp.name, listOf(searchParams)),
+                                        text = highlightedAnnotatedString(macApp.name.coerce(30), listOf(searchParams)),
                                         fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
                                         color = timeCopiedTextAnim,
                                         fontSize = 11.sp
@@ -470,6 +491,9 @@ fun ClipTemplate (
                                 .clip(RoundedCornerShape(90.dp))
                                 .height(22.dp)
                                 .background(Color.White)
+                                .clickable(!isSearching) {
+                                    onAction(ClipAction.FilterByType(clip.associatedIcon.toClipType()))
+                                }
                                 .padding(horizontal = 7.dp), verticalAlignment = Alignment.CenterVertically
                         ){
                             Canvas(
@@ -482,7 +506,7 @@ fun ClipTemplate (
                             Spacer(Modifier.width(5.dp))
 
                             Text (
-                                text = buildHighlightedAnnotatedString(clipTypeToDesc(clip.associatedIcon), listOf(searchParams)),
+                                text = highlightedAnnotatedString(clipTypeToDesc(clip.associatedIcon), listOf(searchParams)),
                                 fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
                                 color = timeCopiedTextAnim,
                                 fontSize = 11.sp
@@ -498,6 +522,7 @@ fun ClipTemplate (
                                     .clip(RoundedCornerShape(90.dp))
                                     .height(22.dp)
                                     .background(timeCopiedBackgroundAnim)
+                                    .clickable(false) {}
                                     .padding(horizontal = 7.dp), verticalAlignment = Alignment.CenterVertically
                             ){
                                 val lines = clip.content.lines().size
@@ -539,6 +564,7 @@ fun ClipTemplate (
                                 .clip(RoundedCornerShape(90.dp))
                                 .height(22.dp)
                                 .background(timeCopiedBackgroundAnim)
+                                .clickable(false) {}
                                 .padding(horizontal = 7.dp),
                             fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
                             color = timeCopiedTextAnim,

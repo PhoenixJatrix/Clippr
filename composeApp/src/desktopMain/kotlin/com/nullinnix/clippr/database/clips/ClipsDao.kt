@@ -26,4 +26,7 @@ interface ClipsDao {
 
     @Query("DELETE FROM clips WHERE :currentEpoch - copiedAt > 2592000 AND NOT isPinned")
     suspend fun deleteUnpinnedOlderThan30(currentEpoch: Long)
+
+    @Query("DELETE FROM clips WHERE clipID IN (:clipsToDelete)")
+    suspend fun deleteSelected(clipsToDelete: List<String>)
 }

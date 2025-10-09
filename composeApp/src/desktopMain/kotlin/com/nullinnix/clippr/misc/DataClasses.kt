@@ -40,10 +40,10 @@ data class ClipsState (
     val currentTab: Tab = Tab.ClipsTab,
     val isSearching: Boolean = false,
     val searchParams: String = "",
-    val selectedPinnedClips: Set<Clip> = emptySet(),
-    val selectedOtherClips: Set<Clip> = emptySet(),
+    val selectedClips: Set<Clip> = emptySet(),
     val protoFilters: Filters = Filters(),
     val searchFilter: Filters = Filters(),
+    val customFilterApplied: Boolean = false,
     val searchResults: List<Clip> = emptyList(),
     val showFilters: Boolean = false,
     val isOnGoingSearch: Boolean = false
@@ -75,7 +75,9 @@ data class SettingsState (
 
 data class MiscViewModelState (
     val allApps: Map<String, MacApp> = emptyMap(),
-    val loadedIcns: Map<String, ImageBitmap> = emptyMap()
+    val loadedIcns: Map<String, ImageBitmap> = emptyMap(),
+    val metaHeldDown: Boolean = false,
+    val altHeldDown: Boolean = false
 )
 
 data class MacApp(

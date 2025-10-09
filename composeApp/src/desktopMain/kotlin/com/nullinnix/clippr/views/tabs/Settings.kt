@@ -1,15 +1,21 @@
 package com.nullinnix.clippr.views.tabs
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.LocalScrollbarStyle
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
@@ -43,64 +49,79 @@ fun Settings (
 
     val scrollState = rememberScrollState()
 
-    Column (
+    Box (
         modifier = Modifier
-            .verticalScroll(state = scrollState)
-            .padding(10.dp)
-    ){
-        Spacer(Modifier.height(15.dp))
+            .fillMaxSize()
+    ) {
+        Column (
+            modifier = Modifier
+                .verticalScroll(state = scrollState)
+                .padding(10.dp)
+                .padding(end = 20.dp)
+        ){
+            Spacer(Modifier.height(15.dp))
 
-        SettingsCheckBoxElement(
-            title = "Recording enabled",
-            description = "Enable recording to save copied items",
-            isChecked = recordingEnabled
-        ) {
-            settingsViewModel.onAction(SettingsAction.ToggleEnableClipping)
+            SettingsCheckBoxElement(
+                title = "Recording enabled",
+                description = "Enable recording to save copied items",
+                isChecked = recordingEnabled
+            ) {
+                settingsViewModel.onAction(SettingsAction.ToggleEnableClipping)
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            SettingsCheckBoxElement(
+                title = "Start recording on login. Read more below",
+                description = "Start recording clips automatically whenever the device is started (and recording is enabled)",
+                isChecked = startAtLogin,
+                enabled = startAtLogin,
+                extras = "Go to System Settings -> General -> Login Items and Extensions. Click + then add Clippr"
+            ) {
+                settingsViewModel.onAction(SettingsAction.ToggleStartAtLogin)
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            SettingsCheckBoxElement(
+                title = "Enable ⌘ + ⇧ + V (Command + Shift + V) shortcut",
+                description = "Enable the shortcut to show/hide the app when it's running. (Requires app restart)",
+                isChecked = enableMetaShiftVPopup
+            ) {
+                settingsViewModel.onAction(SettingsAction.ToggleEnableMetaShiftV)
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            SettingsCheckBoxElement(
+                title = "Clear unpinned on login",
+                description = "Delete all unpinned clips when the device is started",
+                isChecked = clearAllUnpinnedClipsOnDeviceStart
+            ) {
+                settingsViewModel.onAction(SettingsAction.ToggleClearAllUnpinnedDevicesOnStart)
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            SettingsCheckBoxElement(
+                title = "Clear unpinned after 30 days",
+                description = "Delete any unpinned clip after 30 days",
+                isChecked = deleteUnpinnedClipsAfter30Days
+            ) {
+                settingsViewModel.onAction(SettingsAction.ToggleDeleteUnpinnedAfter30)
+            }
+
+            Spacer(Modifier.height(20.dp))
         }
 
-        Spacer(Modifier.height(20.dp))
-
-        SettingsCheckBoxElement(
-            title = "Start recording on login. Read more below",
-            description = "Start recording clips automatically whenever the device is started (and recording is enabled)",
-            isChecked = startAtLogin,
-            enabled = startAtLogin,
-            extras = "Go to System Settings -> General -> Login Items and Extensions. Click + then add Clippr"
-        ) {
-            settingsViewModel.onAction(SettingsAction.ToggleStartAtLogin)
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        SettingsCheckBoxElement(
-            title = "Enable ⌘ + ⇧ + V (Command + Shift + V) shortcut",
-            description = "Enable the shortcut to show/hide the app when it's running. (Requires app restart)",
-            isChecked = enableMetaShiftVPopup
-        ) {
-            settingsViewModel.onAction(SettingsAction.ToggleEnableMetaShiftV)
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        SettingsCheckBoxElement(
-            title = "Clear unpinned on login",
-            description = "Delete all unpinned clips when the device is started",
-            isChecked = clearAllUnpinnedClipsOnDeviceStart
-        ) {
-            settingsViewModel.onAction(SettingsAction.ToggleClearAllUnpinnedDevicesOnStart)
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        SettingsCheckBoxElement(
-            title = "Clear unpinned after 30 days",
-            description = "Delete any unpinned clip after 30 days",
-            isChecked = deleteUnpinnedClipsAfter30Days
-        ) {
-            settingsViewModel.onAction(SettingsAction.ToggleDeleteUnpinnedAfter30)
-        }
-
-        Spacer(Modifier.height(20.dp))
+        VerticalScrollbar (
+            adapter = rememberScrollbarAdapter(scrollState),
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .fillMaxHeight()
+                .padding(end = 10.dp, bottom = 15.dp, top = 25.dp),
+            style = LocalScrollbarStyle.current.copy(minimalHeight = 35.dp)
+        )
     }
 }
 

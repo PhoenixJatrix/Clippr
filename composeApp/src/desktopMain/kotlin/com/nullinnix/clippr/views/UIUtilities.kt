@@ -318,6 +318,7 @@ fun SearchBar (
 ) {
     val widthAnim by animateDpAsState(if (isSearching) window.width.dp else 300.dp)
     val searchParams = clipState.searchParams
+    val customFiltersApplied = clipState.customFilterApplied
 
     val focusRequester by remember {
         mutableStateOf(FocusRequester())
@@ -354,7 +355,7 @@ fun SearchBar (
                 .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
                 .clip(corners(90.dp))
                 .background(HeaderColor)
-                .noGleamTaps {
+                .noGleamTaps (!isSearching) {
                     onAction(SearchAction.OnSearchStart)
                 }
                 .padding(10.dp)
@@ -425,20 +426,32 @@ fun SearchBar (
         Spacer(Modifier.width(10.dp))
 
         if (isSearching) {
-            Icon(
-                painter = painterResource(Res.drawable.filter),
-                contentDescription = "",
-                tint = Color.Black,
-                modifier = Modifier
-                    .size(40.dp)
-                    .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
-                    .clip(corners(90.dp))
-                    .background(Color.White)
-                    .clickable {
-                        onAction(SearchAction.Filter)
+            Box {
+                Icon (
+                    painter = painterResource(Res.drawable.filter),
+                    contentDescription = "",
+                    tint = Color.Black,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                        .clip(corners(90.dp))
+                        .background(Color.White)
+                        .clickable {
+                            onAction(SearchAction.Filter)
+                        }
+                        .padding(10.dp)
+                )
+
+                if (customFiltersApplied) {
+                    Canvas (
+                        modifier = Modifier
+                            .size(10.dp)
+                            .align(Alignment.TopEnd)
+                    ) {
+                        drawCircle(color = Color.Red)
                     }
-                    .padding(10.dp)
-            )
+                }
+            }
         }
     }
 }

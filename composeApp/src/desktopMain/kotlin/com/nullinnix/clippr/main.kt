@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -22,6 +23,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
@@ -141,26 +143,37 @@ fun main() {
                         .focusable()
                         .onPreviewKeyEvent {event ->
                             println("event = ${event.key}")
+                            var intercepted = false
+                            val clipsState = clipsViewModel.clipsState.value
+                            val miscViewModelState = miscViewModel.state.value
 
                             if (event.type == KeyEventType.KeyDown) {
                                 when (event.key) {
                                     Key.MetaLeft, Key.MetaRight -> {
+                                        miscViewModel.setMetaHeldDown(true)
+                                        intercepted = true
+                                    }
 
+                                    Key.AltLeft, Key.AltRight -> {
+                                        miscViewModel.setAltHeldDown(true)
+                                        intercepted = true
                                     }
 
                                     Key.Escape -> {
                                         for (consumer in EscPriorityConsumers.entries) {
                                             when (consumer) {
                                                 EscPriorityConsumers.FilterEsc -> {
-                                                    if (clipsViewModel.clipsState.value.showFilters) {
+                                                    if (clipsState.showFilters) {
                                                         clipsViewModel.setShowFilters(false)
+                                                        intercepted = true
                                                         break
                                                     }
                                                 }
 
                                                 EscPriorityConsumers.SearchEsc -> {
-                                                    if (clipsViewModel.clipsState.value.isSearching) {
+                                                    if (clipsState.isSearching) {
                                                         clipsViewModel.setIsSearching(false)
+                                                        intercepted = true
                                                         break
                                                     }
                                                 }
@@ -170,17 +183,56 @@ fun main() {
 
                                     Key.Enter -> {
                                         clipsViewModel.searchAndFilter(true)
+                                        intercepted = true
+                                    }
+
+                                    Key.F -> {
+                                        if (miscViewModelState.metaHeldDown && clipsState.currentTab == Tab.ClipsTab) {
+                                            clipsViewModel.setIsSearching(true)
+                                            intercepted = true
+                                        }
+                                    }
+
+                                    Key.Comma -> {
+                                        if (miscViewModelState.metaHeldDown && !clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab) {
+                                            clipsViewModel.switchTab(Tab.SettingsTab)
+                                            intercepted = true
+                                        }
+                                    }
+
+                                    Key.Delete -> {
+                                        if (clipsState.selectedClips.isNotEmpty()) {
+                                            if (showMacConfirmDialog("Delete selected clips?", "${clipsState.selectedClips.size }${if (clipsState.selectedClips.size == 1) " clip" else " clips"} will be deleted")) {
+                                                intercepted = true
+                                                clipsViewModel.deleteSelected()
+                                                clipsViewModel.setIsSearching(false)
+                                            }
+                                        }
+                                    }
+
+                                    Key.A -> {
+                                        if (miscViewModelState.metaHeldDown && clipsState.isSearching && clipsState.searchResults.isNotEmpty()) {
+                                            clipsViewModel.setSelectedClips(clipsState.searchResults.toSet())
+                                            intercepted = true
+                                        }
                                     }
                                 }
                             } else if (event.type == KeyEventType.KeyUp) {
                                 when (event.key) {
                                     Key.MetaLeft, Key.MetaRight -> {
+                                        miscViewModel.setMetaHeldDown(false)
+                                        intercepted = true
+                                    }
 
+                                    Key.AltLeft, Key.AltRight -> {
+                                        miscViewModel.setAltHeldDown(false)
+                                        intercepted = true
                                     }
                                 }
                             }
 
-                            !clipsViewModel.clipsState.value.isSearching && !clipsViewModel.clipsState.value.showFilters
+                            intercepted
+//                            !clipsViewModel.clipsState.value.isSearching && !clipsViewModel.clipsState.value.showFilters
                         }
                 ){
                     Theme {

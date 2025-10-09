@@ -11,7 +11,6 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
@@ -316,7 +315,7 @@ fun LocalDateTime.startOfDay(): LocalDateTime {
     return LocalDateTime.of(this.year, this.month, this.dayOfMonth, 0, 0, 0)
 }
 
-fun buildHighlightedAnnotatedString(
+fun highlightedAnnotatedString (
     text: String,
     keywords: List<String>,
     caseSensitive: Boolean = false,

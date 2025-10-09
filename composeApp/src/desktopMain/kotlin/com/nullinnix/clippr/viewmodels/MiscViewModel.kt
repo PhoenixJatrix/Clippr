@@ -34,4 +34,16 @@ class MiscViewModel: ViewModel() {
             it.copy(loadedIcns = icns)
         }
     }
+
+    fun setMetaHeldDown(value: Boolean) {
+        _state.update {
+            it.copy(metaHeldDown = value)
+        }
+    }
+
+    fun setAltHeldDown(value: Boolean) {
+        _state.update {
+            it.copy(altHeldDown = value)
+        }
+    }
 }

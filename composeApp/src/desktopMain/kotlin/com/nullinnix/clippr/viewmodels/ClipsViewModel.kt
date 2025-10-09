@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.nullinnix.clippr.database.clips.ClipsDao
 import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipAction
+import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.ClipsState
 import com.nullinnix.clippr.misc.Filters
 import com.nullinnix.clippr.misc.Tab
@@ -86,6 +87,28 @@ class ClipsViewModel(
             is ClipAction.Search -> {
                 searchAndFilter()
             }
+
+            is ClipAction.FilterBySource -> {
+                _clipsState.update {
+                    it.copy(
+                        searchParams = "",
+                        protoFilters = Filters(sources = setOf(action.source), types = it.protoFilters.types),
+                    )
+                }
+
+                searchAndFilter(true)
+            }
+
+            is ClipAction.FilterByType -> {
+                _clipsState.update {
+                    it.copy(
+                        searchParams = "",
+                        protoFilters = Filters(types = setOf(action.type), sources = it.protoFilters.sources),
+                    )
+                }
+
+                searchAndFilter(true)
+            }
         }
     }
 
@@ -139,6 +162,17 @@ class ClipsViewModel(
         }
     }
 
+    fun deleteSelected() {
+        viewModelScope.launch {
+            log("delete all selected clips", "deleteSelected")
+            clipsDao.deleteSelected(
+                clipsToDelete = clipsState.value.selectedClips.map {
+                    it.clipID
+                }
+            )
+        }
+    }
+
     fun deleteUnpinnedOlderThan30() {
         viewModelScope.launch {
             log("delete all unpinned clips older than 30 days", "deleteUnpinnedOlderThan30")
@@ -156,8 +190,7 @@ class ClipsViewModel(
             _clipsState.update {
                 it.copy(
                     searchParams = "",
-                    selectedOtherClips = setOf(),
-                    selectedPinnedClips = setOf(),
+                    selectedClips = emptySet(),
                     isOnGoingSearch = false,
                     protoFilters = Filters(sources = miscViewModel.state.value.allApps.keys),
                     searchFilter = Filters(sources = miscViewModel.state.value.allApps.keys),
@@ -182,41 +215,27 @@ class ClipsViewModel(
     }
     
     fun toggleSelectClip(clip: Clip) {
-        if (clip.isPinned) {
-            _clipsState.update {
-                if (clip in it.selectedPinnedClips) {
-                    it.copy(selectedPinnedClips = it.selectedPinnedClips - clip)
-                } else {
-                    it.copy(selectedPinnedClips = it.selectedPinnedClips + clip)
-                }
-            }
-        } else {
-            _clipsState.update {
-                if (clip in it.selectedOtherClips) {
-                    it.copy(selectedOtherClips = it.selectedOtherClips - clip)
-                } else {
-                    it.copy(selectedOtherClips = it.selectedOtherClips + clip)
-                }
+        _clipsState.update {
+            if (clip in it.selectedClips) {
+                it.copy(selectedClips = it.selectedClips - clip)
+            } else {
+                it.copy(selectedClips = it.selectedClips + clip)
             }
         }
     }
 
-    fun setSelectedPinnedClips (value: Set<Clip>) {
+    fun setSelectedClips (value: Set<Clip>) {
         _clipsState.update {
-            it.copy(selectedPinnedClips = value)
-        }
-    }
-
-    fun setSelectedOtherClips (value: Set<Clip>) {
-        _clipsState.update {
-            it.copy(selectedOtherClips = value)
+            it.copy(selectedClips = value)
         }
     }
 
     fun searchAndFilter (searchWithFilters: Boolean = false) {
         viewModelScope.launch {
             _clipsState.update {
-                it.copy(searchFilter = it.protoFilters, showFilters = false)
+                val customFilterApplied = it.protoFilters.sources.size != miscViewModel.state.value.allApps.size || it.protoFilters.pinState != null || it.protoFilters.types.size != ClipType.entries.size || it.protoFilters.copyTime != null || it.protoFilters.lineCount != null
+
+                it.copy(searchFilter = it.protoFilters, showFilters = false, isSearching = true, customFilterApplied = customFilterApplied)
             }
 
             if (clipsState.value.searchParams.isNotEmpty() || searchWithFilters) {

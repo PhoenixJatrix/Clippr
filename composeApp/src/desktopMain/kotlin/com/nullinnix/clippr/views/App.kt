@@ -127,7 +127,7 @@ fun App (
                                     clipsViewModel.setIsSearching(false)
                                 }
                                 SearchAction.OnSearchStart -> {
-                                    clipsViewModel.setIsSearching(true)
+                                    clipsViewModel.searchAndFilter(true)
                                 }
                                 is SearchAction.SearchParamsChanged -> {
                                     clipsViewModel.setSearchParams(action.params)

@@ -569,13 +569,17 @@ suspend fun search(searchParams: String, filters: Filters, clips: List<Clip>, al
                 typeMatches.add(clip)
             }
         }
-    } else {
-        tempClips.addAll(clips)
-    }
 
-    tempClips.addAll(contentMatches)
-    tempClips.addAll(sourceMatches)
-    tempClips.addAll(typeMatches)
+        tempClips.addAll(contentMatches)
+        tempClips.addAll(sourceMatches)
+        tempClips.addAll(typeMatches)
+    } else {
+        val sorted = clips.sortedBy {
+            it.copiedAt
+        }
+
+        tempClips.addAll(sorted.reversed())
+    }
 
     return@withContext filterClips(filters = filters, clips = tempClips)
 }

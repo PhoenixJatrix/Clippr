@@ -6,6 +6,8 @@ sealed interface ClipAction {
     data class OnCopyToClipboard(val clip: Clip): ClipAction
     data class OnAddClip(val clip: Clip): ClipAction
     data class ToggleSelectClip(val clip: Clip): ClipAction
+    data class FilterBySource(val source: String): ClipAction
+    data class FilterByType(val type: ClipType): ClipAction
     object Search: ClipAction
 }
 
