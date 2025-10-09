@@ -31,7 +31,6 @@ import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
-import java.util.logging.Filter
 import javax.swing.JOptionPane
 
 var lastCopiedItemHash = ""
@@ -554,159 +553,105 @@ fun clipTypeToColor(type: String): Color {
     }
 }
 
-suspend fun search(searchParams: String, filters: Filters, pinnedClips: List<Clip>, otherClips: List<Clip>, allApps: Map<String, MacApp>): Pair<List<Clip>, List<Clip>> = withContext(Dispatchers.Default) {
-    val tempPinned = mutableSetOf<Clip>()
-    val tempOther = mutableSetOf<Clip>()
+suspend fun search(searchParams: String, filters: Filters, clips: List<Clip>, allApps: Map<String, MacApp>): List<Clip> = withContext(Dispatchers.Default) {
+    val tempClips = mutableListOf<Clip>()
+    val contentMatches = mutableListOf<Clip>()
+    val sourceMatches = mutableListOf<Clip>()
+    val typeMatches = mutableListOf<Clip>()
 
     if (searchParams.isNotEmpty()) {
-        //content search
-        for (clip in pinnedClips) {
+        for (clip in clips) {
             if ((searchParams.lowercase() in clip.content.lowercase())) {
-                tempPinned.add(clip)
-            }
-        }
-        for (clip in otherClips) {
-            if (searchParams.lowercase() in clip.content.lowercase()) {
-                tempOther.add(clip)
-            }
-        }
-
-        //source search
-        for (clip in pinnedClips) {
-            if (searchParams.lowercase() in (allApps[clip.source]?.name?.lowercase() ?: "")) {
-                tempPinned.add(clip)
-            }
-        }
-        for (clip in otherClips) {
-            if (searchParams.lowercase() in (allApps[clip.source]?.name?.lowercase() ?: "")) {
-                tempOther.add(clip)
-            }
-        }
-
-        //clip type search
-        for (clip in pinnedClips) {
-            if (searchParams.lowercase() in clipTypeToDesc(clip.associatedIcon).lowercase()) {
-                tempPinned.add(clip)
-            }
-        }
-        for (clip in otherClips) {
-            if (searchParams.lowercase() in clipTypeToDesc(clip.associatedIcon).lowercase()) {
-                tempOther.add(clip)
+                contentMatches.add(clip)
+            } else if (searchParams.lowercase() in (allApps[clip.source]?.name?.lowercase() ?: "")) {
+                sourceMatches.add(clip)
+            } else if (searchParams.lowercase() in clipTypeToDesc(clip.associatedIcon).lowercase()) {
+                typeMatches.add(clip)
             }
         }
     } else {
-        tempPinned.addAll(pinnedClips)
-        tempOther.addAll(otherClips)
+        tempClips.addAll(clips)
     }
 
-    val r = filterClips(filters = filters, pinnedClips = tempPinned, otherClips = tempOther)
+    tempClips.addAll(contentMatches)
+    tempClips.addAll(sourceMatches)
+    tempClips.addAll(typeMatches)
 
-    println("filters = $filters, f = ${r.first.size}")
-
-    return@withContext r
+    return@withContext filterClips(filters = filters, clips = tempClips)
 }
 
-suspend fun filterClips(filters: Filters, pinnedClips: Set<Clip>, otherClips: Set<Clip>): Pair<List<Clip>, List<Clip>> = withContext(Dispatchers.Default) {
-    var pinnedMatches = pinnedClips
-    var otherMatches = otherClips
+suspend fun filterClips(filters: Filters, clips: List<Clip>): List<Clip> = withContext(Dispatchers.Default) {
+    var matches = clips.toMutableList()
 
     //by type
     run {
-        val tempPinned = mutableSetOf<Clip>()
-        val tempOther = mutableSetOf<Clip>()
+        val temp = mutableListOf<Clip>()
 
-        for (clip in pinnedClips) {
+        for (clip in matches) {
             if (clip.associatedIcon.toClipType() in filters.types) {
-                tempPinned.add(clip)
+                temp.add(clip)
             }
         }
 
-        for (clip in otherClips) {
-            if (clip.associatedIcon.toClipType() in filters.types) {
-                tempOther.add(clip)
-            }
-        }
-
-        pinnedMatches = tempPinned
-        otherMatches = tempOther
+        matches = temp
     }
-
-    println("filters = $filters, fh1 = ${pinnedMatches.size}")
 
     // by sources
     run {
-        val tempPinned = mutableSetOf<Clip>()
-        val tempOther = mutableSetOf<Clip>()
+        val temp = mutableListOf<Clip>()
 
-        for (clip in pinnedMatches) {
+        for (clip in matches) {
             if (clip.source in filters.sources || (clip.source == null && filters.sources.contains("unknown"))) {
-                tempPinned.add(clip)
+                temp.add(clip)
             }
         }
 
-        for (clip in otherMatches) {
-            if (clip.source in filters.sources || (clip.source == null && filters.sources.contains("unknown"))) {
-                tempOther.add(clip)
-            }
-        }
-
-        pinnedMatches = tempPinned
-        otherMatches = tempOther
+        matches = temp
     }
-
-    println("filters = $filters, fh2 = ${pinnedMatches.size}")
 
     //by copy time
     if (filters.copyTime != null) {
-        val tempPinned = mutableSetOf<Clip>()
-        val tempOther = mutableSetOf<Clip>()
+        val temp = mutableListOf<Clip>()
         val dateTime = LocalDateTime.ofEpochSecond(filters.copyTime, 0, ZoneOffset.UTC).startOfDay()
 
-        for (clip in pinnedMatches) {
+        for (clip in matches) {
             if (dateTime.toEpochSecond(ZoneOffset.UTC) == LocalDateTime.ofEpochSecond(clip.copiedAt, 0, ZoneOffset.UTC).startOfDay().toEpochSecond(ZoneOffset.UTC)) {
-                tempPinned.add(clip)
+                temp.add(clip)
             }
         }
 
-        for (clip in otherMatches) {
-            if (dateTime.toEpochSecond(ZoneOffset.UTC) == LocalDateTime.ofEpochSecond(clip.copiedAt, 0, ZoneOffset.UTC).startOfDay().toEpochSecond(ZoneOffset.UTC)) {
-                tempOther.add(clip)
-            }
-        }
-
-        pinnedMatches = tempPinned
-        otherMatches = tempOther
+        matches = temp
     }
 
     //by line count
     if (filters.lineCount != null) {
-        val tempPinned = mutableSetOf<Clip>()
-        val tempOther = mutableSetOf<Clip>()
+        val temp = mutableListOf<Clip>()
 
-        for (clip in pinnedMatches) {
+        for (clip in matches) {
             if (filters.lineCount == clip.content.lines().size) {
-                tempPinned.add(clip)
+                temp.add(clip)
             }
         }
 
-        for (clip in otherMatches) {
-            if (filters.lineCount == clip.content.lines().size) {
-                tempOther.add(clip)
-            }
-        }
-
-        pinnedMatches = tempPinned
-        otherMatches = tempOther
+        matches = temp
     }
 
     //by pin state
     if (filters.pinState != null) {
-        if (filters.pinState) {
-            otherMatches = emptySet()
-        } else {
-            pinnedMatches = emptySet()
+        val temp = mutableListOf<Clip>()
+
+        for (clip in matches) {
+            if (filters.pinState) {
+                if (clip.isPinned)
+                    temp.add(clip)
+            } else {
+                if (!clip.isPinned)
+                    temp.add(clip)
+            }
         }
+
+        matches = temp
     }
 
-    return@withContext Pair(pinnedMatches.toList(), otherMatches.toList())
+    return@withContext matches.toList()
 }

@@ -161,7 +161,7 @@ class ClipsViewModel(
                     isOnGoingSearch = false,
                     protoFilters = Filters(sources = miscViewModel.state.value.allApps.keys),
                     searchFilter = Filters(sources = miscViewModel.state.value.allApps.keys),
-                    searchResults = Pair(emptyList(), emptyList())
+                    searchResults = emptyList()
                 )
             }
         }
@@ -175,7 +175,7 @@ class ClipsViewModel(
 
     fun setSearchParams (value: String) {
         _clipsState.update {
-            it.copy(searchParams = value, searchResults = if (value.isBlank()) Pair(emptyList(), emptyList()) else it.searchResults)
+            it.copy(searchParams = value, searchResults = if (value.isBlank()) emptyList() else it.searchResults)
         }
 
         searchAndFilter()
@@ -225,7 +225,7 @@ class ClipsViewModel(
                 _clipsState.update {
                     it.copy(isOnGoingSearch = true)
                 }
-                val searchResults = search(searchParams = clipsState.value.searchParams, filters = clipsState.value.searchFilter, pinnedClips = clipsState.value.pinnedClips, otherClips = clipsState.value.otherClips, allApps = miscViewModel.state.value.allApps)
+                val searchResults = search(searchParams = clipsState.value.searchParams, filters = clipsState.value.searchFilter, clips = clipsState.value.pinnedClips + clipsState.value.otherClips, allApps = miscViewModel.state.value.allApps)
 
                 delay(300)
 

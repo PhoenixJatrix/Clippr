@@ -44,7 +44,7 @@ data class ClipsState (
     val selectedOtherClips: Set<Clip> = emptySet(),
     val protoFilters: Filters = Filters(),
     val searchFilter: Filters = Filters(),
-    val searchResults: Pair<List<Clip>, List<Clip>> = Pair(emptyList(), emptyList()),
+    val searchResults: List<Clip> = emptyList(),
     val showFilters: Boolean = false,
     val isOnGoingSearch: Boolean = false
 )

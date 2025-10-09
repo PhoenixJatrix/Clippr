@@ -1,6 +1,5 @@
 package com.nullinnix.clippr.views.tabs
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -8,7 +7,6 @@ import androidx.compose.foundation.LocalScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -30,7 +28,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
-import androidx.compose.material.ProgressIndicatorDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -87,8 +84,7 @@ fun Clips (
     val pinnedClips = clipState.pinnedClips
     val otherClips = clipState.otherClips
 
-    val pinnedSearchResults = clipState.searchResults.first
-    val otherSearchResults = clipState.searchResults.second
+    val searchResults = clipState.searchResults
 
     val isSearching = clipState.isSearching
 
@@ -129,15 +125,13 @@ fun Clips (
                                 Row (
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    AnimatedVisibility(isSearching) {
-                                        RadioButton(
-                                            isSelected = pinnedClips.size == selectedPinnedClips.size
-                                        ) {
-                                            if (pinnedClips.size == selectedPinnedClips.size) {
-                                                clipsViewModel.setSelectedPinnedClips(emptySet())
-                                            } else {
-                                                clipsViewModel.setSelectedPinnedClips(pinnedClips.toSet())
-                                            }
+                                    RadioButton(
+                                        isSelected = pinnedClips.size == selectedPinnedClips.size
+                                    ) {
+                                        if (pinnedClips.size == selectedPinnedClips.size) {
+                                            clipsViewModel.setSelectedPinnedClips(emptySet())
+                                        } else {
+                                            clipsViewModel.setSelectedPinnedClips(pinnedClips.toSet())
                                         }
                                     }
 
@@ -172,7 +166,7 @@ fun Clips (
                             icns = loadedIcns[clip.source ?: ""],
                             macApp = allApps[clip.source ?: ""],
                             isSelected = clip in selectedPinnedClips,
-                            isSearching = isSearching,
+                            isSearching = false,
                             searchParams = clipState.searchParams
                         ) { action ->
                             clipsViewModel.onAction(action)
@@ -191,15 +185,13 @@ fun Clips (
                                     .padding(10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                AnimatedVisibility(isSearching) {
-                                    RadioButton(
-                                        isSelected = otherClips.size == selectedOtherClips.size
-                                    ) {
-                                        if (otherClips.size == selectedOtherClips.size) {
-                                            clipsViewModel.setSelectedOtherClips(emptySet())
-                                        } else {
-                                            clipsViewModel.setSelectedOtherClips(otherClips.toSet())
-                                        }
+                                RadioButton(
+                                    isSelected = otherClips.size == selectedOtherClips.size
+                                ) {
+                                    if (otherClips.size == selectedOtherClips.size) {
+                                        clipsViewModel.setSelectedOtherClips(emptySet())
+                                    } else {
+                                        clipsViewModel.setSelectedOtherClips(otherClips.toSet())
                                     }
                                 }
 
@@ -219,7 +211,7 @@ fun Clips (
                             icns = loadedIcns[clip.source ?: ""],
                             macApp = allApps[clip.source ?: ""],
                             isSelected = clip in selectedOtherClips,
-                            isSearching = isSearching,
+                            isSearching = false,
                             searchParams = clipState.searchParams
                         ) { action ->
                             clipsViewModel.onAction(action)
@@ -280,7 +272,7 @@ fun Clips (
                 )
             }
         } else {
-            if (pinnedSearchResults.isNotEmpty() || otherSearchResults.isNotEmpty()) {
+            if (searchResults.isNotEmpty()) {
                 Box {
                     LazyColumn (
                         state = searchScrollState,
@@ -291,28 +283,13 @@ fun Clips (
                             Spacer(Modifier.height(15.dp))
                         }
 
-                        items(pinnedSearchResults) { clip ->
+                        items(searchResults) { clip ->
                             ClipTemplate (
                                 clip = clip,
                                 icns = loadedIcns[clip.source ?: ""],
                                 macApp = allApps[clip.source ?: ""],
                                 isSelected = clip in selectedPinnedClips,
-                                isSearching = isSearching,
-                                searchParams = clipState.searchParams
-                            ) { action ->
-                                clipsViewModel.onAction(action)
-                            }
-
-                            Spacer(Modifier.height(20.dp))
-                        }
-
-                        items(otherSearchResults) { clip ->
-                            ClipTemplate(
-                                clip = clip,
-                                icns = loadedIcns[clip.source ?: ""],
-                                macApp = allApps[clip.source ?: ""],
-                                isSelected = clip in selectedOtherClips,
-                                isSearching = isSearching,
+                                isSearching = true,
                                 searchParams = clipState.searchParams
                             ) { action ->
                                 clipsViewModel.onAction(action)
