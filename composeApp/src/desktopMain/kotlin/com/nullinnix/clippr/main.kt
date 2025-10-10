@@ -105,7 +105,7 @@ fun main() {
 
                 LaunchedEffect(composeWindowState) {
                     while (true) {
-                        if (!clipsViewModel.clipsState.value.isSearching) {
+                        if (!clipsViewModel.clipsState.value.isSearching && clipsViewModel.clipsState.value.currentTab != Tab.SettingsTab) {
                             focusRequester.requestFocus()
                         }
 

@@ -11,12 +11,14 @@ import com.nullinnix.clippr.misc.Filters
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.focusWindow
 import com.nullinnix.clippr.misc.log
-import com.nullinnix.clippr.misc.monitorOldClips
 import com.nullinnix.clippr.misc.onCopyToClipboard
 import com.nullinnix.clippr.misc.search
 import com.nullinnix.clippr.misc.toClip
 import com.nullinnix.clippr.misc.toClipEntity
 import com.nullinnix.clippr.showMain
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,10 +38,10 @@ class ClipsViewModel(
 ): ViewModel() {
     private val _clipsState = MutableStateFlow(ClipsState())
     val clipsState = _clipsState.asStateFlow()
+    var job: Job? = null
 
     init {
-        deleteUnpinnedOlderThan30()
-        monitorOldClips(clipsViewModel = this@ClipsViewModel)
+        monitorOldClips()
 
         clipsDao
             .getOtherClips(clipsState.value.currentOtherClipsFetchOffset + FETCH_OFFSET)
@@ -58,6 +60,26 @@ class ClipsViewModel(
                 }
             }
             .launchIn(viewModelScope)
+    }
+
+    fun monitorOldClips () {
+        job?.cancel()
+
+        job = CoroutineScope(Dispatchers.Default).launch {
+            while(true) {
+                //delay 10 seconds before start
+                delay(10000)
+
+                val settingsState = settingsViewModel.settings.value
+
+                log("monitor clips", "monitorOldClips")
+                println("still running the job every ${settingsState.clipDeleteTime.unit * settingsState.clipDeleteTime.timeCode.secondsPer} second")
+
+                deleteOldUnpinnedClips()
+
+                delay((settingsState.clipDeleteTime.unit * settingsState.clipDeleteTime.timeCode.secondsPer).toLong() * 1000)
+            }
+        }
     }
 
     fun onAction (action: ClipAction) {
@@ -173,11 +195,11 @@ class ClipsViewModel(
         }
     }
 
-    fun deleteUnpinnedOlderThan30() {
+    fun deleteOldUnpinnedClips() {
         viewModelScope.launch {
-            log("delete all unpinned clips older than 30 days", "deleteUnpinnedOlderThan30")
-
-            clipsDao.deleteUnpinnedOlderThan30(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC))
+            val settingsState = settingsViewModel.settings.value
+            log("delete all unpinned clips older ${settingsState.clipDeleteTime.unit * settingsState.clipDeleteTime.timeCode.secondsPer}", "deleteOldUnpinnedClips")
+            clipsDao.deleteOldUnpinnedClips(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC), (settingsState.clipDeleteTime.unit * settingsState.clipDeleteTime.timeCode.secondsPer).toLong())
         }
     }
 

@@ -14,8 +14,10 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
+import com.nullinnix.clippr.viewmodels.SettingsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonArray
@@ -240,21 +242,6 @@ fun epochToReadableTime (epoch: Long): String {
 
 fun String.coerce(maxChar: Int): String {
     return if (this.length <= maxChar) this else this.substring(0, maxChar - 3) + "..."
-}
-
-fun monitorOldClips(
-    clipsViewModel: ClipsViewModel
-) {
-    CoroutineScope(Dispatchers.IO).launch {
-        while(true) {
-            //every 30 minutes
-            delay(1800 * 1000)
-
-            log("monitor clips", "monitorOldClips")
-
-            clipsViewModel.deleteUnpinnedOlderThan30()
-        }
-    }
 }
 
 fun log(content: String, from: String) {

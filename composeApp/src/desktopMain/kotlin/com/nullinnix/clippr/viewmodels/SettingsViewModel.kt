@@ -56,12 +56,6 @@ class SettingsViewModel (
                 lastCopiedItemHash = ""
             }
 
-            SettingsAction.ToggleDeleteUnpinnedAfter30 -> {
-                _settings.update {
-                    it.copy(deleteUnpinnedClipsAfter30Days = !it.deleteUnpinnedClipsAfter30Days)
-                }
-            }
-
             SettingsAction.ToggleStartAtLogin -> {
                 viewModelScope.launch {
                     if (!isInLoginItems()) {
@@ -93,6 +87,12 @@ class SettingsViewModel (
                     it.copy(sourcesExceptions = action.value)
                 }
             }
+
+            is SettingsAction.SetClipDeleteTime -> {
+                _settings.update {
+                    it.copy(clipDeleteTime = action.value)
+                }
+            }
         }
 
         save()
@@ -100,7 +100,9 @@ class SettingsViewModel (
 
     fun save () {
         viewModelScope.launch {
-            settingsDao.save(SettingsClass(settingsState = settings.value))
+            if (settings.value.clipDeleteTime.unit > 0) {
+                settingsDao.save(SettingsClass(settingsState = settings.value))
+            }
         }
     }
 }

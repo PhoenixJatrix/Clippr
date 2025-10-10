@@ -16,14 +16,4 @@ class SettingsTypeConverters {
     fun toSettings(json: String): SettingsState {
         return Json.decodeFromString<SettingsState>(json)
     }
-
-    @TypeConverter
-    fun fromClipType(clipType: ClipType): String {
-        return Json.encodeToString(clipType)
-    }
-
-    @TypeConverter
-    fun toClipType(json: String): ClipType {
-        return Json.decodeFromString<ClipType>(json)
-    }
 }

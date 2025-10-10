@@ -1,10 +1,14 @@
 package com.nullinnix.clippr.views.tabs
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +25,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -33,6 +42,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -41,13 +52,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import clippr.composeapp.generated.resources.Res
 import clippr.composeapp.generated.resources.finder
+import com.nullinnix.clippr.misc.ClipDeleteTime
 import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.MiscViewModelState
 import com.nullinnix.clippr.misc.SettingsAction
+import com.nullinnix.clippr.misc.TimeCode
 import com.nullinnix.clippr.misc.clipTypeToColor
 import com.nullinnix.clippr.misc.clipTypeToDesc
 import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.theme.HeaderColor
+import com.nullinnix.clippr.theme.Transparent
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
 import com.nullinnix.clippr.views.CheckBox
 import com.nullinnix.clippr.views.RadioButton
@@ -57,13 +71,13 @@ import org.jetbrains.compose.resources.painterResource
 @Composable
 fun Settings (
     settingsViewModel: SettingsViewModel,
-    miscViewModelState: MiscViewModelState
+    miscViewModelState: MiscViewModelState,
+    restartClipsMonitor: () -> Unit
 ) {
     val settingsState = settingsViewModel.settings.collectAsState().value
     val recordingEnabled = settingsState.recordingEnabled
     val enableMetaShiftVPopup = settingsState.enableMetaShiftVPopup
     val clearAllUnpinnedClipsOnDeviceStart = settingsState.clearAllUnpinnedClipsOnDeviceStart
-    val deleteUnpinnedClipsAfter30Days = settingsState.deleteUnpinnedClipsAfter30Days
     val startAtLogin = settingsState.startAtLogin
     val sourcesExceptions = settingsState.sourcesExceptions
     val clipTypesExceptions = settingsState.clipTypesExceptions
@@ -71,6 +85,8 @@ fun Settings (
     val allApps = miscViewModelState.allApps
     val loadedIcns = miscViewModelState.loadedIcns
     val scrollState = rememberScrollState()
+
+    val clipDeleteTime = settingsState.clipDeleteTime
 
     Box (
         modifier = Modifier
@@ -126,12 +142,103 @@ fun Settings (
 
             Spacer(Modifier.height(20.dp))
 
-            SettingsCheckBoxElement(
-                title = "Clear unpinned after 30 days",
-                description = "Delete any unpinned clip after 30 days",
-                isChecked = deleteUnpinnedClipsAfter30Days
+            SettingsElement(
+                title = "When to delete unpinned clips",
+                description = "Delete any unpinned clip after specified time"
             ) {
-                settingsViewModel.onAction(SettingsAction.ToggleDeleteUnpinnedAfter30)
+                var expanded by remember { mutableStateOf(false) }
+                var entry by remember { mutableStateOf("${clipDeleteTime.unit}") }
+                val entryShadowAnim by animateColorAsState(if (clipDeleteTime.unit < 1) Color.Red else Color.Black, animationSpec = tween(500))
+
+                Row(
+                    modifier = Modifier,
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TextField (
+                        value = entry,
+                        onValueChange = { newValue ->
+                            if (newValue.all { it.isDigit() } ) {
+                                try {
+                                    if (newValue.isNotEmpty() && newValue.toInt() > 0) {
+                                        settingsViewModel.onAction(SettingsAction.SetClipDeleteTime(ClipDeleteTime(unit = newValue.toInt(), timeCode = clipDeleteTime.timeCode)))
+                                        restartClipsMonitor()
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+
+                                entry = newValue
+                            }
+                        },
+                        singleLine = true,
+                        modifier = Modifier
+                            .width(100.dp)
+                            .height(50.dp)
+                            .shadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = entryShadowAnim, spotColor = entryShadowAnim)
+                            .clip(corners(10.dp))
+                            .background(Color.White),
+                        colors = TextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedIndicatorColor = Transparent,
+                            unfocusedIndicatorColor = Transparent,
+                            focusedLabelColor = Transparent,
+                            unfocusedLabelColor = Transparent,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+
+                    Spacer(Modifier.width(2.dp))
+
+                    Box {
+                        Box(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .height(50.dp)
+                                .shadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                                .clip(corners(10.dp))
+                                .background(Color.White)
+                                .clickable {
+                                    expanded = true
+                                }, contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = clipDeleteTime.timeCode.desc + if (clipDeleteTime.unit != 1) "s" else ""
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            TimeCode.entries.forEach { option ->
+                                DropdownMenuItem(
+                                    onClick = {
+                                        settingsViewModel.onAction(SettingsAction.SetClipDeleteTime(ClipDeleteTime(unit = clipDeleteTime.unit, timeCode = option)))
+                                        restartClipsMonitor()
+                                        expanded = false
+                                    },
+                                    content = {
+                                        Text(
+                                            text = option.desc + if (clipDeleteTime.unit != 1) "s" else ""
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                if (clipDeleteTime.unit == 0) {
+                    Text(
+                        text = "Must not be 0",
+                        color = Color.Red
+                    )
+                }
             }
 
             Spacer(Modifier.height(20.dp))
@@ -190,7 +297,7 @@ fun Settings (
                         }
                     }
 
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(15.dp))
 
                     SettingsElement(
                         title = "Sources",
@@ -302,7 +409,7 @@ fun SettingsCheckBoxElement (
     Column (
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(10.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+            .shadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(corners(10.dp))
             .background(Color.White)
     ){
@@ -343,15 +450,16 @@ fun SettingsCheckBoxElement (
                     .padding(start = 20.dp, end = 20.dp, top = 20.dp),
                 color = Color.Black,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp
+                fontSize = 15.sp
             )
         }
 
         Text(
             text = description,
             modifier = Modifier
-                .padding(20.dp),
-            color = Color.DarkGray
+                .padding(10.dp),
+            color = Color.Black,
+            fontSize = 13.sp
         )
     }
 }
@@ -366,9 +474,10 @@ fun SettingsElement (
     Column (
         modifier = Modifier
             .fillMaxWidth()
-            .shadow( if (isMainHeading) 10.dp else 2.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+            .shadow( if (isMainHeading) 7.dp else 2.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(corners(10.dp))
             .background(Color.White)
+            .animateContentSize()
     ){
         Row (
             modifier = Modifier
@@ -380,7 +489,7 @@ fun SettingsElement (
                 text = title,
                 modifier = Modifier
                     .weight(1f),
-                fontSize = if (isMainHeading) 17.sp else 14.sp,
+                fontSize = if (isMainHeading) 17.sp else 13.sp,
                 fontWeight = FontWeight.SemiBold
             )
         }
@@ -399,7 +508,7 @@ fun SettingsElement (
                 modifier = Modifier
                     .padding(start = 10.dp, end = 10.dp, top = 10.dp),
                 color = Color.Black,
-                fontSize = 16.sp
+                fontSize = 13.sp
             )
         }
 

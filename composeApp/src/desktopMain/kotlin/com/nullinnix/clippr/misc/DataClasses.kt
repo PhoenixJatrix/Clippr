@@ -69,10 +69,10 @@ data class SettingsState (
     val clearAllUnpinnedClipsOnDeviceStart: Boolean = false,
     val maximumRememberableUnpinnedClips: Int = 1000,
     val enableMetaShiftVPopup: Boolean = false,
-    val deleteUnpinnedClipsAfter30Days: Boolean = false,
     val startAtLogin: Boolean = false,
     val sourcesExceptions: Set<String> = emptySet(),
     val clipTypesExceptions: Set<ClipType> = emptySet(),
+    val clipDeleteTime: ClipDeleteTime = ClipDeleteTime(TimeCode.Day, 7)
 )
 
 data class MiscViewModelState (
@@ -86,6 +86,18 @@ data class MacApp(
     val name: String,
     val bundleId: String,
     val iconPath: String?
+)
+
+enum class TimeCode (val secondsPer: Int, val desc: String){
+    Minute(60, "Minute"),
+    Hour(Minute.secondsPer * 60, "Hour"),
+    Day(Hour.secondsPer * 24, "Day"),
+}
+
+@Serializable
+data class ClipDeleteTime (
+    val timeCode: TimeCode,
+    val unit: Int
 )
 
 const val CLIP_ID = "clipID"

@@ -150,7 +150,10 @@ fun App (
                         Tab.SettingsTab -> {
                             Settings(
                                 settingsViewModel = settingsViewModel,
-                                miscViewModelState = miscViewModelState
+                                miscViewModelState = miscViewModelState,
+                                restartClipsMonitor = {
+                                    clipsViewModel.monitorOldClips()
+                                }
                             )
                         }
                     }

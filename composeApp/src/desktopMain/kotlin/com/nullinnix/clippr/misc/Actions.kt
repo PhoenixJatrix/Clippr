@@ -45,11 +45,11 @@ sealed interface SettingsAction {
     object ToggleClearAllUnpinnedDevicesOnStart: SettingsAction
     object ToggleEnableMetaShiftV: SettingsAction
     object ToggleEnableClipping: SettingsAction
-    object ToggleDeleteUnpinnedAfter30: SettingsAction
     object ToggleStartAtLogin: SettingsAction
     data class SetStartAtLogin(val value: Boolean): SettingsAction
     data class SetClipTypes(val value: Set<ClipType>): SettingsAction
     data class SetSourceExceptions(val value: Set<String>): SettingsAction
+    data class SetClipDeleteTime(val value: ClipDeleteTime): SettingsAction
 }
 
 sealed interface SearchAction {
