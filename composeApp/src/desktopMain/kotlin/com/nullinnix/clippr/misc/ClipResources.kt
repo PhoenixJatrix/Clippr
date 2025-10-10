@@ -36,6 +36,8 @@ import javax.swing.JOptionPane
 var lastCopiedItemHash = ""
 
 fun getClipboard (
+    sourceExceptions: Set<String>,
+    clipTypeExceptions: Set<ClipType>,
     onCopy: (Clip) -> Unit,
 ) {
     try {
@@ -44,10 +46,8 @@ fun getClipboard (
 
         if (contents.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
             val paths = contents.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
-            val hash = paths.toString().hash()
 
-            if (lastCopiedItemHash != hash) {
-                lastCopiedItemHash = hash
+            if (lastCopiedItemHash != paths.toString().hash()) {
 
                 for (index in paths.indices) {
                     if ((paths[index] as File).isDirectory) {
@@ -56,23 +56,25 @@ fun getClipboard (
 
                         log("dir ${path.path} to dir from $source", "")
                         println("dir ${path.path} to dir from $source")
-//                        log("dir ${path.path} to red", "")
-//                        println("file ${path.path} to ${Files.probeContentType(Paths.get(path.path))}")
 
-                        onCopy(
-                            Clip(
-                                clipID = UUID.randomUUID().toString(),
-                                content = path.path,
-                                copiedAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
-                                isPinned = false,
-                                mimeType = MIME_TYPE_DIR,
-                                isImage = false,
-                                exists = path.exists(),
-                                pinnedAt = 0L,
-                                associatedIcon = ClipType.FOLDER.id,
-                                source = source ?: "unknown"
+                        if (!sourceExceptions.contains(source ?: ClipType.UNKNOWN) && !clipTypeExceptions.contains(ClipType.FOLDER)) {
+                            onCopy(
+                                Clip(
+                                    clipID = UUID.randomUUID().toString(),
+                                    content = path.path,
+                                    copiedAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
+                                    isPinned = false,
+                                    mimeType = MIME_TYPE_DIR,
+                                    isImage = false,
+                                    exists = path.exists(),
+                                    pinnedAt = 0L,
+                                    associatedIcon = ClipType.FOLDER.id,
+                                    source = source ?: "unknown"
+                                )
                             )
-                        )
+
+                            lastCopiedItemHash = paths.toString().hash()
+                        }
                     } else {
                         val path = paths[index] as File
                         val source = getClipSource()
@@ -80,23 +82,29 @@ fun getClipboard (
 
                         log("file ${path.path} to $mimeType from $source", "")
                         println("file ${path.path} to $mimeType from $source")
-//                        log("dir ${path.path} to red", "")
-//                        println("file ${path.path} to ${Files.probeContentType(Paths.get(path.path))}")
 
-                        onCopy(
-                            Clip(
-                                clipID = UUID.randomUUID().toString(),
-                                content = path.path,
-                                copiedAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
-                                isPinned = false,
-                                mimeType = mimeType,
-                                isImage = false,
-                                exists = path.exists(),
-                                pinnedAt = 0L,
-                                associatedIcon = getIconForContent(mimeType, path.path.lowercase()),
-                                source = source ?: "unknown"
+                        val resolvedType = getIconForContent(mimeType, path.path.lowercase())
+
+                        println("sources = $sourceExceptions == $source, type = $clipTypeExceptions == $resolvedType")
+
+                        if (!sourceExceptions.contains(source ?: ClipType.UNKNOWN) && !clipTypeExceptions.contains(resolvedType.toClipType())) {
+                            onCopy(
+                                Clip(
+                                    clipID = UUID.randomUUID().toString(),
+                                    content = path.path,
+                                    copiedAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
+                                    isPinned = false,
+                                    mimeType = mimeType,
+                                    isImage = false,
+                                    exists = path.exists(),
+                                    pinnedAt = 0L,
+                                    associatedIcon = resolvedType,
+                                    source = source ?: "unknown"
+                                )
                             )
-                        )
+
+                            lastCopiedItemHash = paths.toString().hash()
+                        }
                     }
                 }
             }
@@ -105,26 +113,33 @@ fun getClipboard (
             val hash = content.hash()
 
             if (lastCopiedItemHash != hash) {
-                lastCopiedItemHash = hash
                 val source = getClipSource()
 
                 log("str $content from $source", "")
                 println("str $content from $source")
 
-                onCopy(
-                    Clip(
-                        clipID = UUID.randomUUID().toString(),
-                        content = content,
-                        copiedAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
-                        isPinned = false,
-                        mimeType = MIME_TYPE_PLAIN_TEXT,
-                        isImage = false,
-                        exists = true,
-                        pinnedAt = 0L,
-                        associatedIcon = getIconForContent(MIME_TYPE_PLAIN_TEXT, content),
-                        source = source ?: "unknown"
+                val resolvedType = getIconForContent(MIME_TYPE_PLAIN_TEXT, content)
+
+                println("sources = $sourceExceptions == $source, type = $clipTypeExceptions == $resolvedType")
+
+                if (!sourceExceptions.contains(source ?: ClipType.UNKNOWN) && !clipTypeExceptions.contains(resolvedType.toClipType())) {
+                    onCopy(
+                        Clip(
+                            clipID = UUID.randomUUID().toString(),
+                            content = content,
+                            copiedAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
+                            isPinned = false,
+                            mimeType = MIME_TYPE_PLAIN_TEXT,
+                            isImage = false,
+                            exists = true,
+                            pinnedAt = 0L,
+                            associatedIcon = resolvedType,
+                            source = source ?: "unknown"
+                        )
                     )
-                )
+
+                    lastCopiedItemHash = hash
+                }
             }
         }
     } catch (e: Exception) {
@@ -246,46 +261,33 @@ fun getIconForContent (
     }
 }
 
-fun onCopyToClipboard(clip: Clip) {
+fun onCopyToClipboard(clip: Clip, altHeldDown: Boolean) {
     val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-    val customTransferable = CustomTransferable(clip)
+    val customTransferable = CustomTransferable(clip, altHeldDown)
 
     lastCopiedItemHash = customTransferable.hash ?: lastCopiedItemHash
 
     clipboard.setContents(customTransferable, CustomClipboardOwner())
 }
 
-fun mimeTypeToDataFlavor(mimeType: String): List<DataFlavor> {
-    val mediaType = mimeType.split("/")[0]
-    val subType = mimeType.split("/")[1]
-
-    return when (mediaType) {
-        "text" -> {
-            when(subType) {
-                "plain" -> {
-                    listOf(DataFlavor.stringFlavor)
-                }
-
-                else -> {
-                    listOf(DataFlavor.javaFileListFlavor)
-                }
-            }
-        }
-
-        "image" -> {
-            listOf(DataFlavor.imageFlavor)
+fun mimeTypeToDataFlavor(clipType: ClipType, altHeldDown: Boolean): List<DataFlavor> {
+    return when (clipType) {
+        ClipType.PLAIN_TEXT -> {
+            listOf(DataFlavor.stringFlavor)
         }
 
         else -> {
-            listOf(DataFlavor.javaFileListFlavor)
+            if (altHeldDown) {
+                listOf(DataFlavor.javaFileListFlavor)
+            } else {
+                listOf(DataFlavor.stringFlavor)
+            }
         }
     }
 }
 
-class CustomTransferable(private val clip: Clip): Transferable {
-    val mediaType = clip.mimeType.split("/")[0]
-    val subType = clip.mimeType.split("/")[1]
-    val dataFlavors = mimeTypeToDataFlavor(clip.mimeType)
+class CustomTransferable(private val clip: Clip, private val altHeldDown: Boolean): Transferable {
+    val dataFlavors = mimeTypeToDataFlavor(clip.associatedIcon.toClipType(), altHeldDown)
     var hash: String? = null
 
     init {
@@ -305,30 +307,20 @@ class CustomTransferable(private val clip: Clip): Transferable {
     }
 
     override fun getTransferData(p0: DataFlavor?): Any {
-        return when (mediaType) {
-            "text" -> {
-                when(subType) {
-                    "plain" -> {
-                        clip.content
-                    }
-
-                    else -> {
-                        listOf(File(clip.content))
-                    }
-                }
-
-            }
-
-            "image" -> {
-                println("copying image")
-
-                val file = File(clip.content)
-                println(file.exists())
+        return when (clip.associatedIcon.toClipType()) {
+            ClipType.PLAIN_TEXT -> {
+                println("copying plain text")
+                clip.content
             }
 
             else -> {
-                println("copying other")
-                listOf(File(clip.content))
+                if (altHeldDown) {
+                    println("copying file")
+                    listOf(File(clip.content))
+                } else {
+                    println("copying plain text of a file")
+                    clip.content
+                }
             }
         }
     }
@@ -344,7 +336,7 @@ class CustomClipboardOwner: ClipboardOwner {
 }
 
 fun pasteWithRobot(clip: Clip) {
-    onCopyToClipboard(clip)
+    onCopyToClipboard(clip, false)
 
     Thread.sleep(50)
 

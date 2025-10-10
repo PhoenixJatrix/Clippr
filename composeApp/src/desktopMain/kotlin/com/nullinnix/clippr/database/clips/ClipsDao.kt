@@ -15,11 +15,11 @@ interface ClipsDao {
     @Delete
     suspend fun delete(clip: ClipEntity)
 
-    @Query("SELECT * FROM clips WHERE not isPinned ORDER BY copiedAt DESC LIMIT :limit OFFSET 0")
-    fun getOtherClips(limit: Int): Flow<List<ClipEntity>>
+    @Query("SELECT * FROM clips WHERE not isPinned ORDER BY copiedAt DESC")
+    fun getOtherClips(): Flow<List<ClipEntity>>
 
-    @Query("SELECT * FROM clips WHERE isPinned ORDER BY pinnedAt DESC LIMIT :limit OFFSET 0")
-    fun getPinnedClips(limit: Int): Flow<List<ClipEntity>>
+    @Query("SELECT * FROM clips WHERE isPinned ORDER BY pinnedAt DESC")
+    fun getPinnedClips(): Flow<List<ClipEntity>>
 
     @Query("DELETE FROM clips WHERE NOT isPinned")
     suspend fun deleteAllUnpinned()

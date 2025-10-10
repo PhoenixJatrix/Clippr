@@ -35,8 +35,6 @@ data class Clip (
 data class ClipsState (
     val pinnedClips: List<Clip> = emptyList(),
     val otherClips: List<Clip> = emptyList(),
-    val currentPinnedClipsFetchOffset: Int = 0,
-    val currentOtherClipsFetchOffset: Int = 0,
     val currentTab: Tab = Tab.ClipsTab,
     val isSearching: Boolean = false,
     val searchParams: String = "",
@@ -67,12 +65,12 @@ data class SettingsClass (
 data class SettingsState (
     val recordingEnabled: Boolean = true,
     val clearAllUnpinnedClipsOnDeviceStart: Boolean = false,
-    val maximumRememberableUnpinnedClips: Int = 1000,
+    val maximumRememberableUnpinnedClips: Int = 100,
     val enableMetaShiftVPopup: Boolean = false,
     val startAtLogin: Boolean = false,
     val sourcesExceptions: Set<String> = emptySet(),
     val clipTypesExceptions: Set<ClipType> = emptySet(),
-    val clipDeleteTime: ClipDeleteTime = ClipDeleteTime(TimeCode.Day, 7)
+    val clipDeleteTime: ClipDeleteTime = ClipDeleteTime(TimeCode.Day, 7),
 )
 
 data class MiscViewModelState (

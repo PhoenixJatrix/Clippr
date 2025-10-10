@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 sealed interface ClipAction {
     data class OnTogglePin(val clip: Clip): ClipAction
     data class OnDelete(val clip: Clip): ClipAction
-    data class OnCopyToClipboard(val clip: Clip): ClipAction
+    data class OnCopyToClipboard(val clip: Clip, val altHeldDown: Boolean): ClipAction
     data class OnAddClip(val clip: Clip): ClipAction
     data class ToggleSelectClip(val clip: Clip): ClipAction
     data class FilterBySource(val source: String): ClipAction
@@ -50,6 +50,7 @@ sealed interface SettingsAction {
     data class SetClipTypes(val value: Set<ClipType>): SettingsAction
     data class SetSourceExceptions(val value: Set<String>): SettingsAction
     data class SetClipDeleteTime(val value: ClipDeleteTime): SettingsAction
+    data class SetMaximumRememberableUnpinnedClips(val value: Int): SettingsAction
 }
 
 sealed interface SearchAction {

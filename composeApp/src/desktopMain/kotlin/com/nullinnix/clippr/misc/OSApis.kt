@@ -3,6 +3,7 @@ package com.nullinnix.clippr.misc
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.res.loadImageBitmap
+import com.nullinnix.clippr.viewmodels.SettingsViewModel
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.Pointer
@@ -82,17 +83,20 @@ fun registerKeyStroke (
 }
 
 fun listenForCopy(
+    settingsViewModel: SettingsViewModel,
     onCopy: (Clip) -> Unit
 ) {
     CoroutineScope(Dispatchers.IO).launch {
         while(true) {
-            getClipboard(
+            getClipboard (
+                sourceExceptions = settingsViewModel.settings.value.sourcesExceptions,
+                clipTypeExceptions = settingsViewModel.settings.value.clipTypesExceptions,
                 onCopy = {
                     onCopy(it)
                 }
             )
 
-            delay(5000)
+            delay(300)
         }
     }
 }

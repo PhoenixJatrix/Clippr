@@ -29,8 +29,6 @@ import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
-const val FETCH_OFFSET = 100
-
 class ClipsViewModel(
     private val clipsDao: ClipsDao,
     private val settingsViewModel: SettingsViewModel,
@@ -44,19 +42,29 @@ class ClipsViewModel(
         monitorOldClips()
 
         clipsDao
-            .getOtherClips(clipsState.value.currentOtherClipsFetchOffset + FETCH_OFFSET)
+            .getOtherClips()
             .onEach {
                 _clipsState.update { state ->
-                    state.copy(currentOtherClipsFetchOffset = state.currentOtherClipsFetchOffset + FETCH_OFFSET, otherClips = it.toClip())
+                    state.copy(otherClips = it.toClip())
+                }
+
+                if (it.size > settingsViewModel.settings.value.maximumRememberableUnpinnedClips) {
+                    val maxClips = settingsViewModel.settings.value.maximumRememberableUnpinnedClips
+
+                    println("size = ${it.size}, limit = $maxClips")
+
+                    val toDelete = it.subList(maxClips, it.size)
+
+                    deleteSpecified(toDelete.toClip())
                 }
             }
             .launchIn(viewModelScope)
 
         clipsDao
-            .getPinnedClips(clipsState.value.currentPinnedClipsFetchOffset + FETCH_OFFSET)
+            .getPinnedClips()
             .onEach {
                 _clipsState.update { state ->
-                    state.copy(currentPinnedClipsFetchOffset = state.currentPinnedClipsFetchOffset + FETCH_OFFSET, pinnedClips = it.toClip())
+                    state.copy(pinnedClips = it.toClip())
                 }
             }
             .launchIn(viewModelScope)
@@ -85,7 +93,7 @@ class ClipsViewModel(
     fun onAction (action: ClipAction) {
         when (action) {
             is ClipAction.OnCopyToClipboard -> {
-                onCopyToClipboard(clip = action.clip)
+                onCopyToClipboard(clip = action.clip, altHeldDown = action.altHeldDown)
             }
 
             is ClipAction.OnDelete -> {
@@ -189,6 +197,17 @@ class ClipsViewModel(
             log("delete all selected clips", "deleteSelected")
             clipsDao.deleteSelected(
                 clipsToDelete = clipsState.value.selectedClips.map {
+                    it.clipID
+                }
+            )
+        }
+    }
+
+    fun deleteSpecified(clips: List<Clip>) {
+        viewModelScope.launch {
+            log("delete all specified clips", "deleteSpecified")
+            clipsDao.deleteSelected (
+                clipsToDelete = clips.map {
                     it.clipID
                 }
             )

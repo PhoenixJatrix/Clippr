@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -42,8 +41,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -81,6 +78,7 @@ fun Settings (
     val startAtLogin = settingsState.startAtLogin
     val sourcesExceptions = settingsState.sourcesExceptions
     val clipTypesExceptions = settingsState.clipTypesExceptions
+    val maximumRememberableUnpinnedClips = settingsState.maximumRememberableUnpinnedClips
 
     val allApps = miscViewModelState.allApps
     val loadedIcns = miscViewModelState.loadedIcns
@@ -190,8 +188,6 @@ fun Settings (
                         )
                     )
 
-                    Spacer(Modifier.width(2.dp))
-
                     Box {
                         Box(
                             modifier = Modifier
@@ -243,6 +239,65 @@ fun Settings (
 
             Spacer(Modifier.height(20.dp))
 
+            SettingsElement(
+                title = "Maximum unpinned clips to remember",
+                description = "Maximum clips to save at a time. Older unpinned clips will be deleted if the limit is reached"
+            ) {
+                var entry by remember { mutableStateOf("$maximumRememberableUnpinnedClips") }
+                val entryShadowAnim by animateColorAsState(if (clipDeleteTime.unit < 1) Color.Red else Color.Black, animationSpec = tween(500))
+
+                Row(
+                    modifier = Modifier,
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TextField (
+                        value = entry,
+                        onValueChange = { newValue ->
+                            if (newValue.all { it.isDigit() } ) {
+                                try {
+                                    if (newValue.isNotEmpty() && newValue.toInt() > 0) {
+                                        settingsViewModel.onAction(SettingsAction.SetMaximumRememberableUnpinnedClips(newValue.toInt()))
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+
+                                entry = newValue
+                            }
+                        },
+                        singleLine = true,
+                        modifier = Modifier
+                            .width(100.dp)
+                            .height(50.dp)
+                            .shadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = entryShadowAnim, spotColor = entryShadowAnim)
+                            .clip(corners(10.dp))
+                            .background(Color.White),
+                        colors = TextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedIndicatorColor = Transparent,
+                            unfocusedIndicatorColor = Transparent,
+                            focusedLabelColor = Transparent,
+                            unfocusedLabelColor = Transparent,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                if (clipDeleteTime.unit == 0) {
+                    Text(
+                        text = "Must not be 0",
+                        color = Color.Red
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+
             SettingsElement (
                 title = "Exceptions",
                 content = {
@@ -258,7 +313,7 @@ fun Settings (
                             RadioButton(
                                 isSelected = clipTypesExceptions.size == ClipType.entries.size
                             ) {
-                                if (sourcesExceptions.size == ClipType.entries.size) {
+                                if (clipTypesExceptions.size == ClipType.entries.size) {
                                     settingsViewModel.onAction(SettingsAction.SetClipTypes(emptySet()))
                                 } else {
                                     settingsViewModel.onAction(SettingsAction.SetClipTypes(ClipType.entries.toSet()))

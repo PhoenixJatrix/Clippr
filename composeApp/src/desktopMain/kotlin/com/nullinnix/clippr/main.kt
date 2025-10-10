@@ -25,6 +25,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberTrayState
 import androidx.compose.ui.window.rememberWindowState
@@ -55,6 +56,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import org.jetbrains.compose.resources.painterResource
 import java.awt.Dimension
+import java.awt.Point
+import java.awt.Toolkit
 import java.awt.Window
 
 fun main() {
@@ -65,6 +68,7 @@ fun main() {
     val clipsViewModel = ClipsViewModel(clipsDatabase.clipsDao(), settingsViewModel, miscViewModel)
 
     val composeWindowStateRaw = MutableStateFlow<Window?>(null)
+    var coercedWindowPositionAndSize = false
 
     registerKeyStroke {
         if (settingsViewModel.settings.value.enableMetaShiftVPopup) {
@@ -76,7 +80,9 @@ fun main() {
         }
     }
 
-    listenForCopy {
+    listenForCopy (
+        settingsViewModel = settingsViewModel
+    ){
         clipsViewModel.onAction(ClipAction.OnAddClip(it))
     }
 
@@ -87,9 +93,9 @@ fun main() {
     }
 
     application {
-        if (showMain.collectAsState().value) {
-            val windowState = rememberWindowState()
+        val windowState = rememberWindowState()
 
+        if (showMain.collectAsState().value) {
             Window (
                 transparent = true,
                 undecorated = true,
@@ -99,6 +105,20 @@ fun main() {
                 },
                 title = "Clippr",
             ) {
+                LaunchedEffect(Unit) {
+                    if (!coercedWindowPositionAndSize) {
+                        val gd = window.graphicsConfiguration
+                        val insets = Toolkit.getDefaultToolkit().getScreenInsets(gd)
+                        val maxSize = Dimension(window.graphicsConfiguration.bounds.size.width, window.graphicsConfiguration.bounds.size.height - (insets.top + insets.bottom))
+                        val windowSize = window.size
+
+                        window.size = Dimension(window.width, maxSize.height)
+                        window.location = Point((maxSize.width / 2) - (windowSize.width / 2), insets.top)
+
+                        coercedWindowPositionAndSize = true
+                    }
+                }
+
                 var isFocused by remember { mutableStateOf(true) }
                 val composeWindowState = composeWindowStateRaw.collectAsState().value
                 val focusRequester = remember { FocusRequester() }
@@ -230,7 +250,6 @@ fun main() {
                             }
 
                             intercepted
-//                            !clipsViewModel.clipsState.value.isSearching && !clipsViewModel.clipsState.value.showFilters
                         }
                 ){
                     Theme {

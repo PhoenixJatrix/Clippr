@@ -9,6 +9,7 @@ import com.nullinnix.clippr.misc.SettingsState
 import com.nullinnix.clippr.misc.addToLoginItems
 import com.nullinnix.clippr.misc.isInLoginItems
 import com.nullinnix.clippr.misc.lastCopiedItemHash
+import com.nullinnix.clippr.misc.log
 import com.nullinnix.clippr.misc.removeFromLoginItems
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -93,6 +94,12 @@ class SettingsViewModel (
                     it.copy(clipDeleteTime = action.value)
                 }
             }
+
+            is SettingsAction.SetMaximumRememberableUnpinnedClips -> {
+                _settings.update {
+                    it.copy(maximumRememberableUnpinnedClips = action.value)
+                }
+            }
         }
 
         save()
@@ -101,6 +108,7 @@ class SettingsViewModel (
     fun save () {
         viewModelScope.launch {
             if (settings.value.clipDeleteTime.unit > 0) {
+                log("saving settings", "save")
                 settingsDao.save(SettingsClass(settingsState = settings.value))
             }
         }

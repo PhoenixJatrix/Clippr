@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
@@ -57,6 +58,9 @@ fun App (
         var onActualTabChanged by remember { mutableStateOf(false) }
 
         val miscViewModelState = miscViewModel.state.collectAsState().value
+
+        val clipLazyColumnScrollState = rememberLazyListState()
+        val clipSearchScrollState = rememberLazyListState()
 
         LaunchedEffect(currentTab) {
             pagerState.animateScrollToPage(
@@ -143,7 +147,8 @@ fun App (
                         Tab.ClipsTab -> {
                             Clips (
                                 clipsViewModel = clipsViewModel,
-                                miscViewModel = miscViewModel
+                                miscViewModel = miscViewModel,
+                                scrollStates = Pair(clipLazyColumnScrollState, clipSearchScrollState)
                             )
                         }
 

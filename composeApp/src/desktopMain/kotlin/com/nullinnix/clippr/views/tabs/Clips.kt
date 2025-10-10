@@ -1,6 +1,5 @@
 package com.nullinnix.clippr.views.tabs
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalScrollbarStyle
@@ -23,12 +22,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -68,10 +68,10 @@ import com.nullinnix.clippr.misc.formatText
 import com.nullinnix.clippr.misc.highlightedAnnotatedString
 import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.misc.toClipType
-import com.nullinnix.clippr.theme.Transparent
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
 import com.nullinnix.clippr.views.RadioButton
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
@@ -79,7 +79,8 @@ import org.jetbrains.compose.resources.painterResource
 @Composable
 fun Clips (
     clipsViewModel: ClipsViewModel,
-    miscViewModel: MiscViewModel
+    miscViewModel: MiscViewModel,
+    scrollStates: Pair<LazyListState, LazyListState>
 ) {
     val clipState = clipsViewModel.clipsState.collectAsState().value
     val pinnedClips = clipState.pinnedClips
@@ -98,9 +99,11 @@ fun Clips (
     val isHovered by showAllInteractionSource.collectIsHoveredAsState()
     var allPinnedClipsExpanded by remember { mutableStateOf(false) }
 
-    val scrollState = rememberLazyListState()
-    val searchScrollState = rememberLazyListState()
+    val scrollState = scrollStates.first
+    val searchScrollState = scrollStates.second
     val coroutine = rememberCoroutineScope()
+
+    val altHeldDown = miscViewModel.state.value.altHeldDown
 
     if (!isSearching) {
         if (pinnedClips.isNotEmpty() || otherClips.isNotEmpty()) {
@@ -156,7 +159,8 @@ fun Clips (
                             macApp = allApps[clip.source ?: ""],
                             isSelected = clip in selectedClips,
                             isSearching = false,
-                            searchParams = clipState.searchParams
+                            searchParams = clipState.searchParams,
+                            altHeldDown = altHeldDown
                         ) { action ->
                             clipsViewModel.onAction(action)
                         }
@@ -191,7 +195,8 @@ fun Clips (
                             macApp = allApps[clip.source ?: ""],
                             isSelected = clip in selectedClips,
                             isSearching = false,
-                            searchParams = clipState.searchParams
+                            searchParams = clipState.searchParams,
+                            altHeldDown = altHeldDown
                         ) { action ->
                             clipsViewModel.onAction(action)
                         }
@@ -286,7 +291,8 @@ fun Clips (
                                 macApp = allApps[clip.source ?: ""],
                                 isSelected = clip in selectedClips,
                                 isSearching = true,
-                                searchParams = clipState.searchParams
+                                searchParams = clipState.searchParams,
+                                altHeldDown = altHeldDown
                             ) { action ->
                                 clipsViewModel.onAction(action)
                             }
@@ -324,6 +330,7 @@ fun Clips (
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClipTemplate (
     isSearching: Boolean,
@@ -332,17 +339,23 @@ fun ClipTemplate (
     clip: Clip,
     icns: ImageBitmap?,
     macApp: MacApp?,
+    altHeldDown: Boolean,
     onAction: (ClipAction) -> Unit
 ) {
     Column (
         modifier = Modifier
     ) {
         val interactionSource = remember { MutableInteractionSource() }
-        val isHovered = false
+//            val isHovered = interactionSource.collectIsHoveredAsState().value
 
-        val timeCopiedTextAnim by animateColorAsState(if (isHovered) Transparent else Color.Gray)
-        val timeCopiedBackgroundAnim by animateColorAsState(if (isHovered) Transparent else Color.White)
-        val onHoverShadow by animateColorAsState(if (isHovered) Transparent else Color.Black)
+        var copiedTime by remember { mutableStateOf(epochToReadableTime(clip.copiedAt)) }
+
+        LaunchedEffect(Unit) {
+            while (true) {
+                copiedTime = epochToReadableTime(clip.copiedAt)
+                delay(5000)
+            }
+        }
 
         Row(
             modifier = Modifier
@@ -379,7 +392,7 @@ fun ClipTemplate (
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(end = 10.dp)
-                    .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
+                    .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
                     .clip(corners(15.dp))
                     .background(Color.White)
             ) {
@@ -387,7 +400,7 @@ fun ClipTemplate (
                     modifier = Modifier
                         .fillMaxSize()
                         .clickable {
-                            onAction(ClipAction.OnCopyToClipboard(clip))
+                            onAction(ClipAction.OnCopyToClipboard(clip, altHeldDown))
                         }
                         .hoverable(interactionSource)
                 ) {
@@ -421,7 +434,7 @@ fun ClipTemplate (
                         if (isSearching && clip.isPinned) {
                             Row (
                                 modifier = Modifier
-                                    .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
+                                    .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
                                     .clip(RoundedCornerShape(90.dp))
                                     .height(22.dp)
                                     .background(Color.Black)
@@ -445,10 +458,10 @@ fun ClipTemplate (
                             clip.source?.let {
                                 Row (
                                     modifier = Modifier
-                                        .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
+                                        .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
                                         .clip(RoundedCornerShape(90.dp))
                                         .height(22.dp)
-                                        .background(timeCopiedBackgroundAnim)
+                                        .background(Color.White)
                                         .clickable(!isSearching) {
                                             onAction(ClipAction.FilterBySource(clip.source))
                                         }
@@ -476,7 +489,7 @@ fun ClipTemplate (
                                     Text (
                                         text = highlightedAnnotatedString(macApp.name.coerce(30), listOf(searchParams)),
                                         fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                                        color = timeCopiedTextAnim,
+                                        color = Color.Gray,
                                         fontSize = 11.sp
                                     )
                                 }
@@ -487,7 +500,7 @@ fun ClipTemplate (
 
                         Row (
                             modifier = Modifier
-                                .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
+                                .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
                                 .clip(RoundedCornerShape(90.dp))
                                 .height(22.dp)
                                 .background(Color.White)
@@ -508,7 +521,7 @@ fun ClipTemplate (
                             Text (
                                 text = highlightedAnnotatedString(clipTypeToDesc(clip.associatedIcon), listOf(searchParams)),
                                 fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                                color = timeCopiedTextAnim,
+                                color = Color.Gray,
                                 fontSize = 11.sp
                             )
                         }
@@ -518,10 +531,10 @@ fun ClipTemplate (
                         if (clip.associatedIcon.toClipType() == ClipType.PLAIN_TEXT) {
                             Row (
                                 modifier = Modifier
-                                    .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
+                                    .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
                                     .clip(RoundedCornerShape(90.dp))
                                     .height(22.dp)
-                                    .background(timeCopiedBackgroundAnim)
+                                    .background(Color.White)
                                     .clickable(false) {}
                                     .padding(horizontal = 7.dp), verticalAlignment = Alignment.CenterVertically
                             ){
@@ -530,7 +543,7 @@ fun ClipTemplate (
                                     Text (
                                         text = "$lines lines",
                                         fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                                        color = timeCopiedTextAnim,
+                                        color = Color.Gray,
                                         fontSize = 11.sp
                                     )
 
@@ -540,7 +553,7 @@ fun ClipTemplate (
                                         modifier = Modifier
                                             .size(5.dp)
                                     ) {
-                                        drawCircle(color = timeCopiedTextAnim)
+                                        drawCircle(color = Color.Gray)
                                     }
 
                                     Spacer(Modifier.width(5.dp))
@@ -549,7 +562,7 @@ fun ClipTemplate (
                                 Text (
                                     text = "${clip.content.length} ${if (clip.content.length == 1) "char" else "chars"}",
                                     fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                                    color = timeCopiedTextAnim,
+                                    color = Color.Gray,
                                     fontSize = 11.sp
                                 )
                             }
@@ -557,20 +570,33 @@ fun ClipTemplate (
                             Spacer(Modifier.width(7.dp))
                         }
 
-                        Text(
-                            text = epochToReadableTime(clip.copiedAt),
+                        Text (
+                            text = copiedTime,
                             modifier = Modifier
-                                .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = onHoverShadow, spotColor = onHoverShadow)
+                                .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
                                 .clip(RoundedCornerShape(90.dp))
                                 .height(22.dp)
-                                .background(timeCopiedBackgroundAnim)
+                                .background(Color.White)
                                 .clickable(false) {}
                                 .padding(horizontal = 7.dp),
                             fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                            color = timeCopiedTextAnim,
+                            color = Color.Gray,
                             fontSize = 11.sp
                         )
                     }
+                }
+
+                if (altHeldDown && clip.associatedIcon.toClipType() != ClipType.PLAIN_TEXT) {
+                    Text (
+                        text = "⌥ + left click to copy as file",
+                        fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+                        color = Color.Black,
+                        fontSize = 11.sp,
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(start = 5.dp),
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
         }
