@@ -2,6 +2,7 @@ package com.nullinnix.clippr.views
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
@@ -27,8 +28,11 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -56,8 +60,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
 import clippr.composeapp.generated.resources.Res
 import clippr.composeapp.generated.resources.back
 import clippr.composeapp.generated.resources.check
@@ -65,13 +72,21 @@ import clippr.composeapp.generated.resources.close
 import clippr.composeapp.generated.resources.filter
 import clippr.composeapp.generated.resources.full_screen
 import clippr.composeapp.generated.resources.search
+import com.nullinnix.clippr.misc.Clip
+import com.nullinnix.clippr.misc.ClipAction
+import com.nullinnix.clippr.misc.ClipMenuAction
 import com.nullinnix.clippr.misc.ClipsState
 import com.nullinnix.clippr.misc.SearchAction
 import com.nullinnix.clippr.misc.Tab
+import com.nullinnix.clippr.misc.TimeCode
 import com.nullinnix.clippr.misc.corners
+import com.nullinnix.clippr.misc.desc
+import com.nullinnix.clippr.misc.getClipMenuActions
+import com.nullinnix.clippr.misc.info
 import com.nullinnix.clippr.misc.name
 import com.nullinnix.clippr.misc.noGleamCombinedClickable
 import com.nullinnix.clippr.misc.noGleamTaps
+import com.nullinnix.clippr.misc.shortcut
 import com.nullinnix.clippr.theme.HeaderColor
 import com.nullinnix.clippr.theme.Transparent
 import kotlinx.coroutines.CoroutineScope
@@ -552,6 +567,86 @@ fun PopupMenu (
             } else {
                 content()
             }
+        }
+    }
+}
+
+@Composable
+fun ClipDropDownMenu (
+    menuXPosition: Dp,
+    clip: Clip,
+    secondsBeforePaste: Int,
+    onAction: (ClipMenuAction) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var currentHoverAction by remember { mutableStateOf<ClipMenuAction?>(null) }
+
+    DropdownMenu(
+        expanded = true,
+        onDismissRequest = {
+            onDismiss()
+        },
+        offset = DpOffset(menuXPosition, 0.dp),
+        properties = PopupProperties(focusable = true),
+        modifier = Modifier
+            .padding(7.dp)
+            .clip(corners(10.dp))
+            .animateContentSize()
+    ) {
+        //paste in //customizable delay seconds as text meta + v
+        //paste in //customizable delay seconds as file alt = v
+        //copy as text meta + c
+        //copy as file alt + c
+        //pin/unpin meta + p
+        //preview as enter
+        //open link as alt + enter
+        //reveal in finder as alt + enter
+        //delete
+
+        getClipMenuActions(clip).forEach { option ->
+            val interactionSource = remember { MutableInteractionSource() }
+            val isHover = interactionSource.collectIsHoveredAsState().value
+
+            LaunchedEffect(isHover) {
+                if (isHover) {
+                    currentHoverAction = option
+                }
+            }
+
+            DropdownMenuItem (
+                onClick = {
+                    onAction(option)
+                },
+                content = {
+                    Row(
+                        modifier = Modifier
+                            .widthIn(min = 350.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = option.desc(secondsBeforePaste),
+                            fontSize = 14.sp,
+                            color = if (option == ClipMenuAction.Delete) Color.Red else Color.Black
+                        )
+
+                        Text(
+                            text = option.shortcut(),
+                            fontSize = 14.sp,
+                            color = Color.Black.copy(0.5f)
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .clip(corners(10.dp))
+                    .hoverable(interactionSource)
+            )
+        }
+
+        currentHoverAction?.let {
+            Text (
+                text = it.info(secondsBeforePaste),
+                color = Color.Black.copy(0.5f)
+            )
         }
     }
 }

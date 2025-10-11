@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.nullinnix.clippr.database.clips.ClipsDao
 import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipAction
+import com.nullinnix.clippr.misc.ClipMenuAction
 import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.ClipsState
 import com.nullinnix.clippr.misc.Filters
@@ -140,6 +141,10 @@ class ClipsViewModel(
                 searchAndFilter(true)
             }
         }
+    }
+
+    fun onClipMenuAction(action: ClipMenuAction) {
+
     }
 
     fun addClip(clip: Clip) {

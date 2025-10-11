@@ -218,7 +218,7 @@ fun main() {
                                         }
                                     }
 
-                                    Key.Delete -> {
+                                    Key.Backspace -> {
                                         if (clipsState.selectedClips.isNotEmpty()) {
                                             if (showMacConfirmDialog("Delete selected clips?", "${clipsState.selectedClips.size }${if (clipsState.selectedClips.size == 1) " clip" else " clips"} will be deleted")) {
                                                 intercepted = true

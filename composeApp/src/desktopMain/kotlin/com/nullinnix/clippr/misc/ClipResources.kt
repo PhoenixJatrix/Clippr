@@ -34,6 +34,7 @@ import java.util.UUID
 import javax.swing.JOptionPane
 
 var lastCopiedItemHash = ""
+var duplicateHandlerHash = ""
 
 fun getClipboard (
     sourceExceptions: Set<String>,
@@ -47,7 +48,8 @@ fun getClipboard (
         if (contents.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
             val paths = contents.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
 
-            if (lastCopiedItemHash != paths.toString().hash()) {
+            if (lastCopiedItemHash != paths.toString().hash() && duplicateHandlerHash != paths.toString().hash()) {
+                duplicateHandlerHash = paths.toString().hash()
 
                 for (index in paths.indices) {
                     if ((paths[index] as File).isDirectory) {
@@ -112,7 +114,8 @@ fun getClipboard (
             val content = contents.getTransferData(DataFlavor.stringFlavor) as String
             val hash = content.hash()
 
-            if (lastCopiedItemHash != hash) {
+            if (lastCopiedItemHash != hash  && duplicateHandlerHash != hash) {
+                duplicateHandlerHash = hash
                 val source = getClipSource()
 
                 log("str $content from $source", "")
@@ -650,4 +653,90 @@ suspend fun filterClips(filters: Filters, clips: List<Clip>): List<Clip> = withC
     }
 
     return@withContext matches.toList()
+}
+
+fun ClipMenuAction.desc(secondsBeforePaste: Int): String {
+    return when(this) {
+        ClipMenuAction.PasteAsText -> "Paste as plain text in ${secondsBeforePaste}s"
+        ClipMenuAction.PasteAsFile -> "Paste as file in ${secondsBeforePaste}s"
+        ClipMenuAction.CopyAsText -> "Copy as plain text"
+        ClipMenuAction.CopyAsFile -> "Copy as file"
+        ClipMenuAction.Pin -> "Pin"
+        ClipMenuAction.Unpin -> "Unpin"
+        ClipMenuAction.Preview -> "Preview clip"
+        ClipMenuAction.OpenAsLink -> "Open in browser"
+        ClipMenuAction.RevealInFinder -> "Reveal in Finder"
+        ClipMenuAction.Delete -> "Delete"
+    }
+}
+
+//paste in //customizable delay seconds as text meta + v
+//paste in //customizable delay seconds as file alt = v
+//copy as text meta + c
+//copy as file alt + c
+//pin/unpin meta + p
+//preview as enter
+//open link as alt + enter
+//reveal in finder as alt + enter
+//delete backspace
+
+fun ClipMenuAction.shortcut(): String {
+    return when(this) {
+        ClipMenuAction.PasteAsText -> "⌘ + V"
+        ClipMenuAction.PasteAsFile -> "⌥ + V"
+        ClipMenuAction.CopyAsText -> "⌘ + C"
+        ClipMenuAction.CopyAsFile -> "⌥ + C"
+        ClipMenuAction.Pin -> "⌘ + P"
+        ClipMenuAction.Unpin -> "⌘ + P"
+        ClipMenuAction.Preview -> "⏎"
+        ClipMenuAction.OpenAsLink -> "⌥ + ⏎"
+        ClipMenuAction.RevealInFinder -> "⌥ + ⏎"
+        ClipMenuAction.Delete -> "⌦"
+    }
+}
+
+fun ClipMenuAction.info(secondsBeforePaste: Int): String {
+    return when(this) {
+        ClipMenuAction.PasteAsText -> "Paste as plain text to focused window in ${secondsBeforePaste}s"
+        ClipMenuAction.PasteAsFile -> "Paste as file to focused window in ${secondsBeforePaste}s"
+        ClipMenuAction.CopyAsText -> "Copy this clip to global clipboard as plain text"
+        ClipMenuAction.CopyAsFile -> "Copy this clip to global clipboard a file"
+        ClipMenuAction.Pin -> "Pin this clip"
+        ClipMenuAction.Unpin -> "Unpin this clip"
+        ClipMenuAction.Preview -> "Open this clip in preview window"
+        ClipMenuAction.OpenAsLink -> "Open in a browser"
+        ClipMenuAction.RevealInFinder -> "Open the location of this clip if it exists"
+        ClipMenuAction.Delete -> "Delete clip"
+    }
+}
+
+fun getClipMenuActions(clip: Clip): List<ClipMenuAction> {
+    val clipActions = ClipMenuAction.entries.toMutableList()
+
+    if (clip.isPinned) {
+        clipActions.remove(ClipMenuAction.Pin)
+    } else {
+        clipActions.remove(ClipMenuAction.Unpin)
+    }
+
+    clipActions.remove(ClipMenuAction.OpenAsLink)
+
+    return when (clip.associatedIcon.toClipType()) {
+        ClipType.PLAIN_TEXT -> {
+            clipActions.remove(ClipMenuAction.PasteAsFile)
+            clipActions.remove(ClipMenuAction.CopyAsFile)
+            clipActions.remove(ClipMenuAction.RevealInFinder)
+            clipActions
+        }
+        ClipType.WEB -> {
+            clipActions.remove(ClipMenuAction.PasteAsFile)
+            clipActions.remove(ClipMenuAction.CopyAsFile)
+            clipActions.remove(ClipMenuAction.RevealInFinder)
+            clipActions.add(ClipMenuAction.OpenAsLink)
+            clipActions
+        }
+        else -> {
+            clipActions
+        }
+    }
 }

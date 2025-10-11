@@ -39,11 +39,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -57,6 +63,7 @@ import clippr.composeapp.generated.resources.clippr_status_icon_thicker
 import clippr.composeapp.generated.resources.finder
 import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipAction
+import com.nullinnix.clippr.misc.ClipMenuAction
 import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.MacApp
 import com.nullinnix.clippr.misc.clipTypeToColor
@@ -70,6 +77,7 @@ import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.misc.toClipType
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
+import com.nullinnix.clippr.views.ClipDropDownMenu
 import com.nullinnix.clippr.views.RadioButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -78,6 +86,7 @@ import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun Clips (
+    secondsBeforePaste: Int,
     clipsViewModel: ClipsViewModel,
     miscViewModel: MiscViewModel,
     scrollStates: Pair<LazyListState, LazyListState>
@@ -104,6 +113,8 @@ fun Clips (
     val coroutine = rememberCoroutineScope()
 
     val altHeldDown = miscViewModel.state.value.altHeldDown
+
+    var rightClickedClip by remember { mutableStateOf<String?>(null) }
 
     if (!isSearching) {
         if (pinnedClips.isNotEmpty() || otherClips.isNotEmpty()) {
@@ -160,10 +171,19 @@ fun Clips (
                             isSelected = clip in selectedClips,
                             isSearching = false,
                             searchParams = clipState.searchParams,
-                            altHeldDown = altHeldDown
-                        ) { action ->
-                            clipsViewModel.onAction(action)
-                        }
+                            altHeldDown = altHeldDown,
+                            rightClickedClip = rightClickedClip,
+                            secondsBeforePaste = secondsBeforePaste,
+                            onClipMenuAction = {
+                                clipsViewModel.onClipMenuAction(it)
+                            },
+                            onMenuShowEvent = {
+                                rightClickedClip = if (it) clip.clipID else null
+                            },
+                            onAction = { action ->
+                                clipsViewModel.onAction(action)
+                            }
+                        )
 
                         Spacer(Modifier.height(20.dp))
                     }
@@ -196,10 +216,19 @@ fun Clips (
                             isSelected = clip in selectedClips,
                             isSearching = false,
                             searchParams = clipState.searchParams,
-                            altHeldDown = altHeldDown
-                        ) { action ->
-                            clipsViewModel.onAction(action)
-                        }
+                            altHeldDown = altHeldDown,
+                            rightClickedClip = rightClickedClip,
+                            secondsBeforePaste = secondsBeforePaste,
+                            onClipMenuAction = {
+                                clipsViewModel.onClipMenuAction(it)
+                            },
+                            onMenuShowEvent = {
+                                rightClickedClip = if (it) clip.clipID else null
+                            },
+                            onAction = { action ->
+                                clipsViewModel.onAction(action)
+                            }
+                        )
 
                         Spacer(Modifier.height(20.dp))
                     }
@@ -292,10 +321,19 @@ fun Clips (
                                 isSelected = clip in selectedClips,
                                 isSearching = true,
                                 searchParams = clipState.searchParams,
-                                altHeldDown = altHeldDown
-                            ) { action ->
-                                clipsViewModel.onAction(action)
-                            }
+                                altHeldDown = altHeldDown,
+                                rightClickedClip = rightClickedClip,
+                                secondsBeforePaste = secondsBeforePaste,
+                                onClipMenuAction = {
+                                    clipsViewModel.onClipMenuAction(it)
+                                },
+                                onMenuShowEvent = {
+                                    rightClickedClip = if (it) clip.clipID else null
+                                },
+                                onAction = { action ->
+                                    clipsViewModel.onAction(action)
+                                }
+                            )
 
                             Spacer(Modifier.height(20.dp))
                         }
@@ -330,7 +368,7 @@ fun Clips (
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun ClipTemplate (
     isSearching: Boolean,
@@ -340,15 +378,19 @@ fun ClipTemplate (
     icns: ImageBitmap?,
     macApp: MacApp?,
     altHeldDown: Boolean,
-    onAction: (ClipAction) -> Unit
+    rightClickedClip: String?,
+    secondsBeforePaste: Int,
+    onAction: (ClipAction) -> Unit,
+    onClipMenuAction: (ClipMenuAction) -> Unit,
+    onMenuShowEvent: (Boolean) -> Unit,
 ) {
     Column (
         modifier = Modifier
     ) {
         val interactionSource = remember { MutableInteractionSource() }
-//            val isHovered = interactionSource.collectIsHoveredAsState().value
-
+        var showMenu by remember { mutableStateOf(false) }
         var copiedTime by remember { mutableStateOf(epochToReadableTime(clip.copiedAt)) }
+        var menuPosition by remember { mutableStateOf(Offset.Zero) }
 
         LaunchedEffect(Unit) {
             while (true) {
@@ -360,7 +402,8 @@ fun ClipTemplate (
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(55.dp),
+                .height(55.dp)
+                .alpha(if (!showMenu && rightClickedClip != null) 0.45f else 1f),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(Modifier.width(10.dp))
@@ -394,7 +437,16 @@ fun ClipTemplate (
                     .padding(end = 10.dp)
                     .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
                     .clip(corners(15.dp))
-                    .background(Color.White)
+                    .background(if (showMenu && rightClickedClip == null) Color(0.95f, 0.95f, 0.95f) else Color.White)
+                    .onPointerEvent(PointerEventType.Press) { event ->
+                        if (event.buttons.isSecondaryPressed) {
+                            onMenuShowEvent(rightClickedClip == null)
+                            menuPosition = event.changes.first().position
+                            showMenu = true
+                        } else {
+                            showMenu = false
+                        }
+                    }
             ) {
                 Box (
                     modifier = Modifier
@@ -405,6 +457,21 @@ fun ClipTemplate (
                         .hoverable(interactionSource)
                 ) {
 
+                }
+
+                if (showMenu) {
+                    ClipDropDownMenu (
+                        menuXPosition = menuPosition.x.dp,
+                        secondsBeforePaste = secondsBeforePaste,
+                        clip = clip,
+                        onDismiss = {
+                            onMenuShowEvent(false)
+                            showMenu = false
+                        },
+                        onAction = {
+                            onClipMenuAction(it)
+                        }
+                    )
                 }
 
                 Column(

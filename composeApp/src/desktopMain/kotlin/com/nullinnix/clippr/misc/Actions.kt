@@ -13,6 +13,19 @@ sealed interface ClipAction {
     object Search: ClipAction
 }
 
+enum class ClipMenuAction {
+    PasteAsText,
+    PasteAsFile,
+    CopyAsText,
+    CopyAsFile,
+    Pin,
+    Unpin,
+    Preview,
+    OpenAsLink,
+    RevealInFinder,
+    Delete
+}
+
 sealed interface Tab {
     object ClipsTab: Tab
     object SettingsTab: Tab

@@ -71,6 +71,7 @@ data class SettingsState (
     val sourcesExceptions: Set<String> = emptySet(),
     val clipTypesExceptions: Set<ClipType> = emptySet(),
     val clipDeleteTime: ClipDeleteTime = ClipDeleteTime(TimeCode.Day, 7),
+    val secondsBeforePaste: Int = 3
 )
 
 data class MiscViewModelState (
