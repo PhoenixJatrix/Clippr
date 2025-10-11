@@ -180,12 +180,12 @@ fun main() {
                                     }
 
                                     Key.V -> {
-                                        intercepted = true
                                         if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && !clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                                            intercepted = true
                                             if (miscViewModelState.metaHeldDown) {
-                                                clipsViewModel.onClipMenuAction(ClipMenuAction.PasteAsText)
+                                                clipsViewModel.onClipMenuAction(ClipMenuAction.PasteAsText, miscViewModelState.lastHoveredClip)
                                             } else {
-                                                clipsViewModel.onClipMenuAction(ClipMenuAction.PasteAsFile)
+                                                clipsViewModel.onClipMenuAction(ClipMenuAction.PasteAsFile, miscViewModelState.lastHoveredClip)
                                             }
                                         }
                                     }
@@ -194,9 +194,9 @@ fun main() {
                                         if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && !clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
                                             intercepted = true
                                             if (miscViewModelState.metaHeldDown) {
-                                                clipsViewModel.onClipMenuAction(ClipMenuAction.CopyAsText)
+                                                clipsViewModel.onClipMenuAction(ClipMenuAction.CopyAsText, miscViewModelState.lastHoveredClip)
                                             } else {
-                                                clipsViewModel.onClipMenuAction(ClipMenuAction.CopyAsFile)
+                                                clipsViewModel.onClipMenuAction(ClipMenuAction.CopyAsFile, miscViewModelState.lastHoveredClip)
                                             }
                                         }
                                     }
@@ -204,7 +204,7 @@ fun main() {
                                     Key.P -> {
                                         if (miscViewModelState.metaHeldDown && !clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
                                             intercepted = true
-                                            clipsViewModel.onClipMenuAction(if (miscViewModelState.lastHoveredClip.isPinned) ClipMenuAction.Unpin else ClipMenuAction.Pin)
+                                            clipsViewModel.onClipMenuAction(if (miscViewModelState.lastHoveredClip.isPinned) ClipMenuAction.Unpin else ClipMenuAction.Pin, miscViewModelState.lastHoveredClip)
                                         }
                                     }
 
@@ -226,11 +226,11 @@ fun main() {
 
                                                 if (action != null) {
                                                     intercepted = true
-                                                    clipsViewModel.onClipMenuAction(action)
+                                                    clipsViewModel.onClipMenuAction(action, miscViewModelState.lastHoveredClip)
                                                 }
                                             } else {
                                                 intercepted = true
-                                                clipsViewModel.onClipMenuAction(ClipMenuAction.Preview)
+                                                clipsViewModel.onClipMenuAction(ClipMenuAction.Preview, miscViewModelState.lastHoveredClip)
                                             }
                                         }
                                     }
@@ -248,7 +248,7 @@ fun main() {
                                                 intercepted = true
 
                                                 if (showMacConfirmDialog("Delete clip", "'${miscViewModelState.lastHoveredClip.content.coerce(50)}' will be deleted")) {
-                                                    clipsViewModel.onClipMenuAction(ClipMenuAction.Delete)
+                                                    clipsViewModel.onClipMenuAction(ClipMenuAction.Delete, miscViewModelState.lastHoveredClip)
                                                 }
                                             }
                                         }
@@ -362,7 +362,7 @@ fun main() {
 
                 for (clip in pinned) {
                     Item(clip.content.trimIndent().trimMargin().coerce(50)) {
-                        pasteWithRobot(clip)
+                        pasteWithRobot(clip, false)
                     }
                 }
 
@@ -370,7 +370,7 @@ fun main() {
 
                 for (clip in others) {
                     Item(clip.content.trimIndent().trimMargin().coerce(50)) {
-                        pasteWithRobot(clip)
+                        pasteWithRobot(clip, false)
                     }
                 }
 

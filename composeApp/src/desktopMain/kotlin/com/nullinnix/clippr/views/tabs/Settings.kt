@@ -296,13 +296,6 @@ fun Settings (
                 }
 
                 Spacer(Modifier.height(10.dp))
-
-                if (clipDeleteTime.unit == 0) {
-                    Text(
-                        text = "Must not be 0",
-                        color = Color.Red
-                    )
-                }
             }
 
             Spacer(Modifier.height(20.dp))
@@ -358,6 +351,8 @@ fun Settings (
                         fontWeight = FontWeight.SemiBold
                     )
                 }
+
+                Spacer(Modifier.height(10.dp))
             }
 
             Spacer(Modifier.height(20.dp))

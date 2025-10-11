@@ -10,12 +10,14 @@ import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.ClipsState
 import com.nullinnix.clippr.misc.Filters
 import com.nullinnix.clippr.misc.Tab
+import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.desc
 import com.nullinnix.clippr.misc.focusWindow
 import com.nullinnix.clippr.misc.log
 import com.nullinnix.clippr.misc.onCopyToClipboard
 import com.nullinnix.clippr.misc.pasteWithRobot
 import com.nullinnix.clippr.misc.search
+import com.nullinnix.clippr.misc.showMacConfirmDialog
 import com.nullinnix.clippr.misc.toClip
 import com.nullinnix.clippr.misc.toClipEntity
 import com.nullinnix.clippr.showMain
@@ -29,6 +31,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
@@ -178,15 +181,21 @@ class ClipsViewModel(
             }
 
             ClipMenuAction.OpenAsLink -> {
-
+                ProcessBuilder("open", clip.content).start()
             }
 
             ClipMenuAction.RevealInFinder -> {
+                val file = File(clip.content)
 
+                if (file.exists()) {
+                    ProcessBuilder("open", "-R", file.absolutePath).start()
+                }
             }
 
             ClipMenuAction.Delete -> {
-                deleteClip(clip)
+                if (showMacConfirmDialog("Delete clip", "'${clip.content.coerce(50)}' will be deleted")) {
+                    deleteClip(clip)
+                }
             }
         }
     }

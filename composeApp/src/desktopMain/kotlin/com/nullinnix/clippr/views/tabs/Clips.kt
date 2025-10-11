@@ -175,7 +175,7 @@ fun Clips (
                             rightClickedClip = rightClickedClip,
                             secondsBeforePaste = secondsBeforePaste,
                             onClipMenuAction = {
-                                clipsViewModel.onClipMenuAction(it)
+                                clipsViewModel.onClipMenuAction(it, clip)
                             },
                             onMenuShowEvent = {
                                 rightClickedClip = if (it) clip.clipID else null
@@ -223,7 +223,7 @@ fun Clips (
                             rightClickedClip = rightClickedClip,
                             secondsBeforePaste = secondsBeforePaste,
                             onClipMenuAction = {
-                                clipsViewModel.onClipMenuAction(it)
+                                clipsViewModel.onClipMenuAction(it, clip)
                             },
                             onMenuShowEvent = {
                                 rightClickedClip = if (it) clip.clipID else null
@@ -303,9 +303,9 @@ fun Clips (
                         }
 
                         item {
-                            Box(
+                            Row (
                                 modifier = Modifier
-                                    .padding(10.dp)
+                                    .padding(10.dp), verticalAlignment = Alignment.CenterVertically
                             ) {
                                 RadioButton(
                                     isSelected = searchResults.size == selectedClips.size
@@ -316,6 +316,10 @@ fun Clips (
                                         clipsViewModel.setSelectedClips(searchResults.toSet())
                                     }
                                 }
+
+                                Text (
+                                    text = "${selectedClips.size}/${searchResults.size} clips selected"
+                                )
                             }
                         }
 
@@ -331,7 +335,7 @@ fun Clips (
                                 rightClickedClip = rightClickedClip,
                                 secondsBeforePaste = secondsBeforePaste,
                                 onClipMenuAction = {
-                                    clipsViewModel.onClipMenuAction(it)
+                                    clipsViewModel.onClipMenuAction(it, clip)
                                 },
                                 onMenuShowEvent = {
                                     rightClickedClip = if (it) clip.clipID else null
@@ -495,6 +499,8 @@ fun ClipTemplate (
                         },
                         onAction = {
                             onClipMenuAction(it)
+                            onMenuShowEvent(false)
+                            showMenu = false
                         }
                     )
                 }
