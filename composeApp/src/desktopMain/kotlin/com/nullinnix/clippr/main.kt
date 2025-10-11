@@ -25,7 +25,6 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberTrayState
 import androidx.compose.ui.window.rememberWindowState
@@ -34,6 +33,8 @@ import clippr.composeapp.generated.resources.clippr_status_icon
 import com.nullinnix.clippr.database.clips.ClipsDatabaseFactory
 import com.nullinnix.clippr.database.settings.SettingsDatabaseFactory
 import com.nullinnix.clippr.misc.ClipAction
+import com.nullinnix.clippr.misc.ClipMenuAction
+import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.EscPriorityConsumers
 import com.nullinnix.clippr.misc.SettingsAction
 import com.nullinnix.clippr.misc.Tab
@@ -44,6 +45,7 @@ import com.nullinnix.clippr.misc.listenForCopy
 import com.nullinnix.clippr.misc.pasteWithRobot
 import com.nullinnix.clippr.misc.registerKeyStroke
 import com.nullinnix.clippr.misc.showMacConfirmDialog
+import com.nullinnix.clippr.misc.toClipType
 import com.nullinnix.clippr.misc.toggleFullscreen
 import com.nullinnix.clippr.theme.Theme
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
@@ -168,30 +170,105 @@ fun main() {
                             if (event.type == KeyEventType.KeyDown) {
                                 when (event.key) {
                                     Key.MetaLeft, Key.MetaRight -> {
-                                        miscViewModel.setMetaHeldDown(true)
                                         intercepted = true
+                                        miscViewModel.setMetaHeldDown(true)
                                     }
 
                                     Key.AltLeft, Key.AltRight -> {
-                                        miscViewModel.setAltHeldDown(true)
                                         intercepted = true
+                                        miscViewModel.setAltHeldDown(true)
+                                    }
+
+                                    Key.V -> {
+                                        intercepted = true
+                                        if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && !clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                                            if (miscViewModelState.metaHeldDown) {
+                                                clipsViewModel.onClipMenuAction(ClipMenuAction.PasteAsText)
+                                            } else {
+                                                clipsViewModel.onClipMenuAction(ClipMenuAction.PasteAsFile)
+                                            }
+                                        }
+                                    }
+
+                                    Key.C -> {
+                                        if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && !clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                                            intercepted = true
+                                            if (miscViewModelState.metaHeldDown) {
+                                                clipsViewModel.onClipMenuAction(ClipMenuAction.CopyAsText)
+                                            } else {
+                                                clipsViewModel.onClipMenuAction(ClipMenuAction.CopyAsFile)
+                                            }
+                                        }
+                                    }
+
+                                    Key.P -> {
+                                        if (miscViewModelState.metaHeldDown && !clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                                            intercepted = true
+                                            clipsViewModel.onClipMenuAction(if (miscViewModelState.lastHoveredClip.isPinned) ClipMenuAction.Unpin else ClipMenuAction.Pin)
+                                        }
+                                    }
+
+                                    Key.Enter -> {
+                                        if (clipsState.isShowingFilters) {
+                                            intercepted = true
+                                            clipsViewModel.searchAndFilter(true)
+                                        } else if (!clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                                            if (miscViewModelState.metaHeldDown) {
+                                                val action = if (miscViewModelState.lastHoveredClip.associatedIcon.toClipType() == ClipType.WEB) {
+                                                    ClipMenuAction.OpenAsLink
+                                                } else {
+                                                    if (miscViewModelState.lastHoveredClip.associatedIcon.toClipType() != ClipType.PLAIN_TEXT) {
+                                                        ClipMenuAction.RevealInFinder
+                                                    } else {
+                                                        null
+                                                    }
+                                                }
+
+                                                if (action != null) {
+                                                    intercepted = true
+                                                    clipsViewModel.onClipMenuAction(action)
+                                                }
+                                            } else {
+                                                intercepted = true
+                                                clipsViewModel.onClipMenuAction(ClipMenuAction.Preview)
+                                            }
+                                        }
+                                    }
+
+                                    Key.Backspace -> {
+                                        if (clipsState.selectedClips.isNotEmpty() && clipsState.isSearching) {
+                                            intercepted = true
+
+                                            if (showMacConfirmDialog("Delete selected clips?", "${clipsState.selectedClips.size }${if (clipsState.selectedClips.size == 1) " clip" else " clips"} will be deleted")) {
+                                                clipsViewModel.deleteSelected()
+                                                clipsViewModel.setIsSearching(false)
+                                            }
+                                        } else {
+                                            if (!clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                                                intercepted = true
+
+                                                if (showMacConfirmDialog("Delete clip", "'${miscViewModelState.lastHoveredClip.content.coerce(50)}' will be deleted")) {
+                                                    clipsViewModel.onClipMenuAction(ClipMenuAction.Delete)
+                                                }
+                                            }
+                                        }
                                     }
 
                                     Key.Escape -> {
                                         for (consumer in EscPriorityConsumers.entries) {
                                             when (consumer) {
                                                 EscPriorityConsumers.FilterEsc -> {
-                                                    if (clipsState.showFilters) {
-                                                        clipsViewModel.setShowFilters(false)
+                                                    if (clipsState.isShowingFilters) {
                                                         intercepted = true
+                                                        clipsViewModel.setShowFilters(false)
                                                         break
                                                     }
                                                 }
 
                                                 EscPriorityConsumers.SearchEsc -> {
                                                     if (clipsState.isSearching) {
-                                                        clipsViewModel.setIsSearching(false)
                                                         intercepted = true
+                                                        clipsViewModel.setIsSearching(false)
                                                         break
                                                     }
                                                 }
@@ -199,52 +276,37 @@ fun main() {
                                         }
                                     }
 
-                                    Key.Enter -> {
-                                        clipsViewModel.searchAndFilter(true)
-                                        intercepted = true
-                                    }
-
                                     Key.F -> {
                                         if (miscViewModelState.metaHeldDown && clipsState.currentTab == Tab.ClipsTab) {
-                                            clipsViewModel.setIsSearching(true)
                                             intercepted = true
+                                            clipsViewModel.setIsSearching(true)
                                         }
                                     }
 
                                     Key.Comma -> {
                                         if (miscViewModelState.metaHeldDown && !clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab) {
-                                            clipsViewModel.switchTab(Tab.SettingsTab)
                                             intercepted = true
-                                        }
-                                    }
-
-                                    Key.Backspace -> {
-                                        if (clipsState.selectedClips.isNotEmpty()) {
-                                            if (showMacConfirmDialog("Delete selected clips?", "${clipsState.selectedClips.size }${if (clipsState.selectedClips.size == 1) " clip" else " clips"} will be deleted")) {
-                                                intercepted = true
-                                                clipsViewModel.deleteSelected()
-                                                clipsViewModel.setIsSearching(false)
-                                            }
+                                            clipsViewModel.switchTab(Tab.SettingsTab)
                                         }
                                     }
 
                                     Key.A -> {
                                         if (miscViewModelState.metaHeldDown && clipsState.isSearching && clipsState.searchResults.isNotEmpty()) {
-                                            clipsViewModel.setSelectedClips(clipsState.searchResults.toSet())
                                             intercepted = true
+                                            clipsViewModel.setSelectedClips(clipsState.searchResults.toSet())
                                         }
                                     }
                                 }
                             } else if (event.type == KeyEventType.KeyUp) {
                                 when (event.key) {
                                     Key.MetaLeft, Key.MetaRight -> {
-                                        miscViewModel.setMetaHeldDown(false)
                                         intercepted = true
+                                        miscViewModel.setMetaHeldDown(false)
                                     }
 
                                     Key.AltLeft, Key.AltRight -> {
-                                        miscViewModel.setAltHeldDown(false)
                                         intercepted = true
+                                        miscViewModel.setAltHeldDown(false)
                                     }
                                 }
                             }

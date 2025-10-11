@@ -43,7 +43,7 @@ data class ClipsState (
     val searchFilter: Filters = Filters(),
     val customFilterApplied: Boolean = false,
     val searchResults: List<Clip> = emptyList(),
-    val showFilters: Boolean = false,
+    val isShowingFilters: Boolean = false,
     val isOnGoingSearch: Boolean = false
 )
 
@@ -78,7 +78,8 @@ data class MiscViewModelState (
     val allApps: Map<String, MacApp> = emptyMap(),
     val loadedIcns: Map<String, ImageBitmap> = emptyMap(),
     val metaHeldDown: Boolean = false,
-    val altHeldDown: Boolean = false
+    val altHeldDown: Boolean = false,
+    val lastHoveredClip: Clip? = null
 )
 
 data class MacApp(

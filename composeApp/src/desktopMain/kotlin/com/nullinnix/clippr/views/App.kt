@@ -50,7 +50,7 @@ fun App (
         val clipState = clipsViewModel.clipsState.collectAsState().value
         val currentTab =  clipState.currentTab
         val isSearching = clipState.isSearching
-        val showFilters = clipState.showFilters
+        val showFilters = clipState.isShowingFilters
 
         val pagerState = rememberPagerState { 3 }
         val coroutineScope = rememberCoroutineScope()

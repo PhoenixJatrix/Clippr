@@ -10,6 +10,7 @@ import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.ClipsState
 import com.nullinnix.clippr.misc.Filters
 import com.nullinnix.clippr.misc.Tab
+import com.nullinnix.clippr.misc.desc
 import com.nullinnix.clippr.misc.focusWindow
 import com.nullinnix.clippr.misc.log
 import com.nullinnix.clippr.misc.onCopyToClipboard
@@ -144,7 +145,7 @@ class ClipsViewModel(
     }
 
     fun onClipMenuAction(action: ClipMenuAction) {
-
+        println(action.desc(10))
     }
 
     fun addClip(clip: Clip) {
@@ -248,7 +249,7 @@ class ClipsViewModel(
 
     fun setShowFilters (value: Boolean) {
         _clipsState.update {
-            it.copy(showFilters = value)
+            it.copy(isShowingFilters = value)
         }
     }
 
@@ -281,7 +282,7 @@ class ClipsViewModel(
             _clipsState.update {
                 val customFilterApplied = it.protoFilters.sources.size != miscViewModel.state.value.allApps.size || it.protoFilters.pinState != null || it.protoFilters.types.size != ClipType.entries.size || it.protoFilters.copyTime != null || it.protoFilters.lineCount != null
 
-                it.copy(searchFilter = it.protoFilters, showFilters = false, isSearching = true, customFilterApplied = customFilterApplied)
+                it.copy(searchFilter = it.protoFilters, isShowingFilters = false, isSearching = true, customFilterApplied = customFilterApplied)
             }
 
             if (clipsState.value.searchParams.isNotEmpty() || searchWithFilters) {

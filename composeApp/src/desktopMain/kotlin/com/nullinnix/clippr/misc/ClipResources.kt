@@ -689,8 +689,8 @@ fun ClipMenuAction.shortcut(): String {
         ClipMenuAction.Pin -> "⌘ + P"
         ClipMenuAction.Unpin -> "⌘ + P"
         ClipMenuAction.Preview -> "⏎"
-        ClipMenuAction.OpenAsLink -> "⌥ + ⏎"
-        ClipMenuAction.RevealInFinder -> "⌥ + ⏎"
+        ClipMenuAction.OpenAsLink -> "⌘ + ⏎"
+        ClipMenuAction.RevealInFinder -> "⌘ + ⏎"
         ClipMenuAction.Delete -> "⌦"
     }
 }

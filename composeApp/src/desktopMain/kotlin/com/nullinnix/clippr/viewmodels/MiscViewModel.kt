@@ -2,6 +2,7 @@ package com.nullinnix.clippr.viewmodels
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.ViewModel
+import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.MacApp
 import com.nullinnix.clippr.misc.MiscViewModelState
 import com.nullinnix.clippr.misc.getAllApps
@@ -44,6 +45,13 @@ class MiscViewModel: ViewModel() {
     fun setAltHeldDown(value: Boolean) {
         _state.update {
             it.copy(altHeldDown = value)
+        }
+    }
+
+    fun setLastHoveredClip(value: Clip?) {
+        _state.update {
+            println("last hovered = $value")
+            it.copy(lastHoveredClip = value)
         }
     }
 }

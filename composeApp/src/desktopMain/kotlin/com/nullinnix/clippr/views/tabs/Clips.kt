@@ -182,6 +182,9 @@ fun Clips (
                             },
                             onAction = { action ->
                                 clipsViewModel.onAction(action)
+                            },
+                            onHover = {
+                                miscViewModel.setLastHoveredClip(if (it) clip else null)
                             }
                         )
 
@@ -227,6 +230,9 @@ fun Clips (
                             },
                             onAction = { action ->
                                 clipsViewModel.onAction(action)
+                            },
+                            onHover = {
+                                miscViewModel.setLastHoveredClip(if (it) clip else null)
                             }
                         )
 
@@ -332,6 +338,9 @@ fun Clips (
                                 },
                                 onAction = { action ->
                                     clipsViewModel.onAction(action)
+                                },
+                                onHover = {
+                                    miscViewModel.setLastHoveredClip(if (it) clip else null)
                                 }
                             )
 
@@ -383,6 +392,7 @@ fun ClipTemplate (
     onAction: (ClipAction) -> Unit,
     onClipMenuAction: (ClipMenuAction) -> Unit,
     onMenuShowEvent: (Boolean) -> Unit,
+    onHover: (Boolean) -> Unit
 ) {
     Column (
         modifier = Modifier
@@ -391,11 +401,26 @@ fun ClipTemplate (
         var showMenu by remember { mutableStateOf(false) }
         var copiedTime by remember { mutableStateOf(epochToReadableTime(clip.copiedAt)) }
         var menuPosition by remember { mutableStateOf(Offset.Zero) }
+        var delayedHoverEmits by remember { mutableStateOf(false) }
+        val isHovered = interactionSource.collectIsHoveredAsState().value
+
+        LaunchedEffect(Unit) {
+            delay(100)
+            delayedHoverEmits = true
+        }
 
         LaunchedEffect(Unit) {
             while (true) {
                 copiedTime = epochToReadableTime(clip.copiedAt)
                 delay(5000)
+            }
+        }
+
+        LaunchedEffect(isHovered) {
+            if (delayedHoverEmits) {
+                if (!isSearching) {
+                    onHover(isHovered)
+                }
             }
         }
 
