@@ -17,7 +17,10 @@ import clippr.composeapp.generated.resources.zip
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.Pointer
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.DrawableResource
 import java.awt.Toolkit
@@ -264,9 +267,9 @@ fun getIconForContent (
     }
 }
 
-fun onCopyToClipboard(clip: Clip, altHeldDown: Boolean) {
+fun onCopyToClipboard(clip: Clip, pasteAsFile: Boolean) {
     val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-    val customTransferable = CustomTransferable(clip, altHeldDown)
+    val customTransferable = CustomTransferable(clip, pasteAsFile)
 
     lastCopiedItemHash = customTransferable.hash ?: lastCopiedItemHash
 
@@ -338,31 +341,35 @@ class CustomClipboardOwner: ClipboardOwner {
     }
 }
 
-fun pasteWithRobot(clip: Clip) {
-    onCopyToClipboard(clip, false)
+fun pasteWithRobot(clip: Clip, pasteAsFile: Boolean, wait: Int = 0) {
+    CoroutineScope(Dispatchers.Default).launch {
+        delay(wait * 1000L)
 
-    Thread.sleep(50)
+        onCopyToClipboard(clip = clip, pasteAsFile = pasteAsFile)
 
-    val cg = CoreGraphics.INSTANCE
-    val source = cg.CGEventSourceCreate(CoreGraphics.kCGEventSourceStateHIDSystemState)
+        Thread.sleep(50)
 
-    val vDown = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, true)
-    cg.CGEventSetFlags(vDown, CoreGraphics.kCGEventFlagMaskCommand)
-    cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vDown)
-    Thread.sleep(30)
+        val cg = CoreGraphics.INSTANCE
+        val source = cg.CGEventSourceCreate(CoreGraphics.kCGEventSourceStateHIDSystemState)
 
-    val vUp = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, false)
-    cg.CGEventSetFlags(vUp, CoreGraphics.kCGEventFlagMaskCommand)
-    cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vUp)
-    Thread.sleep(30)
+        val vDown = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, true)
+        cg.CGEventSetFlags(vDown, CoreGraphics.kCGEventFlagMaskCommand)
+        cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vDown)
+        Thread.sleep(30)
 
-    val cmdUp = cg.CGEventCreateKeyboardEvent(source, 55, false)
-    cg.CGEventPost(CoreGraphics.kCGSessionEventTap, cmdUp)
+        val vUp = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, false)
+        cg.CGEventSetFlags(vUp, CoreGraphics.kCGEventFlagMaskCommand)
+        cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vUp)
+        Thread.sleep(30)
 
-    cg.CFRelease(vDown)
-    cg.CFRelease(vUp)
-    cg.CFRelease(cmdUp)
-    cg.CFRelease(source)
+        val cmdUp = cg.CGEventCreateKeyboardEvent(source, 55, false)
+        cg.CGEventPost(CoreGraphics.kCGSessionEventTap, cmdUp)
+
+        cg.CFRelease(vDown)
+        cg.CFRelease(vUp)
+        cg.CFRelease(cmdUp)
+        cg.CFRelease(source)
+    }
 }
 
 fun showMacConfirmDialog(

@@ -50,7 +50,6 @@ class MiscViewModel: ViewModel() {
 
     fun setLastHoveredClip(value: Clip?) {
         _state.update {
-            println("last hovered = $value")
             it.copy(lastHoveredClip = value)
         }
     }

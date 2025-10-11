@@ -14,6 +14,7 @@ import com.nullinnix.clippr.misc.desc
 import com.nullinnix.clippr.misc.focusWindow
 import com.nullinnix.clippr.misc.log
 import com.nullinnix.clippr.misc.onCopyToClipboard
+import com.nullinnix.clippr.misc.pasteWithRobot
 import com.nullinnix.clippr.misc.search
 import com.nullinnix.clippr.misc.toClip
 import com.nullinnix.clippr.misc.toClipEntity
@@ -95,7 +96,7 @@ class ClipsViewModel(
     fun onAction (action: ClipAction) {
         when (action) {
             is ClipAction.OnCopyToClipboard -> {
-                onCopyToClipboard(clip = action.clip, altHeldDown = action.altHeldDown)
+                onCopyToClipboard(clip = action.clip, pasteAsFile = action.altHeldDown)
             }
 
             is ClipAction.OnDelete -> {
@@ -144,8 +145,50 @@ class ClipsViewModel(
         }
     }
 
-    fun onClipMenuAction(action: ClipMenuAction) {
-        println(action.desc(10))
+    fun onClipMenuAction(action: ClipMenuAction, clip: Clip) {
+        println(action.desc(3))
+
+        when (action) {
+            ClipMenuAction.PasteAsText -> {
+                pasteWithRobot(clip = clip, pasteAsFile = false, wait = settingsViewModel.settings.value.secondsBeforePaste)
+            }
+
+            ClipMenuAction.PasteAsFile -> {
+                pasteWithRobot(clip = clip, pasteAsFile = true, wait = settingsViewModel.settings.value.secondsBeforePaste)
+            }
+
+            ClipMenuAction.CopyAsText -> {
+                onCopyToClipboard(clip = clip, pasteAsFile = false)
+            }
+
+            ClipMenuAction.CopyAsFile -> {
+                onCopyToClipboard(clip = clip, pasteAsFile = true)
+            }
+
+            ClipMenuAction.Pin -> {
+                togglePinnedClip(clip)
+            }
+
+            ClipMenuAction.Unpin -> {
+                togglePinnedClip(clip)
+            }
+
+            ClipMenuAction.Preview -> {
+
+            }
+
+            ClipMenuAction.OpenAsLink -> {
+
+            }
+
+            ClipMenuAction.RevealInFinder -> {
+
+            }
+
+            ClipMenuAction.Delete -> {
+                deleteClip(clip)
+            }
+        }
     }
 
     fun addClip(clip: Clip) {

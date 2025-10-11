@@ -13,7 +13,7 @@ sealed interface ClipAction {
     object Search: ClipAction
 }
 
-enum class ClipMenuAction {
+enum class ClipMenuAction() {
     PasteAsText,
     PasteAsFile,
     CopyAsText,
@@ -64,6 +64,7 @@ sealed interface SettingsAction {
     data class SetSourceExceptions(val value: Set<String>): SettingsAction
     data class SetClipDeleteTime(val value: ClipDeleteTime): SettingsAction
     data class SetMaximumRememberableUnpinnedClips(val value: Int): SettingsAction
+    data class SetSecondsBeforePaste(val value: Int): SettingsAction
 }
 
 sealed interface SearchAction {

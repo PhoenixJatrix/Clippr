@@ -86,6 +86,7 @@ fun Settings (
     val scrollState = rememberScrollState()
 
     val clipDeleteTime = settingsState.clipDeleteTime
+    val secondsBeforePaste = settingsState.secondsBeforePaste
 
     Box (
         modifier = Modifier
@@ -241,7 +242,7 @@ fun Settings (
 
             Spacer(Modifier.height(20.dp))
 
-            SettingsElement(
+            SettingsElement (
                 title = "Maximum unpinned clips to remember",
                 description = "Maximum clips to save at a time. Older unpinned clips will be deleted if the limit is reached"
             ) {
@@ -286,6 +287,12 @@ fun Settings (
                             unfocusedContainerColor = Color.White
                         )
                     )
+
+                    Text (
+                        text = if (maximumRememberableUnpinnedClips == 1) "clip" else "clips",
+                        color = Color.Black,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
 
                 Spacer(Modifier.height(10.dp))
@@ -294,6 +301,61 @@ fun Settings (
                     Text(
                         text = "Must not be 0",
                         color = Color.Red
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            SettingsElement (
+                title = "Seconds before paste",
+                description = "Clippr will execute a paste action after the specified seconds when you click on a clip to paste IN APP"
+            ) {
+                var entry by remember { mutableStateOf("$secondsBeforePaste") }
+
+                Row (
+                    modifier = Modifier,
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TextField (
+                        value = entry,
+                        onValueChange = { newValue ->
+                            if (newValue.all { it.isDigit() } ) {
+                                try {
+                                    if (newValue.isNotEmpty()) {
+                                        settingsViewModel.onAction(SettingsAction.SetSecondsBeforePaste(newValue.toInt()))
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+
+                                entry = newValue
+                            }
+                        },
+                        singleLine = true,
+                        modifier = Modifier
+                            .width(100.dp)
+                            .height(50.dp)
+                            .shadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                            .clip(corners(10.dp))
+                            .background(Color.White),
+                        colors = TextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedIndicatorColor = Transparent,
+                            unfocusedIndicatorColor = Transparent,
+                            focusedLabelColor = Transparent,
+                            unfocusedLabelColor = Transparent,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+
+                    Text (
+                        text = if (secondsBeforePaste == 1) "second" else "seconds",
+                        color = Color.Black,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }

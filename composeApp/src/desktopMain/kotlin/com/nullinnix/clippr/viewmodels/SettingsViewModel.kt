@@ -100,6 +100,12 @@ class SettingsViewModel (
                     it.copy(maximumRememberableUnpinnedClips = action.value)
                 }
             }
+
+            is SettingsAction.SetSecondsBeforePaste -> {
+                _settings.update {
+                    it.copy(secondsBeforePaste = action.value)
+                }
+            }
         }
 
         save()
