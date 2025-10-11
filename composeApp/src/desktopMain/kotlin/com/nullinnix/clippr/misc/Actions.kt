@@ -26,6 +26,24 @@ enum class ClipMenuAction() {
     Delete
 }
 
+enum class MultiSelectClipMenuAction {
+    PasteOnlyFiles,
+    CopyOnlyFiles,
+    Merge,
+    PinAll,
+    UnpinAll,
+    DeleteAll
+}
+
+enum class MergeAction {
+    CommaSeparated,
+    NewLineSeparated,
+    NumberSeparated,
+    SpaceSeparated,
+    TabSeparated,
+    NoSeparation
+}
+
 //for when searching. no clip highlight just add number of copied on top the menus. when right click on other that is not selected, remove all selected
 
 //paste one by one in x seconds

@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.CursorDropdownMenu
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
@@ -46,6 +47,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -56,6 +58,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -71,11 +76,14 @@ import clippr.composeapp.generated.resources.check
 import clippr.composeapp.generated.resources.close
 import clippr.composeapp.generated.resources.filter
 import clippr.composeapp.generated.resources.full_screen
+import clippr.composeapp.generated.resources.right
 import clippr.composeapp.generated.resources.search
 import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.ClipMenuAction
 import com.nullinnix.clippr.misc.ClipsState
+import com.nullinnix.clippr.misc.MergeAction
+import com.nullinnix.clippr.misc.MultiSelectClipMenuAction
 import com.nullinnix.clippr.misc.SearchAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.TimeCode
@@ -593,16 +601,6 @@ fun ClipDropDownMenu (
             .clip(corners(10.dp))
             .animateContentSize()
     ) {
-        //paste in //customizable delay seconds as text meta + v
-        //paste in //customizable delay seconds as file alt = v
-        //copy as text meta + c
-        //copy as file alt + c
-        //pin/unpin meta + p
-        //preview as enter
-        //open link as alt + enter
-        //reveal in finder as alt + enter
-        //delete
-
         getClipMenuActions(clip).forEach { option ->
             val interactionSource = remember { MutableInteractionSource() }
             val isHover = interactionSource.collectIsHoveredAsState().value
@@ -647,6 +645,163 @@ fun ClipDropDownMenu (
                 text = it.info(secondsBeforePaste),
                 color = Color.Black.copy(0.5f)
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun MultiSelectClipDropDownMenu (
+    menuXPosition: Dp,
+    secondsBeforePaste: Int,
+    onAction: (ClipMenuAction) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var currentHoverAction by remember { mutableStateOf<MultiSelectClipMenuAction?>(null) }
+    var mergeXPosition by remember { mutableStateOf(0.dp) }
+
+//    Popup(
+//        offset = IntOffset(position.x.toInt(), position.y.toInt()),
+//        properties = PopupProperties(focusable = false)
+//    ) {
+//        Surface(
+//            shape = MaterialTheme.shapes.extraSmall,
+//            shadowElevation = 4.dp,
+//            color = Color(0xFFF7F7F7)
+//        ) {
+//            Column(Modifier.width(180.dp).background(Color.White)) {
+//
+//            }
+//        }
+//    }
+
+    DropdownMenu(
+        expanded = true,
+        onDismissRequest = {
+            onDismiss()
+        },
+        offset = DpOffset(menuXPosition, 0.dp),
+        properties = PopupProperties(focusable = true),
+        modifier = Modifier
+            .padding(7.dp)
+            .clip(corners(10.dp))
+            .animateContentSize()
+    ) {
+        MultiSelectClipMenuAction.entries.forEach { option ->
+            val interactionSource = remember { MutableInteractionSource() }
+            val isHover = interactionSource.collectIsHoveredAsState().value
+
+            LaunchedEffect(isHover) {
+                if (isHover) {
+                    currentHoverAction = option
+                }
+            }
+
+            DropdownMenuItem (
+                onClick = {
+
+                },
+                content = {
+                    Row(
+                        modifier = Modifier
+                            .widthIn(min = 350.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = option.desc(secondsBeforePaste),
+                            fontSize = 14.sp,
+                            color = if (option == MultiSelectClipMenuAction.DeleteAll) Color.Red else Color.Black
+                        )
+
+                        if (option != MultiSelectClipMenuAction.Merge) {
+                            Text(
+                                text = option.shortcut(),
+                                fontSize = 14.sp,
+                                color = Color.Black.copy(0.5f)
+                            )
+                        } else {
+                            Icon(
+                                painter = painterResource(Res.drawable.right),
+                                contentDescription = "",
+                                modifier = Modifier
+                                    .size(30.dp)
+                            )
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .clip(corners(10.dp))
+                    .hoverable(interactionSource)
+                    .onPointerEvent(PointerEventType.Press) { event ->
+                        mergeXPosition = event.changes.first().position.x.dp
+                    }
+            )
+        }
+
+        currentHoverAction?.let {
+            Text (
+                text = it.info(secondsBeforePaste),
+                color = Color.Black.copy(0.5f)
+            )
+        }
+    }
+
+    //merge
+
+    if (currentHoverAction == MultiSelectClipMenuAction.Merge) {
+        DropdownMenu(
+            expanded = true,
+            onDismissRequest = {
+                onDismiss()
+            },
+            offset = DpOffset(mergeXPosition, 0.dp),
+            properties = PopupProperties(focusable = true),
+            modifier = Modifier
+                .padding(7.dp)
+                .clip(corners(10.dp))
+                .animateContentSize()
+        ) {
+            var currentHoverMerge by remember { mutableStateOf<MergeAction?>(null) }
+
+            MergeAction.entries.forEach { option ->
+                val interactionSource = remember { MutableInteractionSource() }
+                val isHover = interactionSource.collectIsHoveredAsState().value
+
+                LaunchedEffect(isHover) {
+                    if (isHover) {
+                        currentHoverMerge = option
+                    }
+                }
+
+                DropdownMenuItem (
+                    onClick = {
+//                    onAction(option)
+                    },
+                    content = {
+                        Row(
+                            modifier = Modifier
+                                .widthIn(min = 350.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = option.desc(),
+                                fontSize = 14.sp,
+                                color = Color.Black
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .clip(corners(10.dp))
+                        .hoverable(interactionSource)
+                )
+            }
+
+            currentHoverMerge?.let {
+                Text (
+                    text = it.info(),
+                    color = Color.Black.copy(0.5f)
+                )
+            }
         }
     }
 }

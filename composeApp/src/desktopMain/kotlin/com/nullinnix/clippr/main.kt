@@ -236,19 +236,21 @@ fun main() {
                                     }
 
                                     Key.Backspace -> {
-                                        if (clipsState.selectedClips.isNotEmpty() && clipsState.isSearching) {
-                                            intercepted = true
-
-                                            if (showMacConfirmDialog("Delete selected clips?", "${clipsState.selectedClips.size }${if (clipsState.selectedClips.size == 1) " clip" else " clips"} will be deleted")) {
-                                                clipsViewModel.deleteSelected()
-                                                clipsViewModel.setIsSearching(false)
-                                            }
-                                        } else {
-                                            if (!clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                                        if (miscViewModelState.metaHeldDown) {
+                                            if (clipsState.selectedClips.isNotEmpty() && clipsState.isSearching) {
                                                 intercepted = true
 
-                                                if (showMacConfirmDialog("Delete clip", "'${miscViewModelState.lastHoveredClip.content.coerce(50)}' will be deleted")) {
-                                                    clipsViewModel.onClipMenuAction(ClipMenuAction.Delete, miscViewModelState.lastHoveredClip)
+                                                if (showMacConfirmDialog("Delete selected clips?", "${clipsState.selectedClips.size }${if (clipsState.selectedClips.size == 1) " clip" else " clips"} will be deleted")) {
+                                                    clipsViewModel.deleteSelected()
+                                                    clipsViewModel.setIsSearching(false)
+                                                }
+                                            } else {
+                                                if (!clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                                                    intercepted = true
+
+                                                    if (showMacConfirmDialog("Delete clip", "'${miscViewModelState.lastHoveredClip.content.coerce(50)}' will be deleted")) {
+                                                        clipsViewModel.onClipMenuAction(ClipMenuAction.Delete, miscViewModelState.lastHoveredClip)
+                                                    }
                                                 }
                                             }
                                         }

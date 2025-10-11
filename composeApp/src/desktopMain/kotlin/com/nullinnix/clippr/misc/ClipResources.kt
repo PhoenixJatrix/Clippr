@@ -677,16 +677,6 @@ fun ClipMenuAction.desc(secondsBeforePaste: Int): String {
     }
 }
 
-//paste in //customizable delay seconds as text meta + v
-//paste in //customizable delay seconds as file alt = v
-//copy as text meta + c
-//copy as file alt + c
-//pin/unpin meta + p
-//preview as enter
-//open link as alt + enter
-//reveal in finder as alt + enter
-//delete backspace
-
 fun ClipMenuAction.shortcut(): String {
     return when(this) {
         ClipMenuAction.PasteAsText -> "⌘ + V"
@@ -698,7 +688,7 @@ fun ClipMenuAction.shortcut(): String {
         ClipMenuAction.Preview -> "⏎"
         ClipMenuAction.OpenAsLink -> "⌘ + ⏎"
         ClipMenuAction.RevealInFinder -> "⌘ + ⏎"
-        ClipMenuAction.Delete -> "⌦"
+        ClipMenuAction.Delete -> "⌘ + ⌦"
     }
 }
 
@@ -714,6 +704,61 @@ fun ClipMenuAction.info(secondsBeforePaste: Int): String {
         ClipMenuAction.OpenAsLink -> "Open in a browser"
         ClipMenuAction.RevealInFinder -> "Open the location of this clip if it exists"
         ClipMenuAction.Delete -> "Delete clip"
+    }
+}
+
+fun MultiSelectClipMenuAction.desc(secondsBeforePaste: Int): String {
+    return when(this) {
+        MultiSelectClipMenuAction.PasteOnlyFiles -> "Paste only files in ${secondsBeforePaste}s"
+        MultiSelectClipMenuAction.CopyOnlyFiles -> "Copy only files"
+        MultiSelectClipMenuAction.Merge -> "Merge all"
+        MultiSelectClipMenuAction.PinAll -> "Pin all"
+        MultiSelectClipMenuAction.UnpinAll -> "Unpin all"
+        MultiSelectClipMenuAction.DeleteAll -> "Delete all"
+    }
+}
+
+fun MultiSelectClipMenuAction.shortcut(): String {
+    return when(this) {
+        MultiSelectClipMenuAction.PasteOnlyFiles -> "⌘ + V"
+        MultiSelectClipMenuAction.CopyOnlyFiles -> "⌥ + C"
+        MultiSelectClipMenuAction.Merge -> ""
+        MultiSelectClipMenuAction.PinAll -> "⌘ + P"
+        MultiSelectClipMenuAction.UnpinAll -> "⌥ + P"
+        MultiSelectClipMenuAction.DeleteAll -> "⌘ + ⌦"
+    }
+}
+
+fun MultiSelectClipMenuAction.info(secondsBeforePaste: Int): String {
+    return when(this) {
+        MultiSelectClipMenuAction.PasteOnlyFiles -> "Paste only files to focused window in ${secondsBeforePaste}s"
+        MultiSelectClipMenuAction.CopyOnlyFiles -> "Copy only files to global keyboard"
+        MultiSelectClipMenuAction.Merge -> "Merge text and or files"
+        MultiSelectClipMenuAction.PinAll -> "Pin all selected clips"
+        MultiSelectClipMenuAction.UnpinAll -> "Unpin all selected clips"
+        MultiSelectClipMenuAction.DeleteAll -> "Delete all selected clips"
+    }
+}
+
+fun MergeAction.desc(): String {
+    return when(this) {
+        MergeAction.CommaSeparated -> "Separate with comma(,)"
+        MergeAction.NewLineSeparated -> "Separate with a new line"
+        MergeAction.NumberSeparated -> "Number"
+        MergeAction.SpaceSeparated -> "Separate with space"
+        MergeAction.TabSeparated -> "Separate with tab"
+        MergeAction.NoSeparation -> "No separation"
+    }
+}
+
+fun MergeAction.info(): String {
+    return when(this) {
+        MergeAction.CommaSeparated -> "\nClip1,Clip2,Clip3\n"
+        MergeAction.NewLineSeparated -> "Clip1\nClip2\nClip3"
+        MergeAction.NumberSeparated -> "1. Clip1\n2. Clip2\n3. Clip3"
+        MergeAction.SpaceSeparated -> "\nClip1 Clip2 Clip3\n"
+        MergeAction.TabSeparated -> "\nClip1  Clip2   Clip3\n"
+        MergeAction.NoSeparation -> "\nClip1Clip2Clip3\n"
     }
 }
 

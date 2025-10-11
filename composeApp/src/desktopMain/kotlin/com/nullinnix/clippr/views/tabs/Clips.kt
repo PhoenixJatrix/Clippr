@@ -78,6 +78,7 @@ import com.nullinnix.clippr.misc.toClipType
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
 import com.nullinnix.clippr.views.ClipDropDownMenu
+import com.nullinnix.clippr.views.MultiSelectClipDropDownMenu
 import com.nullinnix.clippr.views.RadioButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -174,6 +175,7 @@ fun Clips (
                             altHeldDown = altHeldDown,
                             rightClickedClip = rightClickedClip,
                             secondsBeforePaste = secondsBeforePaste,
+                            selectedMultiple = selectedClips.size > 1,
                             onClipMenuAction = {
                                 clipsViewModel.onClipMenuAction(it, clip)
                             },
@@ -185,6 +187,9 @@ fun Clips (
                             },
                             onHover = {
                                 miscViewModel.setLastHoveredClip(if (it) clip else null)
+                            },
+                            onClearSelected = {
+                                clipsViewModel.setSelectedClips(emptySet())
                             }
                         )
 
@@ -222,6 +227,7 @@ fun Clips (
                             altHeldDown = altHeldDown,
                             rightClickedClip = rightClickedClip,
                             secondsBeforePaste = secondsBeforePaste,
+                            selectedMultiple = selectedClips.size > 1,
                             onClipMenuAction = {
                                 clipsViewModel.onClipMenuAction(it, clip)
                             },
@@ -233,6 +239,9 @@ fun Clips (
                             },
                             onHover = {
                                 miscViewModel.setLastHoveredClip(if (it) clip else null)
+                            },
+                            onClearSelected = {
+                                clipsViewModel.setSelectedClips(emptySet())
                             }
                         )
 
@@ -334,6 +343,7 @@ fun Clips (
                                 altHeldDown = altHeldDown,
                                 rightClickedClip = rightClickedClip,
                                 secondsBeforePaste = secondsBeforePaste,
+                                selectedMultiple = selectedClips.size > 1,
                                 onClipMenuAction = {
                                     clipsViewModel.onClipMenuAction(it, clip)
                                 },
@@ -345,6 +355,9 @@ fun Clips (
                                 },
                                 onHover = {
                                     miscViewModel.setLastHoveredClip(if (it) clip else null)
+                                },
+                                onClearSelected = {
+                                    clipsViewModel.setSelectedClips(emptySet())
                                 }
                             )
 
@@ -386,6 +399,7 @@ fun Clips (
 fun ClipTemplate (
     isSearching: Boolean,
     isSelected: Boolean,
+    selectedMultiple: Boolean,
     searchParams: String,
     clip: Clip,
     icns: ImageBitmap?,
@@ -396,7 +410,8 @@ fun ClipTemplate (
     onAction: (ClipAction) -> Unit,
     onClipMenuAction: (ClipMenuAction) -> Unit,
     onMenuShowEvent: (Boolean) -> Unit,
-    onHover: (Boolean) -> Unit
+    onHover: (Boolean) -> Unit,
+    onClearSelected: () -> Unit
 ) {
     Column (
         modifier = Modifier
@@ -404,9 +419,20 @@ fun ClipTemplate (
         val interactionSource = remember { MutableInteractionSource() }
         var showMenu by remember { mutableStateOf(false) }
         var copiedTime by remember { mutableStateOf(epochToReadableTime(clip.copiedAt)) }
-        var menuPosition by remember { mutableStateOf(Offset.Zero) }
+        var menuPosition by remember { mutableStateOf(0.dp) }
         var delayedHoverEmits by remember { mutableStateOf(false) }
         val isHovered = interactionSource.collectIsHoveredAsState().value
+
+        val highLightClip =
+            if (rightClickedClip != null) {
+                if (isSearching && isSelected) {
+                    true
+                } else {
+                    showMenu
+                }
+            } else {
+                true
+            }
 
         LaunchedEffect(Unit) {
             delay(100)
@@ -432,7 +458,7 @@ fun ClipTemplate (
             modifier = Modifier
                 .fillMaxWidth()
                 .height(55.dp)
-                .alpha(if (!showMenu && rightClickedClip != null) 0.45f else 1f),
+                .alpha(if (highLightClip) 1f else 0.45f),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Spacer(Modifier.width(10.dp))
@@ -466,14 +492,18 @@ fun ClipTemplate (
                     .padding(end = 10.dp)
                     .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
                     .clip(corners(15.dp))
-                    .background(if (showMenu && rightClickedClip == null) Color(0.95f, 0.95f, 0.95f) else Color.White)
+                    .background(Color.White)
                     .onPointerEvent(PointerEventType.Press) { event ->
                         if (event.buttons.isSecondaryPressed) {
                             onMenuShowEvent(rightClickedClip == null)
-                            menuPosition = event.changes.first().position
+                            menuPosition = event.changes.first().position.x.dp
                             showMenu = true
                         } else {
                             showMenu = false
+                        }
+
+                        if (isSearching && !isSelected) {
+                            onClearSelected()
                         }
                     }
             ) {
@@ -489,20 +519,37 @@ fun ClipTemplate (
                 }
 
                 if (showMenu) {
-                    ClipDropDownMenu (
-                        menuXPosition = menuPosition.x.dp,
-                        secondsBeforePaste = secondsBeforePaste,
-                        clip = clip,
-                        onDismiss = {
-                            onMenuShowEvent(false)
-                            showMenu = false
-                        },
-                        onAction = {
-                            onClipMenuAction(it)
-                            onMenuShowEvent(false)
-                            showMenu = false
-                        }
-                    )
+                    if (isSearching && selectedMultiple) {
+                        MultiSelectClipDropDownMenu (
+                            menuXPosition = menuPosition,
+                            secondsBeforePaste = secondsBeforePaste,
+                            onAction = {
+                                //
+
+                                onMenuShowEvent(false)
+                                showMenu = false
+                            },
+                            onDismiss = {
+                                onMenuShowEvent(false)
+                                showMenu = false
+                            }
+                        )
+                    } else {
+                        ClipDropDownMenu (
+                            menuXPosition = menuPosition,
+                            secondsBeforePaste = secondsBeforePaste,
+                            clip = clip,
+                            onDismiss = {
+                                onMenuShowEvent(false)
+                                showMenu = false
+                            },
+                            onAction = {
+                                onClipMenuAction(it)
+                                onMenuShowEvent(false)
+                                showMenu = false
+                            }
+                        )
+                    }
                 }
 
                 Column(

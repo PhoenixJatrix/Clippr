@@ -129,6 +129,7 @@ class ClipsViewModel(
                     it.copy(
                         searchParams = "",
                         protoFilters = Filters(sources = setOf(action.source), types = it.protoFilters.types),
+                        selectedClips = emptySet()
                     )
                 }
 
@@ -140,6 +141,7 @@ class ClipsViewModel(
                     it.copy(
                         searchParams = "",
                         protoFilters = Filters(types = setOf(action.type), sources = it.protoFilters.sources),
+                        selectedClips = emptySet()
                     )
                 }
 
@@ -334,7 +336,7 @@ class ClipsViewModel(
             _clipsState.update {
                 val customFilterApplied = it.protoFilters.sources.size != miscViewModel.state.value.allApps.size || it.protoFilters.pinState != null || it.protoFilters.types.size != ClipType.entries.size || it.protoFilters.copyTime != null || it.protoFilters.lineCount != null
 
-                it.copy(searchFilter = it.protoFilters, isShowingFilters = false, isSearching = true, customFilterApplied = customFilterApplied)
+                it.copy(searchFilter = it.protoFilters, isShowingFilters = false, isSearching = true, customFilterApplied = customFilterApplied, selectedClips = emptySet())
             }
 
             if (clipsState.value.searchParams.isNotEmpty() || searchWithFilters) {
