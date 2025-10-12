@@ -101,6 +101,14 @@ data class ClipDeleteTime (
     val unit: Int
 )
 
+data class MergeOptions (
+    val removeDuplicates: Boolean,
+    val saveToDesktop: Boolean,
+    val trim: Boolean,
+    val copyAfterMerge: Boolean,
+    val deleteOriginal: Boolean
+)
+
 const val CLIP_ID = "clipID"
 const val MIME_TYPE = "mimeType"
 

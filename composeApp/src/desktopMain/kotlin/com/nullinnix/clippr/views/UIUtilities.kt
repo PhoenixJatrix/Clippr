@@ -74,6 +74,7 @@ import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipMenuAction
 import com.nullinnix.clippr.misc.ClipsState
 import com.nullinnix.clippr.misc.MergeAction
+import com.nullinnix.clippr.misc.MergeOptions
 import com.nullinnix.clippr.misc.MultiSelectClipMenuAction
 import com.nullinnix.clippr.misc.SearchAction
 import com.nullinnix.clippr.misc.Tab
@@ -642,11 +643,16 @@ fun MultiSelectClipDropDownMenu (
     menuXPosition: Dp,
     secondsBeforePaste: Int,
     onAction: (MultiSelectClipMenuAction) -> Unit,
-    onMergeAction: (MergeAction) -> Unit,
+    onMergeAction: (MergeAction, MergeOptions) -> Unit,
     onDismiss: () -> Unit
 ) {
     var currentHoverAction by remember { mutableStateOf<MultiSelectClipMenuAction?>(null) }
     var mergeXPosition by remember { mutableStateOf(menuXPosition) }
+    var trim by remember { mutableStateOf(true) }
+    var saveToDesktop by remember { mutableStateOf(false) }
+    var deleteOriginal by remember { mutableStateOf(false) }
+    var copyAfterMerge by remember { mutableStateOf(false) }
+    var removeDuplicates by remember { mutableStateOf(false) }
 
     DropdownMenu (
         expanded = true,
@@ -756,7 +762,7 @@ fun MultiSelectClipDropDownMenu (
 
                 DropdownMenuItem (
                     onClick = {
-                        onMergeAction(option)
+                        onMergeAction(option, MergeOptions(removeDuplicates = removeDuplicates, saveToDesktop = saveToDesktop, trim = trim, copyAfterMerge = copyAfterMerge, deleteOriginal = deleteOriginal))
                     },
                     content = {
                         Row(
@@ -777,6 +783,61 @@ fun MultiSelectClipDropDownMenu (
                 )
             }
 
+            Spacer(Modifier.height(10.dp))
+
+            Text (
+                text = "Pre-merge",
+                color = Color.Black.copy(0.5f)
+            )
+
+            Spacer(Modifier.height(5.dp))
+
+            MergeOption(
+                label = "Trim (start/end)",
+                isSelected = trim
+            ) {
+                trim = !trim
+            }
+
+            Spacer(Modifier.height(5.dp))
+
+            MergeOption(
+                label = "Remove duplicates",
+                isSelected = removeDuplicates
+            ) {
+                removeDuplicates = !removeDuplicates
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            Text (
+                text = "Post-merge",
+                color = Color.Black.copy(0.5f)
+            )
+
+            Spacer(Modifier.height(5.dp))
+
+            MergeOption(
+                label = "Save to desktop",
+                isSelected = saveToDesktop
+            ) {
+                saveToDesktop = !saveToDesktop
+            }
+
+            MergeOption(
+                label = "Delete original clips",
+                isSelected = deleteOriginal
+            ) {
+                deleteOriginal = !deleteOriginal
+            }
+
+            MergeOption(
+                label = "Copy after merge",
+                isSelected = copyAfterMerge
+            ) {
+                copyAfterMerge = !copyAfterMerge
+            }
+
             currentHoverMerge?.let {
                 Text (
                     text = it.info(),
@@ -784,5 +845,32 @@ fun MultiSelectClipDropDownMenu (
                 )
             }
         }
+    }
+}
+
+@Composable
+fun MergeOption (
+    label: String,
+    isSelected: Boolean,
+    onAction: () -> Unit
+){
+    Row (
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(corners(10.dp))
+            .clickable {
+                onAction()
+            }
+            .padding(horizontal = 15.dp, vertical = 10.dp)
+    ){
+        RadioButton(
+            isSelected = isSelected
+        ) {
+            onAction()
+        }
+
+        Text(
+            text = label
+        )
     }
 }

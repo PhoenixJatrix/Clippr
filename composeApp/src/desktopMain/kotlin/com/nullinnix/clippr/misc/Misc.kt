@@ -240,8 +240,18 @@ fun epochToReadableTime (epoch: Long): String {
     }
 }
 
-fun String.coerce(maxChar: Int): String {
-    return if (this.length <= maxChar) this else this.substring(0, maxChar - 3) + "..."
+fun String.coerce(maxChar: Int, addEllipses: Boolean = true): String {
+    return run {
+        if (this.length <= maxChar)
+            this
+        else {
+            if (addEllipses) {
+                this.substring(0, maxChar - 3) + "..."
+            } else {
+                this.substring(0, maxChar)
+            }
+        }
+    }
 }
 
 fun log(content: String, from: String) {

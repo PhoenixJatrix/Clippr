@@ -67,6 +67,7 @@ import com.nullinnix.clippr.misc.ClipMenuAction
 import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.MacApp
 import com.nullinnix.clippr.misc.MergeAction
+import com.nullinnix.clippr.misc.MergeOptions
 import com.nullinnix.clippr.misc.MultiSelectClipMenuAction
 import com.nullinnix.clippr.misc.clipTypeToColor
 import com.nullinnix.clippr.misc.clipTypeToDesc
@@ -196,8 +197,8 @@ fun Clips (
                             onMultiSelectClipMenuAction = {
                                 clipsViewModel.onMultiSelectAction(it)
                             },
-                            onMergeAction = {
-                                clipsViewModel.onMergeAction(it)
+                            onMergeAction = {action, options ->
+                                clipsViewModel.onMergeAction(action, options)
                             }
                         )
 
@@ -254,8 +255,8 @@ fun Clips (
                             onMultiSelectClipMenuAction = {
                                 clipsViewModel.onMultiSelectAction(it)
                             },
-                            onMergeAction = {
-                                clipsViewModel.onMergeAction(it)
+                            onMergeAction = {action, options ->
+                                clipsViewModel.onMergeAction(action, options)
                             }
                         )
 
@@ -376,8 +377,8 @@ fun Clips (
                                 onMultiSelectClipMenuAction = {
                                     clipsViewModel.onMultiSelectAction(it)
                                 },
-                                onMergeAction = {
-                                    clipsViewModel.onMergeAction(it)
+                                onMergeAction = {action, options ->
+                                    clipsViewModel.onMergeAction(action, options)
                                 }
                             )
 
@@ -430,7 +431,7 @@ fun ClipTemplate (
     onAction: (ClipAction) -> Unit,
     onClipMenuAction: (ClipMenuAction) -> Unit,
     onMultiSelectClipMenuAction: (MultiSelectClipMenuAction) -> Unit,
-    onMergeAction: (MergeAction) -> Unit,
+    onMergeAction: (MergeAction, MergeOptions) -> Unit,
     onMenuShowEvent: (Boolean) -> Unit,
     onHover: (Boolean) -> Unit,
     onClearSelected: () -> Unit
@@ -546,8 +547,8 @@ fun ClipTemplate (
                                 onMenuShowEvent(false)
                                 showMenu = false
                             },
-                            onMergeAction = {
-                                onMergeAction(it)
+                            onMergeAction = { action, options ->
+                                onMergeAction(action, options)
                                 onMenuShowEvent(false)
                                 showMenu = false
                             }

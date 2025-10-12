@@ -11,6 +11,7 @@ import com.nullinnix.clippr.misc.ClipsState
 import com.nullinnix.clippr.misc.Filters
 import com.nullinnix.clippr.misc.MIME_TYPE_PLAIN_TEXT
 import com.nullinnix.clippr.misc.MergeAction
+import com.nullinnix.clippr.misc.MergeOptions
 import com.nullinnix.clippr.misc.MultiSelectClipMenuAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.coerce
@@ -37,6 +38,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
+import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
@@ -239,54 +241,68 @@ class ClipsViewModel(
         }
     }
     
-    fun onMergeAction(action: MergeAction) {
+    fun onMergeAction(action: MergeAction, options: MergeOptions) {
         var content = ""
         val clips = clipsState.value.selectedClips.toList()
 
+        var normalizedClips = clips.map {
+            var content = it.content
+
+            if (options.trim) {
+                content = content.trim().trimIndent().trimMargin()
+            }
+
+            content
+        }
+
+        if (options.removeDuplicates) {
+            normalizedClips = normalizedClips.toSet().toList()
+        }
+
         when (action) {
             MergeAction.CommaSeparated -> {
-                for (idx in clips.indices) {
-                    content += clips[idx].content
+                for (idx in normalizedClips.indices) {
+                    content += normalizedClips[idx]
 
-                    if (idx != clips.size - 1) {
+                    if (idx != normalizedClips.size - 1) {
                         content += ","
                     }
                 }
             }
 
             MergeAction.NewLineSeparated -> {
-                for (idx in clips.indices) {
-                    content += clips[idx].content
+                for (idx in normalizedClips.indices) {
+                    content += normalizedClips[idx]
 
-                    if (idx != clips.size - 1) {
+                    if (idx != normalizedClips.size - 1) {
                         content += "\n"
                     }
                 }
             }
 
             MergeAction.NumberSeparated -> {
-                for (idx in clips.indices) {
-                    content += "${idx + 1}. ${clips[idx].content}"
+                for (idx in normalizedClips.indices) {
+                    content += "${idx + 1}. ${normalizedClips[idx]}"
 
-                    if (idx != clips.size - 1) {
+                    if (idx != normalizedClips.size - 1) {
                         content += "\n"
                     }
                 }
             }
 
             MergeAction.SpaceSeparated -> {
-                for (idx in clips.indices) {
-                    content += clips[idx].content
+                for (idx in normalizedClips.indices) {
+                    content += normalizedClips[idx]
 
-                    if (idx != clips.size - 1) {
+                    if (idx != normalizedClips.size - 1) {
                         content += " "
                     }
                 }
             }
 
             MergeAction.NoSeparation -> {
-                for (idx in clips.indices) {
-                    content += clips[idx].content
+                for (idx in normalizedClips.indices) {
+                    content += normalizedClips[idx]
                 }
             }
         }
@@ -305,6 +321,27 @@ class ClipsViewModel(
         )
 
         addClip(newClip)
+
+        if (options.copyAfterMerge) {
+            onCopyToClipboard(newClip, false)
+        }
+
+        if (options.deleteOriginal) {
+            deleteSpecified(clips)
+        }
+
+        if (options.saveToDesktop) {
+            val desktopPath = Paths.get(System.getProperty("user.home"), "Desktop")
+            var fileName = newClip.content.coerce(50, false)
+            var idx = 1
+
+            while (desktopPath.resolve("$fileName.txt").toFile().exists()) {
+                fileName = newClip.content.coerce(50, false) + " $idx"
+                idx += 1
+            }
+
+            desktopPath.resolve("$fileName.txt").toFile().writeText(newClip.content)
+        }
     }
 
     fun addClip(clip: Clip) {
