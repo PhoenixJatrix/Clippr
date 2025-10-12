@@ -2,7 +2,6 @@ package com.nullinnix.clippr.misc
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
-import androidx.compose.ui.res.loadImageBitmap
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
 import com.sun.jna.Library
 import com.sun.jna.Native
@@ -13,13 +12,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.awt.Dimension
-import java.awt.Image
 import java.awt.Point
 import java.awt.Toolkit
 import java.awt.Window
 import java.io.File
 import javax.imageio.ImageIO
-import javax.imageio.stream.ImageInputStream
 import javax.swing.KeyStroke
 
 var size = Dimension(300, 200)
@@ -89,8 +86,8 @@ fun listenForCopy(
     CoroutineScope(Dispatchers.IO).launch {
         while(true) {
             getClipboard (
-                sourceExceptions = settingsViewModel.settings.value.sourcesExceptions,
-                clipTypeExceptions = settingsViewModel.settings.value.clipTypesExceptions,
+                sourceExceptions = settingsViewModel.state.value.sourcesExceptions,
+                clipTypeExceptions = settingsViewModel.state.value.clipTypesExceptions,
                 onCopy = {
                     onCopy(it)
                 }

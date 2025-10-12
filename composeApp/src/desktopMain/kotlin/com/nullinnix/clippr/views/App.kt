@@ -62,7 +62,7 @@ fun App (
         val clipLazyColumnScrollState = rememberLazyListState()
         val clipSearchScrollState = rememberLazyListState()
 
-        val secondsBeforePaste = settingsViewModel.settings.value.secondsBeforePaste
+        val secondsBeforePaste = settingsViewModel.state.value.secondsBeforePaste
 
         LaunchedEffect(currentTab) {
             pagerState.animateScrollToPage(

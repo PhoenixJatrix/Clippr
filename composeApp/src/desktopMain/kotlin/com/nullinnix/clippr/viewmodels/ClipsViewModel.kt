@@ -60,8 +60,8 @@ class ClipsViewModel(
                     state.copy(otherClips = it.toClip())
                 }
 
-                if (it.size > settingsViewModel.settings.value.maximumRememberableUnpinnedClips) {
-                    val maxClips = settingsViewModel.settings.value.maximumRememberableUnpinnedClips
+                if (it.size > settingsViewModel.state.value.maximumRememberableUnpinnedClips) {
+                    val maxClips = settingsViewModel.state.value.maximumRememberableUnpinnedClips
 
                     println("size = ${it.size}, limit = $maxClips")
 
@@ -90,7 +90,7 @@ class ClipsViewModel(
                 //delay 10 seconds before start
                 delay(10000)
 
-                val settingsState = settingsViewModel.settings.value
+                val settingsState = settingsViewModel.state.value
 
                 log("monitor clips", "monitorOldClips")
                 println("still running the job every ${settingsState.clipDeleteTime.unit * settingsState.clipDeleteTime.timeCode.secondsPer} second")
@@ -117,7 +117,7 @@ class ClipsViewModel(
             }
 
             is ClipAction.OnAddClip -> {
-                if (settingsViewModel.settings.value.recordingEnabled) {
+                if (settingsViewModel.state.value.recordingEnabled) {
                     addClip(action.clip)
                 }
             }
@@ -161,11 +161,11 @@ class ClipsViewModel(
 
         when (action) {
             ClipMenuAction.PasteAsText -> {
-                pasteWithRobot(clip = clip, pasteAsFile = false, wait = settingsViewModel.settings.value.secondsBeforePaste)
+                pasteWithRobot(clip = clip, pasteAsFile = false, wait = settingsViewModel.state.value.secondsBeforePaste)
             }
 
             ClipMenuAction.PasteAsFile -> {
-                pasteWithRobot(clip = clip, pasteAsFile = true, wait = settingsViewModel.settings.value.secondsBeforePaste)
+                pasteWithRobot(clip = clip, pasteAsFile = true, wait = settingsViewModel.state.value.secondsBeforePaste)
             }
 
             ClipMenuAction.CopyAsText -> {
@@ -212,7 +212,7 @@ class ClipsViewModel(
     fun onMultiSelectAction(action: MultiSelectClipMenuAction) {
         when (action) {
             MultiSelectClipMenuAction.Paste -> {
-                pasteMultipleFilesWithRobot(clips = clipsState.value.selectedClips, wait = settingsViewModel.settings.value.secondsBeforePaste)
+                pasteMultipleFilesWithRobot(clips = clipsState.value.selectedClips, wait = settingsViewModel.state.value.secondsBeforePaste)
             }
 
             MultiSelectClipMenuAction.Copy -> {
@@ -384,7 +384,7 @@ class ClipsViewModel(
 
     fun deleteOldUnpinnedClips() {
         viewModelScope.launch {
-            val settingsState = settingsViewModel.settings.value
+            val settingsState = settingsViewModel.state.value
             log("delete all unpinned clips older ${settingsState.clipDeleteTime.unit * settingsState.clipDeleteTime.timeCode.secondsPer}", "deleteOldUnpinnedClips")
             clipsDao.deleteOldUnpinnedClips(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC), (settingsState.clipDeleteTime.unit * settingsState.clipDeleteTime.timeCode.secondsPer).toLong())
         }

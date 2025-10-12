@@ -41,6 +41,7 @@ import com.nullinnix.clippr.misc.SettingsAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.corners
+import com.nullinnix.clippr.misc.formatText
 import com.nullinnix.clippr.misc.isInLoginItemsChecker
 import com.nullinnix.clippr.misc.listenForCopy
 import com.nullinnix.clippr.misc.pasteWithRobot
@@ -74,7 +75,7 @@ fun main() {
     var coercedWindowPositionAndSize = false
 
     registerKeyStroke {
-        if (settingsViewModel.settings.value.enableMetaShiftVPopup) {
+        if (settingsViewModel.state.value.enableMetaShiftVPopup) {
             if (composeWindowStateRaw.value != null && composeWindowStateRaw.value?.isVisible ?: false) {
                 clipsViewModel.setShowMainApp(false)
             } else {
@@ -90,7 +91,7 @@ fun main() {
     }
 
     isInLoginItemsChecker {
-        if (it != settingsViewModel.settings.value.startAtLogin) {
+        if (it != settingsViewModel.state.value.startAtLogin) {
             settingsViewModel.onAction(SettingsAction.SetStartAtLogin(it))
         }
     }
@@ -377,6 +378,7 @@ fun main() {
 
         val trayState = rememberTrayState()
         val clipsState = clipsViewModel.clipsState.collectAsState().value
+        val settingsState = settingsViewModel.state.collectAsState().value
 
         Tray (
             state = trayState,
@@ -385,51 +387,63 @@ fun main() {
                 val pinned = if (clipsState.pinnedClips.size > 5) clipsState.pinnedClips.subList(0, 5) else clipsState.pinnedClips
                 val others = if (clipsState.otherClips.size > 25) clipsState.otherClips.subList(0, 25) else clipsState.otherClips
 
-                Item(text = "Open app") {
+                Item(text = "Select a clip to paste in a focused window", enabled = false) {}
+
+                Separator()
+
+                Item(text = "\uD83D\uDCC2 Open Clippr") {
                     clipsViewModel.forceShowMainApp()
                 }
 
                 Separator()
 
+                Item(text = "\uD83D\uDCCE Pinned clips", enabled = false) {}
+
                 for (clip in pinned) {
-                    Item(clip.content.trimIndent().trimMargin().coerce(50)) {
-                        pasteWithRobot(clip, false)
+                    Item(formatText(clip.content.trimIndent().trimMargin().coerce(50))) {
+                        pasteWithRobot(clip, !settingsState.pasteFilesAsText)
                     }
                 }
 
                 Separator()
+
+                Item(text = "\uD83D\uDDC2 Other clips", enabled = false) {}
 
                 for (clip in others) {
-                    Item(clip.content.trimIndent().trimMargin().coerce(50)) {
-                        pasteWithRobot(clip, false)
+                    Item(formatText(clip.content.trimIndent().trimMargin().coerce(50))) {
+                        pasteWithRobot(clip, !settingsState.pasteFilesAsText)
                     }
                 }
 
                 Separator()
 
-                Item(text = "Clear unpinned") {
+                Item(text = "Options", enabled = false) {}
+
+                Item(text = "${if(settingsState.pasteFilesAsText) "✅" else "❌"} Toggle paste files as text") {
+                    settingsViewModel.onAction(SettingsAction.SetPasteFilesAsText(!settingsState.pasteFilesAsText))
+                }
+
+                Item(text = "\uD83D\uDDD1\uFE0F Clear unpinned") {
                     if (showMacConfirmDialog("Delete all unpinned clips?", "Delete all your unpinned clips")) {
                         clipsViewModel.deleteAllUnpinned()
                     }
                 }
 
-                Separator()
-
-                Item(text = "Settings") {
+                Item(text = "⚙\uFE0F Settings") {
                     clipsViewModel.switchTab(Tab.SettingsTab)
                     clipsViewModel.forceShowMainApp()
                 }
 
                 Separator()
 
-                Item(text = "Quit") {
+                Item(text = "❌ Quit") {
                     exitApplication()
                 }
             },
             onAction = {
                 println("action")
             },
-            tooltip = "this is tool tip"
+            tooltip = "Clippr"
         )
     }
 }

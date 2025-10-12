@@ -21,14 +21,14 @@ import kotlinx.coroutines.launch
 class SettingsViewModel (
     private val settingsDao: SettingsDao
 ): ViewModel() {
-    private val _settings = MutableStateFlow(SettingsState())
-    val settings = _settings.asStateFlow()
+    private val _state = MutableStateFlow(SettingsState())
+    val state = _state.asStateFlow()
 
     init {
         settingsDao
             .getSettings()
             .onEach { savedSettings ->
-                _settings.update {
+                _state.update {
                     savedSettings.firstOrNull()?.settingsState ?: SettingsState()
                 }
             }
@@ -38,19 +38,19 @@ class SettingsViewModel (
     fun onAction (action: SettingsAction) {
         when (action) {
             SettingsAction.ToggleClearAllUnpinnedDevicesOnStart -> {
-                _settings.update {
+                _state.update {
                     it.copy(clearAllUnpinnedClipsOnDeviceStart = !it.clearAllUnpinnedClipsOnDeviceStart)
                 }
             }
 
             SettingsAction.ToggleEnableMetaShiftV -> {
-                _settings.update {
+                _state.update {
                     it.copy(enableMetaShiftVPopup = !it.enableMetaShiftVPopup)
                 }
             }
 
             SettingsAction.ToggleEnableClipping -> {
-                _settings.update {
+                _state.update {
                     it.copy(recordingEnabled = !it.recordingEnabled)
                 }
 
@@ -65,45 +65,51 @@ class SettingsViewModel (
                         removeFromLoginItems()
                     }
 
-                    _settings.update {
+                    _state.update {
                         it.copy(startAtLogin = isInLoginItems())
                     }
                 }
             }
 
             is SettingsAction.SetStartAtLogin -> {
-                _settings.update {
+                _state.update {
                     it.copy(startAtLogin = action.value)
                 }
             }
 
             is SettingsAction.SetClipTypes -> {
-                _settings.update {
+                _state.update {
                     it.copy(clipTypesExceptions = action.value)
                 }
             }
 
             is SettingsAction.SetSourceExceptions -> {
-                _settings.update {
+                _state.update {
                     it.copy(sourcesExceptions = action.value)
                 }
             }
 
             is SettingsAction.SetClipDeleteTime -> {
-                _settings.update {
+                _state.update {
                     it.copy(clipDeleteTime = action.value)
                 }
             }
 
             is SettingsAction.SetMaximumRememberableUnpinnedClips -> {
-                _settings.update {
+                _state.update {
                     it.copy(maximumRememberableUnpinnedClips = action.value)
                 }
             }
 
             is SettingsAction.SetSecondsBeforePaste -> {
-                _settings.update {
+                _state.update {
                     it.copy(secondsBeforePaste = action.value)
+                }
+            }
+
+            is SettingsAction.SetPasteFilesAsText -> {
+                _state.update {
+                    it.copy(pasteFilesAsText = action.value)
                 }
             }
         }
@@ -113,9 +119,9 @@ class SettingsViewModel (
 
     fun save () {
         viewModelScope.launch {
-            if (settings.value.clipDeleteTime.unit > 0) {
+            if (state.value.clipDeleteTime.unit > 0) {
                 log("saving settings", "save")
-                settingsDao.save(SettingsClass(settingsState = settings.value))
+                settingsDao.save(SettingsClass(settingsState = state.value))
             }
         }
     }

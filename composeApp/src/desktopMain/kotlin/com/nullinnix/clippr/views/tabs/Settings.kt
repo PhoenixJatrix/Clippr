@@ -72,7 +72,7 @@ fun Settings (
     miscViewModelState: MiscViewModelState,
     restartClipsMonitor: () -> Unit
 ) {
-    val settingsState = settingsViewModel.settings.collectAsState().value
+    val settingsState = settingsViewModel.state.collectAsState().value
     val recordingEnabled = settingsState.recordingEnabled
     val enableMetaShiftVPopup = settingsState.enableMetaShiftVPopup
     val clearAllUnpinnedClipsOnDeviceStart = settingsState.clearAllUnpinnedClipsOnDeviceStart
