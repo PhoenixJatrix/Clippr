@@ -9,12 +9,17 @@ import com.nullinnix.clippr.misc.ClipMenuAction
 import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.ClipsState
 import com.nullinnix.clippr.misc.Filters
+import com.nullinnix.clippr.misc.MIME_TYPE_PLAIN_TEXT
+import com.nullinnix.clippr.misc.MergeAction
+import com.nullinnix.clippr.misc.MultiSelectClipMenuAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.desc
 import com.nullinnix.clippr.misc.focusWindow
 import com.nullinnix.clippr.misc.log
+import com.nullinnix.clippr.misc.onCopyMultipleToClipboard
 import com.nullinnix.clippr.misc.onCopyToClipboard
+import com.nullinnix.clippr.misc.pasteMultipleFilesWithRobot
 import com.nullinnix.clippr.misc.pasteWithRobot
 import com.nullinnix.clippr.misc.search
 import com.nullinnix.clippr.misc.showMacConfirmDialog
@@ -34,6 +39,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.util.UUID
 
 class ClipsViewModel(
     private val clipsDao: ClipsDao,
@@ -197,9 +203,118 @@ class ClipsViewModel(
             ClipMenuAction.Delete -> {
                 if (showMacConfirmDialog("Delete clip", "'${clip.content.coerce(50)}' will be deleted")) {
                     deleteClip(clip)
+                    searchAndFilter(true)
                 }
             }
         }
+    }
+    
+    fun onMultiSelectAction(action: MultiSelectClipMenuAction) {
+        when (action) {
+            MultiSelectClipMenuAction.Paste -> {
+                pasteMultipleFilesWithRobot(clips = clipsState.value.selectedClips, wait = settingsViewModel.settings.value.secondsBeforePaste)
+            }
+
+            MultiSelectClipMenuAction.Copy -> {
+                onCopyMultipleToClipboard(clips = clipsState.value.selectedClips)
+            }
+
+            MultiSelectClipMenuAction.Merge -> {}
+
+            MultiSelectClipMenuAction.PinAll -> {
+                setMultiplePinState(clips = clipsState.value.selectedClips.toList(), state = true)
+            }
+
+            MultiSelectClipMenuAction.UnpinAll -> {
+                setMultiplePinState(clips = clipsState.value.selectedClips.toList(), state = false)
+            }
+
+            MultiSelectClipMenuAction.DeleteAll -> {
+                if (showMacConfirmDialog("Delete selected clips?", "${clipsState.value.selectedClips.size }${if (clipsState.value.selectedClips.size == 1) " clip" else " clips"} will be deleted")) {
+                    deleteSpecified(clips = clipsState.value.selectedClips.toList())
+
+                    searchAndFilter(true)
+                }
+            }
+        }
+    }
+    
+    fun onMergeAction(action: MergeAction) {
+        var content = ""
+        val clips = clipsState.value.selectedClips.toList()
+
+        when (action) {
+            MergeAction.CommaSeparated -> {
+                for (idx in clips.indices) {
+                    content += clips[idx].content
+
+                    if (idx != clips.size - 1) {
+                        content += ","
+                    }
+                }
+            }
+
+            MergeAction.NewLineSeparated -> {
+                for (idx in clips.indices) {
+                    content += clips[idx].content
+
+                    if (idx != clips.size - 1) {
+                        content += "\n"
+                    }
+                }
+            }
+
+            MergeAction.NumberSeparated -> {
+                for (idx in clips.indices) {
+                    content += "${idx + 1}. ${clips[idx].content}"
+
+                    if (idx != clips.size - 1) {
+                        content += "\n"
+                    }
+                }
+            }
+
+            MergeAction.SpaceSeparated -> {
+                for (idx in clips.indices) {
+                    content += clips[idx].content
+
+                    if (idx != clips.size - 1) {
+                        content += " "
+                    }
+                }
+            }
+
+            MergeAction.TabSeparated -> {
+                for (idx in clips.indices) {
+                    content += clips[idx].content
+
+                    if (idx != clips.size - 1) {
+                        content += "\t"
+                    }
+                }
+            }
+
+            MergeAction.NoSeparation -> {
+                for (idx in clips.indices) {
+                    content += clips[idx].content
+                }
+            }
+        }
+
+        val newClip = Clip (
+            clipID = UUID.randomUUID().toString(),
+            content = content,
+            copiedAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
+            isPinned = false,
+            mimeType = MIME_TYPE_PLAIN_TEXT,
+            isImage = false,
+            exists = true,
+            pinnedAt = 0L,
+            associatedIcon = ClipType.PLAIN_TEXT.id,
+            source = "com.nullinnix.clippr"
+        )
+
+        addClip(newClip)
     }
 
     fun addClip(clip: Clip) {
@@ -211,6 +326,7 @@ class ClipsViewModel(
     fun deleteClip(clip: Clip) {
         viewModelScope.launch {
             clipsDao.delete(clip.toClipEntity())
+            searchAndFilter(true)
         }
     }
 
@@ -260,6 +376,8 @@ class ClipsViewModel(
                     it.clipID
                 }
             )
+
+            searchAndFilter(true)
         }
     }
 
@@ -354,6 +472,14 @@ class ClipsViewModel(
                 }
 
                 println("searching end")
+            }
+        }
+    }
+
+    fun setMultiplePinState (clips: List<Clip>, state: Boolean) {
+        viewModelScope.launch {
+            if (clips.isNotEmpty()) {
+                clipsDao.setMultiplePinnedState(clips.map {it.clipID}, state, if (state) LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) else 0L)
             }
         }
     }

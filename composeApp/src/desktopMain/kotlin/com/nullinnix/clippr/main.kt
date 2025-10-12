@@ -36,6 +36,7 @@ import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.ClipMenuAction
 import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.EscPriorityConsumers
+import com.nullinnix.clippr.misc.MultiSelectClipMenuAction
 import com.nullinnix.clippr.misc.SettingsAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.coerce
@@ -180,31 +181,59 @@ fun main() {
                                     }
 
                                     Key.V -> {
-                                        if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && !clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
-                                            intercepted = true
-                                            if (miscViewModelState.metaHeldDown) {
-                                                clipsViewModel.onClipMenuAction(ClipMenuAction.PasteAsText, miscViewModelState.lastHoveredClip)
+                                        if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                                            if (clipsState.isSearching) {
+                                                if (miscViewModelState.metaHeldDown && clipsState.selectedClips.size > 1) {
+                                                    intercepted = true
+                                                    clipsViewModel.onMultiSelectAction(MultiSelectClipMenuAction.Paste)
+                                                }
                                             } else {
-                                                clipsViewModel.onClipMenuAction(ClipMenuAction.PasteAsFile, miscViewModelState.lastHoveredClip)
+                                                if (miscViewModelState.metaHeldDown) {
+                                                    clipsViewModel.onClipMenuAction(ClipMenuAction.PasteAsText, miscViewModelState.lastHoveredClip)
+
+                                                } else {
+                                                    clipsViewModel.onClipMenuAction(ClipMenuAction.PasteAsFile, miscViewModelState.lastHoveredClip)
+                                                }
+                                                intercepted = true
                                             }
                                         }
                                     }
 
                                     Key.C -> {
-                                        if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && !clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
-                                            intercepted = true
-                                            if (miscViewModelState.metaHeldDown) {
-                                                clipsViewModel.onClipMenuAction(ClipMenuAction.CopyAsText, miscViewModelState.lastHoveredClip)
+                                        if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                                            if (clipsState.isSearching) {
+                                                if (miscViewModelState.metaHeldDown && clipsState.selectedClips.size > 1) {
+                                                    intercepted = true
+                                                    clipsViewModel.onMultiSelectAction(MultiSelectClipMenuAction.Copy)
+                                                }
                                             } else {
-                                                clipsViewModel.onClipMenuAction(ClipMenuAction.CopyAsFile, miscViewModelState.lastHoveredClip)
+                                                intercepted = true
+
+                                                if (miscViewModelState.metaHeldDown) {
+                                                    clipsViewModel.onClipMenuAction(ClipMenuAction.CopyAsText, miscViewModelState.lastHoveredClip)
+                                                } else {
+                                                    clipsViewModel.onClipMenuAction(ClipMenuAction.CopyAsFile, miscViewModelState.lastHoveredClip)
+                                                }
                                             }
                                         }
                                     }
 
                                     Key.P -> {
-                                        if (miscViewModelState.metaHeldDown && !clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
-                                            intercepted = true
-                                            clipsViewModel.onClipMenuAction(if (miscViewModelState.lastHoveredClip.isPinned) ClipMenuAction.Unpin else ClipMenuAction.Pin, miscViewModelState.lastHoveredClip)
+                                        if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                                            if (clipsState.isSearching) {
+                                                if (clipsState.selectedClips.size > 1) {
+                                                    intercepted = true
+
+                                                    if (miscViewModelState.metaHeldDown) {
+                                                        clipsViewModel.onMultiSelectAction(MultiSelectClipMenuAction.PinAll)
+                                                    } else {
+                                                        clipsViewModel.onMultiSelectAction(MultiSelectClipMenuAction.UnpinAll)
+                                                    }
+                                                }
+                                            } else {
+                                                intercepted = true
+                                                clipsViewModel.onClipMenuAction(if (miscViewModelState.lastHoveredClip.isPinned) ClipMenuAction.Unpin else ClipMenuAction.Pin, miscViewModelState.lastHoveredClip)
+                                            }
                                         }
                                     }
 

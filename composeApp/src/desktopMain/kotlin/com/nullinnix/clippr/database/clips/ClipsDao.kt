@@ -32,4 +32,12 @@ interface ClipsDao {
 
     @Query("DELETE FROM clips WHERE clipID IN (:clipsToDelete)")
     suspend fun deleteSelected(clipsToDelete: List<String>)
+
+    @Query("""
+        UPDATE clips
+        SET isPinned = :state,
+            pinnedAt = :pinnedAt
+        WHERE clipID IN (:clips)
+    """)
+    suspend fun setMultiplePinnedState(clips: List<String>, state: Boolean, pinnedAt: Long)
 }

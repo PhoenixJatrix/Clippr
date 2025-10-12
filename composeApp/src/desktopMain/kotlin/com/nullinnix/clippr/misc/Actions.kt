@@ -27,8 +27,8 @@ enum class ClipMenuAction() {
 }
 
 enum class MultiSelectClipMenuAction {
-    PasteOnlyFiles,
-    CopyOnlyFiles,
+    Paste,
+    Copy,
     Merge,
     PinAll,
     UnpinAll,
@@ -43,16 +43,6 @@ enum class MergeAction {
     TabSeparated,
     NoSeparation
 }
-
-//for when searching. no clip highlight just add number of copied on top the menus. when right click on other that is not selected, remove all selected
-
-//paste one by one in x seconds
-//copy all files
-//copy all text, sep by new line
-//pin all
-//unpin all
-//merge -> comma separated, new line separated, numbered separation, no separation, space separation, tab sep
-//delete all
 
 sealed interface Tab {
     object ClipsTab: Tab

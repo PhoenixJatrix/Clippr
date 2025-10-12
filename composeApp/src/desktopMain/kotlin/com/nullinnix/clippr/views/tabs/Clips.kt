@@ -66,6 +66,8 @@ import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.ClipMenuAction
 import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.MacApp
+import com.nullinnix.clippr.misc.MergeAction
+import com.nullinnix.clippr.misc.MultiSelectClipMenuAction
 import com.nullinnix.clippr.misc.clipTypeToColor
 import com.nullinnix.clippr.misc.clipTypeToDesc
 import com.nullinnix.clippr.misc.coerce
@@ -190,6 +192,12 @@ fun Clips (
                             },
                             onClearSelected = {
                                 clipsViewModel.setSelectedClips(emptySet())
+                            },
+                            onMultiSelectClipMenuAction = {
+                                clipsViewModel.onMultiSelectAction(it)
+                            },
+                            onMergeAction = {
+                                clipsViewModel.onMergeAction(it)
                             }
                         )
 
@@ -242,6 +250,12 @@ fun Clips (
                             },
                             onClearSelected = {
                                 clipsViewModel.setSelectedClips(emptySet())
+                            },
+                            onMultiSelectClipMenuAction = {
+                                clipsViewModel.onMultiSelectAction(it)
+                            },
+                            onMergeAction = {
+                                clipsViewModel.onMergeAction(it)
                             }
                         )
 
@@ -358,6 +372,12 @@ fun Clips (
                                 },
                                 onClearSelected = {
                                     clipsViewModel.setSelectedClips(emptySet())
+                                },
+                                onMultiSelectClipMenuAction = {
+                                    clipsViewModel.onMultiSelectAction(it)
+                                },
+                                onMergeAction = {
+                                    clipsViewModel.onMergeAction(it)
                                 }
                             )
 
@@ -409,6 +429,8 @@ fun ClipTemplate (
     secondsBeforePaste: Int,
     onAction: (ClipAction) -> Unit,
     onClipMenuAction: (ClipMenuAction) -> Unit,
+    onMultiSelectClipMenuAction: (MultiSelectClipMenuAction) -> Unit,
+    onMergeAction: (MergeAction) -> Unit,
     onMenuShowEvent: (Boolean) -> Unit,
     onHover: (Boolean) -> Unit,
     onClearSelected: () -> Unit
@@ -524,12 +546,16 @@ fun ClipTemplate (
                             menuXPosition = menuPosition,
                             secondsBeforePaste = secondsBeforePaste,
                             onAction = {
-                                //
-
+                                onMultiSelectClipMenuAction(it)
                                 onMenuShowEvent(false)
                                 showMenu = false
                             },
                             onDismiss = {
+                                onMenuShowEvent(false)
+                                showMenu = false
+                            },
+                            onMergeAction = {
+                                onMergeAction(it)
                                 onMenuShowEvent(false)
                                 showMenu = false
                             }

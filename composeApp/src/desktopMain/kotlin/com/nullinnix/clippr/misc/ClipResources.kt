@@ -100,7 +100,7 @@ fun getClipboard (
                                     copiedAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
                                     isPinned = false,
                                     mimeType = mimeType,
-                                    isImage = false,
+                                    isImage = resolvedType.toClipType() == ClipType.IMAGE,
                                     exists = path.exists(),
                                     pinnedAt = 0L,
                                     associatedIcon = resolvedType,
@@ -276,24 +276,37 @@ fun onCopyToClipboard(clip: Clip, pasteAsFile: Boolean) {
     clipboard.setContents(customTransferable, CustomClipboardOwner())
 }
 
-fun mimeTypeToDataFlavor(clipType: ClipType, altHeldDown: Boolean): List<DataFlavor> {
+fun onCopyMultipleToClipboard(clips: Set<Clip>) {
+    val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+    val multiFileTransferable = MultiFileTransferable(clips)
+
+    lastCopiedItemHash = multiFileTransferable.hash ?: lastCopiedItemHash
+
+    clipboard.setContents(multiFileTransferable, CustomClipboardOwner())
+}
+
+fun clipTypeToDataFlavor(clipType: ClipType, pasteAsFile: Boolean): DataFlavor {
     return when (clipType) {
         ClipType.PLAIN_TEXT -> {
-            listOf(DataFlavor.stringFlavor)
+            DataFlavor.stringFlavor
+        }
+
+        ClipType.IMAGE -> {
+            DataFlavor.imageFlavor
         }
 
         else -> {
-            if (altHeldDown) {
-                listOf(DataFlavor.javaFileListFlavor)
+            if (pasteAsFile) {
+                DataFlavor.javaFileListFlavor
             } else {
-                listOf(DataFlavor.stringFlavor)
+                DataFlavor.stringFlavor
             }
         }
     }
 }
 
-class CustomTransferable(private val clip: Clip, private val altHeldDown: Boolean): Transferable {
-    val dataFlavors = mimeTypeToDataFlavor(clip.associatedIcon.toClipType(), altHeldDown)
+class CustomTransferable(private val clip: Clip, private val pasteAsFile: Boolean): Transferable {
+    val dataFlavors = listOf(clipTypeToDataFlavor(clip.associatedIcon.toClipType(), pasteAsFile))
     var hash: String? = null
 
     init {
@@ -319,8 +332,18 @@ class CustomTransferable(private val clip: Clip, private val altHeldDown: Boolea
                 clip.content
             }
 
+            ClipType.IMAGE -> {
+                if (pasteAsFile && File(clip.content).exists()) {
+                    println("copying image")
+                    listOf(File(clip.content))
+                } else {
+                    println("copying plain text of an image")
+                    clip.content
+                }
+            }
+
             else -> {
-                if (altHeldDown) {
+                if (pasteAsFile && File(clip.content).exists()) {
                     println("copying file")
                     listOf(File(clip.content))
                 } else {
@@ -329,6 +352,40 @@ class CustomTransferable(private val clip: Clip, private val altHeldDown: Boolea
                 }
             }
         }
+    }
+}
+
+class MultiFileTransferable(private val clips: Set<Clip>): Transferable {
+    val dataFlavors = clips.map {
+        clipTypeToDataFlavor(it.associatedIcon.toClipType(), true)
+    }
+
+    var hash: String? = null
+
+    init {
+        hash = clips.toString().hash()
+    }
+
+    override fun getTransferDataFlavors(): Array<out DataFlavor?>? {
+        val dataFlavorArray = Array(dataFlavors.size) {
+            dataFlavors[it]
+        }
+
+        return dataFlavorArray
+    }
+
+    override fun isDataFlavorSupported(p0: DataFlavor?): Boolean {
+        return p0 in dataFlavors
+    }
+
+    override fun getTransferData(p0: DataFlavor?): Any {
+        val files = mutableListOf<File>()
+
+        clips.forEach {
+            files.add(File(it.content))
+        }
+
+        return files
     }
 }
 
@@ -343,6 +400,8 @@ class CustomClipboardOwner: ClipboardOwner {
 
 fun pasteWithRobot(clip: Clip, pasteAsFile: Boolean, wait: Int = 0) {
     CoroutineScope(Dispatchers.Default).launch {
+        lastCopiedItemHash = clip.content.hash()
+
         delay(wait * 1000L)
 
         onCopyToClipboard(clip = clip, pasteAsFile = pasteAsFile)
@@ -369,6 +428,43 @@ fun pasteWithRobot(clip: Clip, pasteAsFile: Boolean, wait: Int = 0) {
         cg.CFRelease(vUp)
         cg.CFRelease(cmdUp)
         cg.CFRelease(source)
+    }
+}
+
+fun pasteMultipleFilesWithRobot(clips: Set<Clip>, wait: Int = 0) {
+    CoroutineScope(Dispatchers.Default).launch {
+        lastCopiedItemHash = clips.toString().hash()
+
+        delay(wait * 1000L)
+
+        clips.forEach { clip ->
+            onCopyToClipboard(clip = clip, pasteAsFile = true)
+
+            Thread.sleep(50)
+
+            val cg = CoreGraphics.INSTANCE
+            val source = cg.CGEventSourceCreate(CoreGraphics.kCGEventSourceStateHIDSystemState)
+
+            val vDown = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, true)
+            cg.CGEventSetFlags(vDown, CoreGraphics.kCGEventFlagMaskCommand)
+            cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vDown)
+            Thread.sleep(30)
+
+            val vUp = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, false)
+            cg.CGEventSetFlags(vUp, CoreGraphics.kCGEventFlagMaskCommand)
+            cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vUp)
+            Thread.sleep(30)
+
+            val cmdUp = cg.CGEventCreateKeyboardEvent(source, 55, false)
+            cg.CGEventPost(CoreGraphics.kCGSessionEventTap, cmdUp)
+
+            cg.CFRelease(vDown)
+            cg.CFRelease(vUp)
+            cg.CFRelease(cmdUp)
+            cg.CFRelease(source)
+
+            Thread.sleep(50)
+        }
     }
 }
 
@@ -709,8 +805,8 @@ fun ClipMenuAction.info(secondsBeforePaste: Int): String {
 
 fun MultiSelectClipMenuAction.desc(secondsBeforePaste: Int): String {
     return when(this) {
-        MultiSelectClipMenuAction.PasteOnlyFiles -> "Paste only files in ${secondsBeforePaste}s"
-        MultiSelectClipMenuAction.CopyOnlyFiles -> "Copy only files"
+        MultiSelectClipMenuAction.Paste -> "Paste clips in ${secondsBeforePaste}s"
+        MultiSelectClipMenuAction.Copy -> "Copy clips"
         MultiSelectClipMenuAction.Merge -> "Merge all"
         MultiSelectClipMenuAction.PinAll -> "Pin all"
         MultiSelectClipMenuAction.UnpinAll -> "Unpin all"
@@ -720,8 +816,8 @@ fun MultiSelectClipMenuAction.desc(secondsBeforePaste: Int): String {
 
 fun MultiSelectClipMenuAction.shortcut(): String {
     return when(this) {
-        MultiSelectClipMenuAction.PasteOnlyFiles -> "⌘ + V"
-        MultiSelectClipMenuAction.CopyOnlyFiles -> "⌥ + C"
+        MultiSelectClipMenuAction.Paste -> "⌘ + V"
+        MultiSelectClipMenuAction.Copy -> "⌘ + C"
         MultiSelectClipMenuAction.Merge -> ""
         MultiSelectClipMenuAction.PinAll -> "⌘ + P"
         MultiSelectClipMenuAction.UnpinAll -> "⌥ + P"
@@ -731,8 +827,8 @@ fun MultiSelectClipMenuAction.shortcut(): String {
 
 fun MultiSelectClipMenuAction.info(secondsBeforePaste: Int): String {
     return when(this) {
-        MultiSelectClipMenuAction.PasteOnlyFiles -> "Paste only files to focused window in ${secondsBeforePaste}s"
-        MultiSelectClipMenuAction.CopyOnlyFiles -> "Copy only files to global keyboard"
+        MultiSelectClipMenuAction.Paste -> "Paste clips to focused window in ${secondsBeforePaste}s"
+        MultiSelectClipMenuAction.Copy -> "Copy clips to global keyboard"
         MultiSelectClipMenuAction.Merge -> "Merge text and or files"
         MultiSelectClipMenuAction.PinAll -> "Pin all selected clips"
         MultiSelectClipMenuAction.UnpinAll -> "Unpin all selected clips"

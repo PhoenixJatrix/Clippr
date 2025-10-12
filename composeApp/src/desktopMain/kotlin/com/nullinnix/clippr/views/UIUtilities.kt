@@ -9,7 +9,6 @@ import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.hoverable
@@ -31,14 +30,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.CursorDropdownMenu
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,12 +49,9 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
@@ -79,14 +71,12 @@ import clippr.composeapp.generated.resources.full_screen
 import clippr.composeapp.generated.resources.right
 import clippr.composeapp.generated.resources.search
 import com.nullinnix.clippr.misc.Clip
-import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.ClipMenuAction
 import com.nullinnix.clippr.misc.ClipsState
 import com.nullinnix.clippr.misc.MergeAction
 import com.nullinnix.clippr.misc.MultiSelectClipMenuAction
 import com.nullinnix.clippr.misc.SearchAction
 import com.nullinnix.clippr.misc.Tab
-import com.nullinnix.clippr.misc.TimeCode
 import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.misc.desc
 import com.nullinnix.clippr.misc.getClipMenuActions
@@ -97,10 +87,7 @@ import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.misc.shortcut
 import com.nullinnix.clippr.theme.HeaderColor
 import com.nullinnix.clippr.theme.Transparent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import java.awt.MouseInfo
 import java.awt.Window
@@ -654,28 +641,14 @@ fun ClipDropDownMenu (
 fun MultiSelectClipDropDownMenu (
     menuXPosition: Dp,
     secondsBeforePaste: Int,
-    onAction: (ClipMenuAction) -> Unit,
+    onAction: (MultiSelectClipMenuAction) -> Unit,
+    onMergeAction: (MergeAction) -> Unit,
     onDismiss: () -> Unit
 ) {
     var currentHoverAction by remember { mutableStateOf<MultiSelectClipMenuAction?>(null) }
-    var mergeXPosition by remember { mutableStateOf(0.dp) }
+    var mergeXPosition by remember { mutableStateOf(menuXPosition) }
 
-//    Popup(
-//        offset = IntOffset(position.x.toInt(), position.y.toInt()),
-//        properties = PopupProperties(focusable = false)
-//    ) {
-//        Surface(
-//            shape = MaterialTheme.shapes.extraSmall,
-//            shadowElevation = 4.dp,
-//            color = Color(0xFFF7F7F7)
-//        ) {
-//            Column(Modifier.width(180.dp).background(Color.White)) {
-//
-//            }
-//        }
-//    }
-
-    DropdownMenu(
+    DropdownMenu (
         expanded = true,
         onDismissRequest = {
             onDismiss()
@@ -699,12 +672,15 @@ fun MultiSelectClipDropDownMenu (
 
             DropdownMenuItem (
                 onClick = {
-
+                    if (option != MultiSelectClipMenuAction.Merge) {
+                        onAction(option)
+                    }
                 },
                 content = {
                     Row(
                         modifier = Modifier
-                            .widthIn(min = 350.dp),
+                            .widthIn(min = 350.dp)
+                            .background(Color.White),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
@@ -724,7 +700,8 @@ fun MultiSelectClipDropDownMenu (
                                 painter = painterResource(Res.drawable.right),
                                 contentDescription = "",
                                 modifier = Modifier
-                                    .size(30.dp)
+                                    .size(20.dp),
+                                tint = Color.Black.copy(0.5f)
                             )
                         }
                     }
@@ -746,22 +723,26 @@ fun MultiSelectClipDropDownMenu (
         }
     }
 
-    //merge
-
     if (currentHoverAction == MultiSelectClipMenuAction.Merge) {
         DropdownMenu(
             expanded = true,
-            onDismissRequest = {
-                onDismiss()
-            },
-            offset = DpOffset(mergeXPosition, 0.dp),
-            properties = PopupProperties(focusable = true),
+            onDismissRequest = {},
+            offset = DpOffset(x = mergeXPosition + 280.dp, y = 0.dp),
+            properties = PopupProperties(focusable = false),
             modifier = Modifier
                 .padding(7.dp)
                 .clip(corners(10.dp))
                 .animateContentSize()
         ) {
             var currentHoverMerge by remember { mutableStateOf<MergeAction?>(null) }
+
+            Text (
+                text = "Merge all",
+                color = Color.Black,
+                fontSize = 16.sp
+            )
+
+            Spacer(Modifier.height(5.dp))
 
             MergeAction.entries.forEach { option ->
                 val interactionSource = remember { MutableInteractionSource() }
@@ -775,7 +756,7 @@ fun MultiSelectClipDropDownMenu (
 
                 DropdownMenuItem (
                     onClick = {
-//                    onAction(option)
+                        onMergeAction(option)
                     },
                     content = {
                         Row(
