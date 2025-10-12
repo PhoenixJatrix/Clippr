@@ -842,7 +842,6 @@ fun MergeAction.desc(): String {
         MergeAction.NewLineSeparated -> "Separate with a new line"
         MergeAction.NumberSeparated -> "Number"
         MergeAction.SpaceSeparated -> "Separate with space"
-        MergeAction.TabSeparated -> "Separate with tab"
         MergeAction.NoSeparation -> "No separation"
     }
 }
@@ -853,7 +852,6 @@ fun MergeAction.info(): String {
         MergeAction.NewLineSeparated -> "Clip1\nClip2\nClip3"
         MergeAction.NumberSeparated -> "1. Clip1\n2. Clip2\n3. Clip3"
         MergeAction.SpaceSeparated -> "\nClip1 Clip2 Clip3\n"
-        MergeAction.TabSeparated -> "\nClip1  Clip2   Clip3\n"
         MergeAction.NoSeparation -> "\nClip1Clip2Clip3\n"
     }
 }

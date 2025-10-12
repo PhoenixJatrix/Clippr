@@ -40,7 +40,6 @@ enum class MergeAction {
     NewLineSeparated,
     NumberSeparated,
     SpaceSeparated,
-    TabSeparated,
     NoSeparation
 }
 

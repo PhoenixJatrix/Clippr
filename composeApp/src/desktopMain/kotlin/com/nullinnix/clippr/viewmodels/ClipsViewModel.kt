@@ -284,16 +284,6 @@ class ClipsViewModel(
                 }
             }
 
-            MergeAction.TabSeparated -> {
-                for (idx in clips.indices) {
-                    content += clips[idx].content
-
-                    if (idx != clips.size - 1) {
-                        content += "\t"
-                    }
-                }
-            }
-
             MergeAction.NoSeparation -> {
                 for (idx in clips.indices) {
                     content += clips[idx].content

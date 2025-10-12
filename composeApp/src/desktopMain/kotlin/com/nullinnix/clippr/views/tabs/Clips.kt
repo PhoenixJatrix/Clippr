@@ -440,7 +440,6 @@ fun ClipTemplate (
     ) {
         val interactionSource = remember { MutableInteractionSource() }
         var showMenu by remember { mutableStateOf(false) }
-        var copiedTime by remember { mutableStateOf(epochToReadableTime(clip.copiedAt)) }
         var menuPosition by remember { mutableStateOf(0.dp) }
         var delayedHoverEmits by remember { mutableStateOf(false) }
         val isHovered = interactionSource.collectIsHoveredAsState().value
@@ -459,13 +458,6 @@ fun ClipTemplate (
         LaunchedEffect(Unit) {
             delay(100)
             delayedHoverEmits = true
-        }
-
-        LaunchedEffect(Unit) {
-            while (true) {
-                copiedTime = epochToReadableTime(clip.copiedAt)
-                delay(5000)
-            }
         }
 
         LaunchedEffect(isHovered) {
@@ -741,8 +733,14 @@ fun ClipTemplate (
                             Spacer(Modifier.width(7.dp))
                         }
 
+                        LaunchedEffect(Unit) {
+                            while (true) {
+                                delay(5000)
+                            }
+                        }
+
                         Text (
-                            text = copiedTime,
+                            text = epochToReadableTime(clip.copiedAt),
                             modifier = Modifier
                                 .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
                                 .clip(RoundedCornerShape(90.dp))
