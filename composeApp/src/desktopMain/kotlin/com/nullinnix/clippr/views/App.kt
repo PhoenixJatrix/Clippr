@@ -97,15 +97,6 @@ fun App (
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clickable {
-                    if (Random.nextInt(0, 2) == 1) {
-                        val time = Random.nextInt(3, 15).toLong()
-                        notificationsViewModel.postNotification(Notification(id = UUID.randomUUID().toString(), duration = time, type = NotificationType.Info, content = "$time"))
-                    } else {
-                        val time = Random.nextInt(3, 15).toLong()
-                        notificationsViewModel.postNotification(Notification(id = UUID.randomUUID().toString(), duration = time, type = NotificationType.Warning, content = "$time"))
-                    }
-                }
         ) {
             Column (
                 modifier = Modifier

@@ -3,10 +3,9 @@ package com.nullinnix.clippr.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nullinnix.clippr.misc.Notification
+import com.nullinnix.clippr.misc.NotificationType
 import com.nullinnix.clippr.misc.NotificationsState
 import com.nullinnix.clippr.misc.epoch
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,9 +23,13 @@ class NotificationsViewModel: ViewModel() {
     }
 
     fun postNotification (notification: Notification) {
-        if (notificationsState.value.notifications.size < 3) {
+        if (notificationsState.value.notifications.size < 3 || notification.type is NotificationType.DelayedOperation) {
             _notificationsState.update {
-                it.copy(notifications = it.notifications + notification.copy(startedAt = LocalDateTime.now().epoch()))
+                if (notification.type is NotificationType.DelayedOperation) {
+                    it.copy(notifications = it.notifications + notification.copy(startedAt = LocalDateTime.now().epoch(), duration = notification.type.delay.toLong() + 1))
+                } else {
+                    it.copy(notifications = it.notifications + notification.copy(startedAt = LocalDateTime.now().epoch()))
+                }
             }
         } else {
             _notificationsState.update {

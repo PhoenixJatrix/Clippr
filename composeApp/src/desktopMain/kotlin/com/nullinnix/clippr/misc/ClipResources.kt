@@ -14,6 +14,7 @@ import clippr.composeapp.generated.resources.unknown
 import clippr.composeapp.generated.resources.video
 import clippr.composeapp.generated.resources.web
 import clippr.composeapp.generated.resources.zip
+import com.nullinnix.clippr.viewmodels.SettingsViewModel
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.Pointer
@@ -37,7 +38,6 @@ import java.util.UUID
 import javax.swing.JOptionPane
 
 var lastCopiedItemHash = ""
-var duplicateHandlerHash = ""
 
 fun getClipboard (
     sourceExceptions: Set<String>,
@@ -51,9 +51,7 @@ fun getClipboard (
         if (contents.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
             val paths = contents.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
 
-            if (lastCopiedItemHash != paths.toString().hash() && duplicateHandlerHash != paths.toString().hash()) {
-                duplicateHandlerHash = paths.toString().hash()
-
+            if (lastCopiedItemHash != paths.toString().hash()) {
                 for (index in paths.indices) {
                     if ((paths[index] as File).isDirectory) {
                         val path = paths[index] as File
@@ -90,8 +88,6 @@ fun getClipboard (
 
                         val resolvedType = getIconForContent(mimeType, path.path.lowercase())
 
-                        println("sources = $sourceExceptions == $source, type = $clipTypeExceptions == $resolvedType")
-
                         if (!sourceExceptions.contains(source ?: ClipType.UNKNOWN) && !clipTypeExceptions.contains(resolvedType.toClipType())) {
                             onCopy(
                                 Clip(
@@ -117,16 +113,13 @@ fun getClipboard (
             val content = contents.getTransferData(DataFlavor.stringFlavor) as String
             val hash = content.hash()
 
-            if (lastCopiedItemHash != hash  && duplicateHandlerHash != hash) {
-                duplicateHandlerHash = hash
+            if (lastCopiedItemHash != hash) {
                 val source = getClipSource()
 
                 log("str $content from $source", "")
                 println("str $content from $source")
 
                 val resolvedType = getIconForContent(MIME_TYPE_PLAIN_TEXT, content)
-
-                println("sources = $sourceExceptions == $source, type = $clipTypeExceptions == $resolvedType")
 
                 if (!sourceExceptions.contains(source ?: ClipType.UNKNOWN) && !clipTypeExceptions.contains(resolvedType.toClipType())) {
                     onCopy(
@@ -150,6 +143,25 @@ fun getClipboard (
         }
     } catch (e: Exception) {
         log("${e.message} -> ${e.stackTrace.firstOrNull()?.let {it::class.java.name}}", "catch")
+    }
+}
+
+fun listenForCopy(
+    settingsViewModel: SettingsViewModel,
+    onCopy: (Clip) -> Unit
+) {
+    CoroutineScope(Dispatchers.Default).launch {
+        while(true) {
+            getClipboard (
+                sourceExceptions = settingsViewModel.state.value.sourcesExceptions,
+                clipTypeExceptions = settingsViewModel.state.value.clipTypesExceptions,
+                onCopy = {
+                    onCopy(it)
+                }
+            )
+
+            delay(300)
+        }
     }
 }
 
@@ -267,22 +279,20 @@ fun getIconForContent (
     }
 }
 
-fun onCopyToClipboard(clip: Clip, pasteAsFile: Boolean) {
+fun copyToClipboard(clip: Clip, pasteAsFile: Boolean) {
     val clipboard = Toolkit.getDefaultToolkit().systemClipboard
     val customTransferable = CustomTransferable(clip, pasteAsFile)
 
-    lastCopiedItemHash = customTransferable.hash ?: lastCopiedItemHash
-
     clipboard.setContents(customTransferable, CustomClipboardOwner())
+    lastCopiedItemHash = clip.content.hash()
 }
 
-fun onCopyMultipleToClipboard(clips: Set<Clip>) {
+fun copyMultipleToClipboard(clips: Set<Clip>) {
     val clipboard = Toolkit.getDefaultToolkit().systemClipboard
     val multiFileTransferable = MultiFileTransferable(clips)
 
-    lastCopiedItemHash = multiFileTransferable.hash ?: lastCopiedItemHash
-
     clipboard.setContents(multiFileTransferable, CustomClipboardOwner())
+    lastCopiedItemHash = clips.toString().hash()
 }
 
 fun clipTypeToDataFlavor(clipType: ClipType, pasteAsFile: Boolean): DataFlavor {
@@ -307,11 +317,6 @@ fun clipTypeToDataFlavor(clipType: ClipType, pasteAsFile: Boolean): DataFlavor {
 
 class CustomTransferable(private val clip: Clip, private val pasteAsFile: Boolean): Transferable {
     val dataFlavors = listOf(clipTypeToDataFlavor(clip.associatedIcon.toClipType(), pasteAsFile))
-    var hash: String? = null
-
-    init {
-        hash = clip.content.hash()
-    }
 
     override fun getTransferDataFlavors(): Array<out DataFlavor?>? {
         val dataFlavorArray = Array(dataFlavors.size) {
@@ -355,12 +360,6 @@ class MultiFileTransferable(private val clips: Set<Clip>): Transferable {
         clipTypeToDataFlavor(it.associatedIcon.toClipType(), true)
     }
 
-    var hash: String? = null
-
-    init {
-        hash = clips.toString().hash()
-    }
-
     override fun getTransferDataFlavors(): Array<out DataFlavor?>? {
         val dataFlavorArray = Array(dataFlavors.size) {
             dataFlavors[it]
@@ -395,11 +394,9 @@ class CustomClipboardOwner: ClipboardOwner {
 
 fun pasteWithRobot(clip: Clip, pasteAsFile: Boolean, wait: Int = 0) {
     CoroutineScope(Dispatchers.Default).launch {
-        lastCopiedItemHash = clip.content.hash()
-
         delay(wait * 1000L)
 
-        onCopyToClipboard(clip = clip, pasteAsFile = pasteAsFile)
+        copyToClipboard(clip = clip, pasteAsFile = pasteAsFile)
 
         Thread.sleep(50)
 
@@ -416,24 +413,22 @@ fun pasteWithRobot(clip: Clip, pasteAsFile: Boolean, wait: Int = 0) {
         cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vUp)
         Thread.sleep(30)
 
-        val cmdUp = cg.CGEventCreateKeyboardEvent(source, 55, false)
-        cg.CGEventPost(CoreGraphics.kCGSessionEventTap, cmdUp)
+        val metaUp = cg.CGEventCreateKeyboardEvent(source, 55, false)
+        cg.CGEventPost(CoreGraphics.kCGSessionEventTap, metaUp)
 
         cg.CFRelease(vDown)
         cg.CFRelease(vUp)
-        cg.CFRelease(cmdUp)
+        cg.CFRelease(metaUp)
         cg.CFRelease(source)
     }
 }
 
 fun pasteMultipleFilesWithRobot(clips: Set<Clip>, wait: Int = 0) {
     CoroutineScope(Dispatchers.Default).launch {
-        lastCopiedItemHash = clips.toString().hash()
-
         delay(wait * 1000L)
 
         clips.forEach { clip ->
-            onCopyToClipboard(clip = clip, pasteAsFile = true)
+            copyToClipboard(clip = clip, pasteAsFile = true)
 
             Thread.sleep(50)
 

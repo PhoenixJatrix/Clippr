@@ -63,7 +63,7 @@ fun main() {
     val settingsViewModel = SettingsViewModel(settingsDatabase.settingsDao())
     val miscViewModel = MiscViewModel()
     val notificationsViewModel = NotificationsViewModel()
-    val clipsViewModel = ClipsViewModel(clipsDatabase.clipsDao(), settingsViewModel, miscViewModel)
+    val clipsViewModel = ClipsViewModel(clipsDatabase.clipsDao(), settingsViewModel, miscViewModel, notificationsViewModel)
 
     val composeWindowStateRaw = MutableStateFlow<Window?>(null)
     var coercedWindowPositionAndSize = false

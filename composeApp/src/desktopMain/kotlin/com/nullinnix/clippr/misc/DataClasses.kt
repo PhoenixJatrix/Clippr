@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 import kotlinx.serialization.Serializable
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.util.UUID
 
 @Entity(tableName = "clips")
 data class ClipEntity (
@@ -112,14 +113,15 @@ data class MergeOptions (
     val deleteOriginal: Boolean
 )
 
-enum class NotificationType(val color: Color) {
-    Info(Color.Black),
-    Warning(Color.Red)
+sealed interface NotificationType {
+    data class Info(val color: Color = Color.Black): NotificationType
+    data class Warning(val color: Color = Color.Red): NotificationType
+    data class DelayedOperation(val color: Color = Color.Yellow, val delay: Int, val action: String): NotificationType
 }
 
 data class Notification (
     val duration: Long,
-    val id: String,
+    val id: String = UUID.randomUUID().toString(),
     val type: NotificationType,
     val content: String,
     val startedAt: Long = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)

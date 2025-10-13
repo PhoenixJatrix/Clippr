@@ -79,25 +79,6 @@ fun registerKeyStroke (
     }
 }
 
-fun listenForCopy(
-    settingsViewModel: SettingsViewModel,
-    onCopy: (Clip) -> Unit
-) {
-    CoroutineScope(Dispatchers.IO).launch {
-        while(true) {
-            getClipboard (
-                sourceExceptions = settingsViewModel.state.value.sourcesExceptions,
-                clipTypeExceptions = settingsViewModel.state.value.clipTypesExceptions,
-                onCopy = {
-                    onCopy(it)
-                }
-            )
-
-            delay(300)
-        }
-    }
-}
-
 fun addToLoginItems() {
     val script = """
         tell application "System Events"

@@ -14,13 +14,14 @@ import com.nullinnix.clippr.misc.MergeAction
 import com.nullinnix.clippr.misc.MergeOptions
 import com.nullinnix.clippr.misc.MultiSelectClipMenuAction
 import com.nullinnix.clippr.misc.Notification
+import com.nullinnix.clippr.misc.NotificationType
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.desc
 import com.nullinnix.clippr.misc.focusWindow
 import com.nullinnix.clippr.misc.log
-import com.nullinnix.clippr.misc.onCopyMultipleToClipboard
-import com.nullinnix.clippr.misc.onCopyToClipboard
+import com.nullinnix.clippr.misc.copyMultipleToClipboard
+import com.nullinnix.clippr.misc.copyToClipboard
 import com.nullinnix.clippr.misc.pasteMultipleFilesWithRobot
 import com.nullinnix.clippr.misc.pasteWithRobot
 import com.nullinnix.clippr.misc.search
@@ -47,7 +48,8 @@ import java.util.UUID
 class ClipsViewModel(
     private val clipsDao: ClipsDao,
     private val settingsViewModel: SettingsViewModel,
-    private val miscViewModel: MiscViewModel
+    private val miscViewModel: MiscViewModel,
+    private val notificationsViewModel: NotificationsViewModel
 ): ViewModel() {
     private val _clipsState = MutableStateFlow(ClipsState())
     val clipsState = _clipsState.asStateFlow()
@@ -65,12 +67,13 @@ class ClipsViewModel(
 
                 if (it.size > settingsViewModel.state.value.maximumRememberableUnpinnedClips) {
                     val maxClips = settingsViewModel.state.value.maximumRememberableUnpinnedClips
-
-                    println("size = ${it.size}, limit = $maxClips")
-
                     val toDelete = it.subList(maxClips, it.size)
 
-                    deleteSpecified(toDelete.toClip())
+                    clipsDao.deleteSelected (
+                        clipsToDelete = toDelete.map { clip ->
+                            clip.clipID
+                        }
+                    )
                 }
             }
             .launchIn(viewModelScope)
@@ -108,7 +111,7 @@ class ClipsViewModel(
     fun onAction (action: ClipAction) {
         when (action) {
             is ClipAction.OnCopyToClipboard -> {
-                onCopyToClipboard(clip = action.clip, pasteAsFile = action.altHeldDown)
+                copyToClipboard(clip = action.clip, pasteAsFile = action.altHeldDown)
             }
 
             is ClipAction.OnDelete -> {
@@ -164,27 +167,75 @@ class ClipsViewModel(
 
         when (action) {
             ClipMenuAction.PasteAsText -> {
+                notificationsViewModel.postNotification(
+                    Notification(
+                        duration = 6,
+                        content = "",
+                        type = NotificationType.DelayedOperation(delay = settingsViewModel.state.value.secondsBeforePaste, action = "Pasting text")
+                    )
+                )
+
                 pasteWithRobot(clip = clip, pasteAsFile = false, wait = settingsViewModel.state.value.secondsBeforePaste)
             }
 
             ClipMenuAction.PasteAsFile -> {
+                notificationsViewModel.postNotification(
+                    Notification(
+                        duration = 6,
+                        content = "",
+                        type = NotificationType.DelayedOperation(delay = settingsViewModel.state.value.secondsBeforePaste, action = "Pasting file")
+                    )
+                )
+
                 pasteWithRobot(clip = clip, pasteAsFile = true, wait = settingsViewModel.state.value.secondsBeforePaste)
             }
 
             ClipMenuAction.CopyAsText -> {
-                onCopyToClipboard(clip = clip, pasteAsFile = false)
+                copyToClipboard(clip = clip, pasteAsFile = false)
+
+                notificationsViewModel.postNotification(
+                    Notification(
+                        duration = 6,
+                        content = "Clip copied as text",
+                        type = NotificationType.Info()
+                    )
+                )
             }
 
             ClipMenuAction.CopyAsFile -> {
-                onCopyToClipboard(clip = clip, pasteAsFile = true)
+                copyToClipboard(clip = clip, pasteAsFile = true)
+
+                notificationsViewModel.postNotification(
+                    Notification(
+                        duration = 6,
+                        content = "Clip copied as file",
+                        type = NotificationType.Info()
+                    )
+                )
             }
 
             ClipMenuAction.Pin -> {
                 togglePinnedClip(clip)
+
+                notificationsViewModel.postNotification(
+                    Notification(
+                        duration = 6,
+                        content = "Clip pinned",
+                        type = NotificationType.Info()
+                    )
+                )
             }
 
             ClipMenuAction.Unpin -> {
                 togglePinnedClip(clip)
+
+                notificationsViewModel.postNotification(
+                    Notification(
+                        duration = 6,
+                        content = "Clip unpinned",
+                        type = NotificationType.Info()
+                    )
+                )
             }
 
             ClipMenuAction.Preview -> {
@@ -215,11 +266,27 @@ class ClipsViewModel(
     fun onMultiSelectAction(action: MultiSelectClipMenuAction) {
         when (action) {
             MultiSelectClipMenuAction.Paste -> {
+                notificationsViewModel.postNotification(
+                    Notification(
+                        duration = 6,
+                        content = "",
+                        type = NotificationType.DelayedOperation(delay = settingsViewModel.state.value.secondsBeforePaste, action = "Pasting ${clipsState.value.selectedClips.size} files")
+                    )
+                )
+
                 pasteMultipleFilesWithRobot(clips = clipsState.value.selectedClips, wait = settingsViewModel.state.value.secondsBeforePaste)
             }
 
             MultiSelectClipMenuAction.Copy -> {
-                onCopyMultipleToClipboard(clips = clipsState.value.selectedClips)
+                copyMultipleToClipboard(clips = clipsState.value.selectedClips)
+
+                notificationsViewModel.postNotification(
+                    Notification(
+                        duration = 6,
+                        content = "Copied ${clipsState.value.selectedClips.size} clips",
+                        type = NotificationType.Info()
+                    )
+                )
             }
 
             MultiSelectClipMenuAction.Merge -> {}
@@ -324,7 +391,7 @@ class ClipsViewModel(
         addClip(newClip)
 
         if (options.copyAfterMerge) {
-            onCopyToClipboard(newClip, false)
+            copyToClipboard(newClip, false)
         }
 
         if (options.deleteOriginal) {
@@ -343,6 +410,14 @@ class ClipsViewModel(
 
             desktopPath.resolve("$fileName.txt").toFile().writeText(newClip.content)
         }
+
+        notificationsViewModel.postNotification(
+            Notification(
+                duration = 6,
+                content = "Merged ${clipsState.value.selectedClips.size} clips",
+                type = NotificationType.Info()
+            )
+        )
     }
 
     fun addClip(clip: Clip) {
@@ -354,12 +429,31 @@ class ClipsViewModel(
     fun deleteClip(clip: Clip) {
         viewModelScope.launch {
             clipsDao.delete(clip.toClipEntity())
-            searchAndFilter(true)
+            
+            if (clipsState.value.isSearching) {
+                searchAndFilter(true)
+            }
+
+            notificationsViewModel.postNotification(
+                Notification(
+                    duration = 6,
+                    content = "Deleted ${clip.content.coerce(15)}",
+                    type = NotificationType.Info()
+                )
+            )
         }
     }
 
     fun togglePinnedClip(clip: Clip) {
         addClip(clip.copy(isPinned = !clip.isPinned, pinnedAt = if (!clip.isPinned) LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) else 0L))
+
+        notificationsViewModel.postNotification(
+            Notification(
+                duration = 6, 
+                content = if (clip.isPinned) "Unpinned ${clip.content.coerce(15)}" else "Pinned ${clip.content.coerce(15)}",
+                type = NotificationType.Info()
+            )
+        )
     }
 
     fun setShowMainApp(value: Boolean) {
@@ -393,6 +487,14 @@ class ClipsViewModel(
         viewModelScope.launch {
             log("delete all unpinned clips", "deleteAllUnpinned")
             clipsDao.deleteAllUnpinned()
+
+            notificationsViewModel.postNotification(
+                Notification(
+                    duration = 6,
+                    content = "Deleted all unpinned clips",
+                    type = NotificationType.Info()
+                )
+            )
         }
     }
 
@@ -405,17 +507,30 @@ class ClipsViewModel(
                 }
             )
 
-            searchAndFilter(true)
+            notificationsViewModel.postNotification(
+                Notification(
+                    duration = 6,
+                    content = "Deleted ${clipsState.value.selectedClips.size} clips",
+                    type = NotificationType.Info()
+                )
+            )
+
+            if (clipsState.value.isSearching) {
+                searchAndFilter(true)
+            }
         }
     }
 
     fun deleteSpecified(clips: List<Clip>) {
         viewModelScope.launch {
             log("delete all specified clips", "deleteSpecified")
-            clipsDao.deleteSelected (
-                clipsToDelete = clips.map {
-                    it.clipID
-                }
+
+            notificationsViewModel.postNotification(
+                Notification(
+                    duration = 6,
+                    content = "Deleted ${clips.size} clips",
+                    type = NotificationType.Info()
+                )
             )
         }
     }
@@ -508,6 +623,14 @@ class ClipsViewModel(
         viewModelScope.launch {
             if (clips.isNotEmpty()) {
                 clipsDao.setMultiplePinnedState(clips.map {it.clipID}, state, if (state) LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) else 0L)
+
+                notificationsViewModel.postNotification(
+                    Notification(
+                        duration = 6,
+                        content = "${if (state) "Pinned" else "Unpinned"} ${clips.size} clips",
+                        type = NotificationType.Info()
+                    )
+                )
             }
         }
     }

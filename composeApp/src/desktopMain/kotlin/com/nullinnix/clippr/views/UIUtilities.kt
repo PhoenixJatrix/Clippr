@@ -18,12 +18,14 @@ import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -41,7 +43,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,14 +58,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -85,6 +88,7 @@ import com.nullinnix.clippr.misc.MergeAction
 import com.nullinnix.clippr.misc.MergeOptions
 import com.nullinnix.clippr.misc.MultiSelectClipMenuAction
 import com.nullinnix.clippr.misc.Notification
+import com.nullinnix.clippr.misc.NotificationType
 import com.nullinnix.clippr.misc.SearchAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.corners
@@ -98,7 +102,10 @@ import com.nullinnix.clippr.misc.shortcut
 import com.nullinnix.clippr.theme.HeaderColor
 import com.nullinnix.clippr.theme.Transparent
 import com.nullinnix.clippr.viewmodels.NotificationsViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import java.awt.MouseInfo
 import java.awt.Window
@@ -929,9 +936,9 @@ fun Notifications (
 
     LazyColumn(
         modifier = modifier
-            .animateContentSize(alignment = Alignment.BottomEnd)
-            .padding(15.dp),
-        verticalArrangement = Arrangement.spacedBy(15.dp)
+            .animateContentSize(alignment = Alignment.BottomEnd),
+        verticalArrangement = Arrangement.spacedBy(15.dp),
+        contentPadding = PaddingValues(15.dp)
     ) {
         items(
             items = notifications,
@@ -955,9 +962,18 @@ fun Notification (
 
     val notificationXOffsetAnim by animateDpAsState(offset)
 
-    LaunchedEffect(Unit) {
-        delay(300)
+    val color by remember {
+        mutableStateOf(
+            value =
+                when (notification.type) {
+                    is NotificationType.DelayedOperation -> notification.type.color
+                    is NotificationType.Info -> notification.type.color
+                    is NotificationType.Warning -> notification.type.color
+                }
+        )
+    }
 
+    LaunchedEffect(Unit) {
         offset = 0.dp
 
         while (true) {
@@ -967,38 +983,63 @@ fun Notification (
             if (timeLeft <= 1) {
                 offset = 350.dp
                 delay(300)
-//                onDismiss()
             }
         }
     }
 
     Row (
         modifier = Modifier
-            .height(75.dp)
             .width(300.dp)
             .offset(x = notificationXOffsetAnim)
-            .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
-            .clip(corners())
-            .background(notification.type.color)
+            .shadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+            .clip(corners(10.dp))
+            .background(color)
             .clickable {
-                onDismiss()
+                CoroutineScope(Dispatchers.Main).launch {
+                    offset = 350.dp
+                    delay(300)
+                    onDismiss()
+                }
             }
             .padding(start = 15.dp)
     ){
         Column (
             modifier = Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(topStart = 15.dp, bottomStart = 15.dp))
+                .heightIn(max = 80.dp)
+                .clip(RoundedCornerShape(topStart = 5.dp, bottomStart = 5.dp))
                 .background(Color.White)
+                .padding(15.dp)
         ) {
-            Text (
-                text = notification.content
-            )
+            if (notification.type is NotificationType.DelayedOperation) {
+                val delayedOperation = notification.type
+                var countDown by remember { mutableStateOf(delayedOperation.delay) }
 
-            Box (
-                modifier = Modifier
-                    .width(((notification.duration * timeLeft) * 300L).toInt().dp)
-            )
+                LaunchedEffect(Unit) {
+                    while (countDown > 1) {
+                        delay(1000)
+                        countDown -= 1
+                    }
+                }
+
+                Text(
+                    text = buildAnnotatedString {
+                        append(notification.type.action + " in ")
+
+                        withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) {
+                            append("${countDown}s")
+                        }
+                    },
+                    fontSize = 16.sp,
+                    overflow = TextOverflow.Ellipsis
+                )
+            } else {
+                Text (
+                    text = notification.content,
+                    fontSize = 16.sp,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
