@@ -9,17 +9,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
+import com.nullinnix.clippr.viewmodels.MiscViewModel
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -398,4 +399,191 @@ fun highlightedAnnotatedString (
     }
 
     return builder.toAnnotatedString()
+}
+
+fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, settingsViewModel: SettingsViewModel, miscViewModel: MiscViewModel): Boolean {
+    println("event = ${event.key}")
+    var intercepted = false
+    val clipsState = clipsViewModel.clipsState.value
+    val miscViewModelState = miscViewModel.state.value
+
+    if (event.type == KeyEventType.KeyDown) {
+        when (event.key) {
+            Key.MetaLeft, Key.MetaRight -> {
+                intercepted = true
+                miscViewModel.setMetaHeldDown(true)
+            }
+
+            Key.AltLeft, Key.AltRight -> {
+                intercepted = true
+                miscViewModel.setAltHeldDown(true)
+            }
+
+            Key.V -> {
+                if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                    if (clipsState.isSearching) {
+                        if (miscViewModelState.metaHeldDown && clipsState.selectedClips.size > 1) {
+                            intercepted = true
+                            clipsViewModel.onMultiSelectAction(MultiSelectClipMenuAction.Paste)
+                        }
+                    } else {
+                        if (miscViewModelState.metaHeldDown) {
+                            clipsViewModel.onClipMenuAction(ClipMenuAction.PasteAsText, miscViewModelState.lastHoveredClip)
+
+                        } else {
+                            clipsViewModel.onClipMenuAction(ClipMenuAction.PasteAsFile, miscViewModelState.lastHoveredClip)
+                        }
+                        intercepted = true
+                    }
+                }
+            }
+
+            Key.C -> {
+                if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                    if (clipsState.isSearching) {
+                        if (miscViewModelState.metaHeldDown && clipsState.selectedClips.size > 1) {
+                            intercepted = true
+                            clipsViewModel.onMultiSelectAction(MultiSelectClipMenuAction.Copy)
+                        }
+                    } else {
+                        intercepted = true
+
+                        if (miscViewModelState.metaHeldDown) {
+                            clipsViewModel.onClipMenuAction(ClipMenuAction.CopyAsText, miscViewModelState.lastHoveredClip)
+                        } else {
+                            clipsViewModel.onClipMenuAction(ClipMenuAction.CopyAsFile, miscViewModelState.lastHoveredClip)
+                        }
+                    }
+                }
+            }
+
+            Key.P -> {
+                if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                    if (clipsState.isSearching) {
+                        if (clipsState.selectedClips.size > 1) {
+                            intercepted = true
+
+                            if (miscViewModelState.metaHeldDown) {
+                                clipsViewModel.onMultiSelectAction(MultiSelectClipMenuAction.PinAll)
+                            } else {
+                                clipsViewModel.onMultiSelectAction(MultiSelectClipMenuAction.UnpinAll)
+                            }
+                        }
+                    } else {
+                        intercepted = true
+                        clipsViewModel.onClipMenuAction(if (miscViewModelState.lastHoveredClip.isPinned) ClipMenuAction.Unpin else ClipMenuAction.Pin, miscViewModelState.lastHoveredClip)
+                    }
+                }
+            }
+
+            Key.Enter -> {
+                if (clipsState.isShowingFilters) {
+                    intercepted = true
+                    clipsViewModel.searchAndFilter(true)
+                } else if (!clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                    if (miscViewModelState.metaHeldDown) {
+                        val action = if (miscViewModelState.lastHoveredClip.associatedIcon.toClipType() == ClipType.WEB) {
+                            ClipMenuAction.OpenAsLink
+                        } else {
+                            if (miscViewModelState.lastHoveredClip.associatedIcon.toClipType() != ClipType.PLAIN_TEXT) {
+                                ClipMenuAction.RevealInFinder
+                            } else {
+                                null
+                            }
+                        }
+
+                        if (action != null) {
+                            intercepted = true
+                            clipsViewModel.onClipMenuAction(action, miscViewModelState.lastHoveredClip)
+                        }
+                    } else {
+                        intercepted = true
+                        clipsViewModel.onClipMenuAction(ClipMenuAction.Preview, miscViewModelState.lastHoveredClip)
+                    }
+                }
+            }
+
+            Key.Backspace -> {
+                if (miscViewModelState.metaHeldDown) {
+                    if (clipsState.selectedClips.isNotEmpty() && clipsState.isSearching) {
+                        intercepted = true
+
+                        if (showMacConfirmDialog("Delete selected clips?", "${clipsState.selectedClips.size }${if (clipsState.selectedClips.size == 1) " clip" else " clips"} will be deleted")) {
+                            clipsViewModel.deleteSelected()
+                            clipsViewModel.setIsSearching(false)
+                        }
+                    } else {
+                        if (!clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                            intercepted = true
+
+                            if (showMacConfirmDialog("Delete clip", "'${miscViewModelState.lastHoveredClip.content.coerce(50)}' will be deleted")) {
+                                clipsViewModel.onClipMenuAction(ClipMenuAction.Delete, miscViewModelState.lastHoveredClip)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Key.Escape -> {
+                for (consumer in EscPriorityConsumers.entries) {
+                    when (consumer) {
+                        EscPriorityConsumers.FilterEsc -> {
+                            if (clipsState.isShowingFilters) {
+                                intercepted = true
+                                clipsViewModel.setShowFilters(false)
+                                break
+                            }
+                        }
+
+                        EscPriorityConsumers.SearchEsc -> {
+                            if (clipsState.isSearching) {
+                                intercepted = true
+                                clipsViewModel.setIsSearching(false)
+                                break
+                            }
+                        }
+                    }
+                }
+            }
+
+            Key.F -> {
+                if (miscViewModelState.metaHeldDown && clipsState.currentTab == Tab.ClipsTab) {
+                    intercepted = true
+                    clipsViewModel.setIsSearching(true)
+                }
+            }
+
+            Key.Comma -> {
+                if (miscViewModelState.metaHeldDown && !clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab) {
+                    intercepted = true
+                    clipsViewModel.switchTab(Tab.SettingsTab)
+                }
+            }
+
+            Key.A -> {
+                if (miscViewModelState.metaHeldDown && clipsState.isSearching && clipsState.searchResults.isNotEmpty()) {
+                    intercepted = true
+                    clipsViewModel.setSelectedClips(clipsState.searchResults.toSet())
+                }
+            }
+        }
+    } else if (event.type == KeyEventType.KeyUp) {
+        when (event.key) {
+            Key.MetaLeft, Key.MetaRight -> {
+                intercepted = true
+                miscViewModel.setMetaHeldDown(false)
+            }
+
+            Key.AltLeft, Key.AltRight -> {
+                intercepted = true
+                miscViewModel.setAltHeldDown(false)
+            }
+        }
+    }
+
+    return intercepted
+}
+
+fun LocalDateTime.epoch (): Long {
+    return this.toEpochSecond(ZoneOffset.UTC)
 }

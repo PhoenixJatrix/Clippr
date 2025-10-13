@@ -13,6 +13,7 @@ import com.nullinnix.clippr.misc.MIME_TYPE_PLAIN_TEXT
 import com.nullinnix.clippr.misc.MergeAction
 import com.nullinnix.clippr.misc.MergeOptions
 import com.nullinnix.clippr.misc.MultiSelectClipMenuAction
+import com.nullinnix.clippr.misc.Notification
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.desc

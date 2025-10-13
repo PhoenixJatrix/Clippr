@@ -10,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -28,6 +29,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.DropdownMenu
@@ -36,7 +39,9 @@ import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +56,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
@@ -76,6 +84,7 @@ import com.nullinnix.clippr.misc.ClipsState
 import com.nullinnix.clippr.misc.MergeAction
 import com.nullinnix.clippr.misc.MergeOptions
 import com.nullinnix.clippr.misc.MultiSelectClipMenuAction
+import com.nullinnix.clippr.misc.Notification
 import com.nullinnix.clippr.misc.SearchAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.corners
@@ -88,10 +97,13 @@ import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.misc.shortcut
 import com.nullinnix.clippr.theme.HeaderColor
 import com.nullinnix.clippr.theme.Transparent
+import com.nullinnix.clippr.viewmodels.NotificationsViewModel
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
 import java.awt.MouseInfo
 import java.awt.Window
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @Composable
 fun Tabs (
@@ -573,9 +585,19 @@ fun ClipDropDownMenu (
     clip: Clip,
     secondsBeforePaste: Int,
     onAction: (ClipMenuAction) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onInterceptEvent: (KeyEvent) -> Unit
 ) {
     var currentHoverAction by remember { mutableStateOf<ClipMenuAction?>(null) }
+
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(500)
+            focusRequester.requestFocus()
+        }
+    }
 
     DropdownMenu(
         expanded = true,
@@ -588,6 +610,12 @@ fun ClipDropDownMenu (
             .padding(7.dp)
             .clip(corners(10.dp))
             .animateContentSize()
+            .focusRequester(focusRequester)
+            .focusable(true)
+            .onPreviewKeyEvent { event ->
+                onInterceptEvent(event)
+                true
+            }
     ) {
         getClipMenuActions(clip).forEach { option ->
             val interactionSource = remember { MutableInteractionSource() }
@@ -644,7 +672,8 @@ fun MultiSelectClipDropDownMenu (
     secondsBeforePaste: Int,
     onAction: (MultiSelectClipMenuAction) -> Unit,
     onMergeAction: (MergeAction, MergeOptions) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onInterceptEvent: (KeyEvent) -> Unit
 ) {
     var currentHoverAction by remember { mutableStateOf<MultiSelectClipMenuAction?>(null) }
     var mergeXPosition by remember { mutableStateOf(menuXPosition) }
@@ -653,6 +682,15 @@ fun MultiSelectClipDropDownMenu (
     var deleteOriginal by remember { mutableStateOf(false) }
     var copyAfterMerge by remember { mutableStateOf(false) }
     var removeDuplicates by remember { mutableStateOf(false) }
+
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(500)
+            focusRequester.requestFocus()
+        }
+    }
 
     DropdownMenu (
         expanded = true,
@@ -665,6 +703,12 @@ fun MultiSelectClipDropDownMenu (
             .padding(7.dp)
             .clip(corners(10.dp))
             .animateContentSize()
+            .focusRequester(focusRequester)
+            .focusable(true)
+            .onPreviewKeyEvent { event ->
+                onInterceptEvent(event)
+                true
+            }
     ) {
         MultiSelectClipMenuAction.entries.forEach { option ->
             val interactionSource = remember { MutableInteractionSource() }
@@ -832,7 +876,7 @@ fun MultiSelectClipDropDownMenu (
             }
 
             MergeOption(
-                label = "Copy after merge",
+                label = "Copy clip after merge",
                 isSelected = copyAfterMerge
             ) {
                 copyAfterMerge = !copyAfterMerge
@@ -872,5 +916,89 @@ fun MergeOption (
         Text(
             text = label
         )
+    }
+}
+
+@Composable
+fun Notifications (
+    modifier: Modifier,
+    notificationsViewModel: NotificationsViewModel,
+    onDismiss: (Notification) -> Unit
+){
+    val notifications = notificationsViewModel.notificationsState.collectAsState().value.notifications
+
+    LazyColumn(
+        modifier = modifier
+            .animateContentSize(alignment = Alignment.BottomEnd)
+            .padding(15.dp),
+        verticalArrangement = Arrangement.spacedBy(15.dp)
+    ) {
+        items(
+            items = notifications,
+            key = { it.id }
+        ) { notification ->
+            Notification(
+                notification = notification,
+                onDismiss = { onDismiss(notification) }
+            )
+        }
+    }
+}
+
+@Composable
+fun Notification (
+    notification: Notification,
+    onDismiss: () -> Unit
+) {
+    var timeLeft by remember { mutableStateOf((notification.startedAt + notification.duration) - LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)) }
+    var offset by remember { mutableStateOf(350.dp) }
+
+    val notificationXOffsetAnim by animateDpAsState(offset)
+
+    LaunchedEffect(Unit) {
+        delay(300)
+
+        offset = 0.dp
+
+        while (true) {
+            delay(500)
+            timeLeft = (notification.startedAt + notification.duration) - LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
+
+            if (timeLeft <= 1) {
+                offset = 350.dp
+                delay(300)
+//                onDismiss()
+            }
+        }
+    }
+
+    Row (
+        modifier = Modifier
+            .height(75.dp)
+            .width(300.dp)
+            .offset(x = notificationXOffsetAnim)
+            .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+            .clip(corners())
+            .background(notification.type.color)
+            .clickable {
+                onDismiss()
+            }
+            .padding(start = 15.dp)
+    ){
+        Column (
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(topStart = 15.dp, bottomStart = 15.dp))
+                .background(Color.White)
+        ) {
+            Text (
+                text = notification.content
+            )
+
+            Box (
+                modifier = Modifier
+                    .width(((notification.duration * timeLeft) * 300L).toInt().dp)
+            )
+        }
     }
 }

@@ -328,26 +328,21 @@ class CustomTransferable(private val clip: Clip, private val pasteAsFile: Boolea
     override fun getTransferData(p0: DataFlavor?): Any {
         return when (clip.associatedIcon.toClipType()) {
             ClipType.PLAIN_TEXT -> {
-                println("copying plain text")
                 clip.content
             }
 
             ClipType.IMAGE -> {
                 if (pasteAsFile && File(clip.content).exists()) {
-                    println("copying image")
                     listOf(File(clip.content))
                 } else {
-                    println("copying plain text of an image")
                     clip.content
                 }
             }
 
             else -> {
                 if (pasteAsFile && File(clip.content).exists()) {
-                    println("copying file")
                     listOf(File(clip.content))
                 } else {
-                    println("copying plain text of a file")
                     clip.content
                 }
             }

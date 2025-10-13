@@ -17,11 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
@@ -33,10 +29,6 @@ import clippr.composeapp.generated.resources.clippr_status_icon
 import com.nullinnix.clippr.database.clips.ClipsDatabaseFactory
 import com.nullinnix.clippr.database.settings.SettingsDatabaseFactory
 import com.nullinnix.clippr.misc.ClipAction
-import com.nullinnix.clippr.misc.ClipMenuAction
-import com.nullinnix.clippr.misc.ClipType
-import com.nullinnix.clippr.misc.EscPriorityConsumers
-import com.nullinnix.clippr.misc.MultiSelectClipMenuAction
 import com.nullinnix.clippr.misc.SettingsAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.coerce
@@ -44,14 +36,15 @@ import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.misc.formatText
 import com.nullinnix.clippr.misc.isInLoginItemsChecker
 import com.nullinnix.clippr.misc.listenForCopy
+import com.nullinnix.clippr.misc.manageKeyEvent
 import com.nullinnix.clippr.misc.pasteWithRobot
 import com.nullinnix.clippr.misc.registerKeyStroke
 import com.nullinnix.clippr.misc.showMacConfirmDialog
-import com.nullinnix.clippr.misc.toClipType
 import com.nullinnix.clippr.misc.toggleFullscreen
 import com.nullinnix.clippr.theme.Theme
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
+import com.nullinnix.clippr.viewmodels.NotificationsViewModel
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
 import com.nullinnix.clippr.views.App
 import com.nullinnix.clippr.views.WindowBar
@@ -69,6 +62,7 @@ fun main() {
     val settingsDatabase = SettingsDatabaseFactory().create()
     val settingsViewModel = SettingsViewModel(settingsDatabase.settingsDao())
     val miscViewModel = MiscViewModel()
+    val notificationsViewModel = NotificationsViewModel()
     val clipsViewModel = ClipsViewModel(clipsDatabase.clipsDao(), settingsViewModel, miscViewModel)
 
     val composeWindowStateRaw = MutableStateFlow<Window?>(null)
@@ -163,187 +157,8 @@ fun main() {
                         .background(Color.White)
                         .focusRequester(focusRequester)
                         .focusable()
-                        .onPreviewKeyEvent {event ->
-                            println("event = ${event.key}")
-                            var intercepted = false
-                            val clipsState = clipsViewModel.clipsState.value
-                            val miscViewModelState = miscViewModel.state.value
-
-                            if (event.type == KeyEventType.KeyDown) {
-                                when (event.key) {
-                                    Key.MetaLeft, Key.MetaRight -> {
-                                        intercepted = true
-                                        miscViewModel.setMetaHeldDown(true)
-                                    }
-
-                                    Key.AltLeft, Key.AltRight -> {
-                                        intercepted = true
-                                        miscViewModel.setAltHeldDown(true)
-                                    }
-
-                                    Key.V -> {
-                                        if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
-                                            if (clipsState.isSearching) {
-                                                if (miscViewModelState.metaHeldDown && clipsState.selectedClips.size > 1) {
-                                                    intercepted = true
-                                                    clipsViewModel.onMultiSelectAction(MultiSelectClipMenuAction.Paste)
-                                                }
-                                            } else {
-                                                if (miscViewModelState.metaHeldDown) {
-                                                    clipsViewModel.onClipMenuAction(ClipMenuAction.PasteAsText, miscViewModelState.lastHoveredClip)
-
-                                                } else {
-                                                    clipsViewModel.onClipMenuAction(ClipMenuAction.PasteAsFile, miscViewModelState.lastHoveredClip)
-                                                }
-                                                intercepted = true
-                                            }
-                                        }
-                                    }
-
-                                    Key.C -> {
-                                        if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
-                                            if (clipsState.isSearching) {
-                                                if (miscViewModelState.metaHeldDown && clipsState.selectedClips.size > 1) {
-                                                    intercepted = true
-                                                    clipsViewModel.onMultiSelectAction(MultiSelectClipMenuAction.Copy)
-                                                }
-                                            } else {
-                                                intercepted = true
-
-                                                if (miscViewModelState.metaHeldDown) {
-                                                    clipsViewModel.onClipMenuAction(ClipMenuAction.CopyAsText, miscViewModelState.lastHoveredClip)
-                                                } else {
-                                                    clipsViewModel.onClipMenuAction(ClipMenuAction.CopyAsFile, miscViewModelState.lastHoveredClip)
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    Key.P -> {
-                                        if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
-                                            if (clipsState.isSearching) {
-                                                if (clipsState.selectedClips.size > 1) {
-                                                    intercepted = true
-
-                                                    if (miscViewModelState.metaHeldDown) {
-                                                        clipsViewModel.onMultiSelectAction(MultiSelectClipMenuAction.PinAll)
-                                                    } else {
-                                                        clipsViewModel.onMultiSelectAction(MultiSelectClipMenuAction.UnpinAll)
-                                                    }
-                                                }
-                                            } else {
-                                                intercepted = true
-                                                clipsViewModel.onClipMenuAction(if (miscViewModelState.lastHoveredClip.isPinned) ClipMenuAction.Unpin else ClipMenuAction.Pin, miscViewModelState.lastHoveredClip)
-                                            }
-                                        }
-                                    }
-
-                                    Key.Enter -> {
-                                        if (clipsState.isShowingFilters) {
-                                            intercepted = true
-                                            clipsViewModel.searchAndFilter(true)
-                                        } else if (!clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
-                                            if (miscViewModelState.metaHeldDown) {
-                                                val action = if (miscViewModelState.lastHoveredClip.associatedIcon.toClipType() == ClipType.WEB) {
-                                                    ClipMenuAction.OpenAsLink
-                                                } else {
-                                                    if (miscViewModelState.lastHoveredClip.associatedIcon.toClipType() != ClipType.PLAIN_TEXT) {
-                                                        ClipMenuAction.RevealInFinder
-                                                    } else {
-                                                        null
-                                                    }
-                                                }
-
-                                                if (action != null) {
-                                                    intercepted = true
-                                                    clipsViewModel.onClipMenuAction(action, miscViewModelState.lastHoveredClip)
-                                                }
-                                            } else {
-                                                intercepted = true
-                                                clipsViewModel.onClipMenuAction(ClipMenuAction.Preview, miscViewModelState.lastHoveredClip)
-                                            }
-                                        }
-                                    }
-
-                                    Key.Backspace -> {
-                                        if (miscViewModelState.metaHeldDown) {
-                                            if (clipsState.selectedClips.isNotEmpty() && clipsState.isSearching) {
-                                                intercepted = true
-
-                                                if (showMacConfirmDialog("Delete selected clips?", "${clipsState.selectedClips.size }${if (clipsState.selectedClips.size == 1) " clip" else " clips"} will be deleted")) {
-                                                    clipsViewModel.deleteSelected()
-                                                    clipsViewModel.setIsSearching(false)
-                                                }
-                                            } else {
-                                                if (!clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
-                                                    intercepted = true
-
-                                                    if (showMacConfirmDialog("Delete clip", "'${miscViewModelState.lastHoveredClip.content.coerce(50)}' will be deleted")) {
-                                                        clipsViewModel.onClipMenuAction(ClipMenuAction.Delete, miscViewModelState.lastHoveredClip)
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    Key.Escape -> {
-                                        for (consumer in EscPriorityConsumers.entries) {
-                                            when (consumer) {
-                                                EscPriorityConsumers.FilterEsc -> {
-                                                    if (clipsState.isShowingFilters) {
-                                                        intercepted = true
-                                                        clipsViewModel.setShowFilters(false)
-                                                        break
-                                                    }
-                                                }
-
-                                                EscPriorityConsumers.SearchEsc -> {
-                                                    if (clipsState.isSearching) {
-                                                        intercepted = true
-                                                        clipsViewModel.setIsSearching(false)
-                                                        break
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    Key.F -> {
-                                        if (miscViewModelState.metaHeldDown && clipsState.currentTab == Tab.ClipsTab) {
-                                            intercepted = true
-                                            clipsViewModel.setIsSearching(true)
-                                        }
-                                    }
-
-                                    Key.Comma -> {
-                                        if (miscViewModelState.metaHeldDown && !clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab) {
-                                            intercepted = true
-                                            clipsViewModel.switchTab(Tab.SettingsTab)
-                                        }
-                                    }
-
-                                    Key.A -> {
-                                        if (miscViewModelState.metaHeldDown && clipsState.isSearching && clipsState.searchResults.isNotEmpty()) {
-                                            intercepted = true
-                                            clipsViewModel.setSelectedClips(clipsState.searchResults.toSet())
-                                        }
-                                    }
-                                }
-                            } else if (event.type == KeyEventType.KeyUp) {
-                                when (event.key) {
-                                    Key.MetaLeft, Key.MetaRight -> {
-                                        intercepted = true
-                                        miscViewModel.setMetaHeldDown(false)
-                                    }
-
-                                    Key.AltLeft, Key.AltRight -> {
-                                        intercepted = true
-                                        miscViewModel.setAltHeldDown(false)
-                                    }
-                                }
-                            }
-
-                            intercepted
+                        .onPreviewKeyEvent { event ->
+                            manageKeyEvent(event, clipsViewModel, settingsViewModel, miscViewModel)
                         }
                 ){
                     Theme {
@@ -357,7 +172,11 @@ fun main() {
                                 isFocused = isFocused,
                                 clipsViewModel = clipsViewModel,
                                 settingsViewModel = settingsViewModel,
-                                miscViewModel = miscViewModel
+                                miscViewModel = miscViewModel,
+                                notificationsViewModel = notificationsViewModel,
+                                onInterceptEvent = { event ->
+                                    manageKeyEvent(event, clipsViewModel, settingsViewModel, miscViewModel)
+                                }
                             )
                         }
                     }

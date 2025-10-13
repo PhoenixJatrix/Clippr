@@ -1,9 +1,12 @@
 package com.nullinnix.clippr.misc
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlinx.serialization.Serializable
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @Entity(tableName = "clips")
 data class ClipEntity (
@@ -107,6 +110,24 @@ data class MergeOptions (
     val trim: Boolean,
     val copyAfterMerge: Boolean,
     val deleteOriginal: Boolean
+)
+
+enum class NotificationType(val color: Color) {
+    Info(Color.Black),
+    Warning(Color.Red)
+}
+
+data class Notification (
+    val duration: Long,
+    val id: String,
+    val type: NotificationType,
+    val content: String,
+    val startedAt: Long = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
+)
+
+data class NotificationsState (
+    val notifications: List<Notification> = emptyList(),
+    val pendingNotifications: List<Notification> = emptyList()
 )
 
 const val CLIP_ID = "clipID"

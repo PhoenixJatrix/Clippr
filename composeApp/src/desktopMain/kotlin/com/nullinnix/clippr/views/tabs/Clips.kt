@@ -44,9 +44,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -93,7 +93,8 @@ fun Clips (
     secondsBeforePaste: Int,
     clipsViewModel: ClipsViewModel,
     miscViewModel: MiscViewModel,
-    scrollStates: Pair<LazyListState, LazyListState>
+    scrollStates: Pair<LazyListState, LazyListState>,
+    onInterceptEvent: (KeyEvent) -> Unit
 ) {
     val clipState = clipsViewModel.clipsState.collectAsState().value
     val pinnedClips = clipState.pinnedClips
@@ -167,7 +168,10 @@ fun Clips (
                         }
                     }
 
-                    items(if ((!allPinnedClipsExpanded) && pinnedClips.size > 5) pinnedClips.subList(0, 5) else pinnedClips) { clip ->
+                    items(
+                        items = if ((!allPinnedClipsExpanded) && pinnedClips.size > 5) pinnedClips.subList(0, 5) else pinnedClips,
+                        key = {it.clipID}
+                    ) { clip ->
                         ClipTemplate (
                             clip = clip,
                             icns = loadedIcns[clip.source ?: ""],
@@ -199,6 +203,9 @@ fun Clips (
                             },
                             onMergeAction = {action, options ->
                                 clipsViewModel.onMergeAction(action, options)
+                            },
+                            onInterceptEvent = {
+                                onInterceptEvent(it)
                             }
                         )
 
@@ -225,7 +232,10 @@ fun Clips (
                         }
                     }
 
-                    items(otherClips) { clip ->
+                    items(
+                        items = otherClips,
+                        key = {it.clipID}
+                    ) { clip ->
                         ClipTemplate(
                             clip = clip,
                             icns = loadedIcns[clip.source ?: ""],
@@ -257,6 +267,9 @@ fun Clips (
                             },
                             onMergeAction = {action, options ->
                                 clipsViewModel.onMergeAction(action, options)
+                            },
+                            onInterceptEvent = {
+                                onInterceptEvent(it)
                             }
                         )
 
@@ -347,7 +360,10 @@ fun Clips (
                             }
                         }
 
-                        items(searchResults) { clip ->
+                        items(
+                            items = searchResults,
+                            key = {it.clipID}
+                        ) { clip ->
                             ClipTemplate (
                                 clip = clip,
                                 icns = loadedIcns[clip.source ?: ""],
@@ -379,6 +395,9 @@ fun Clips (
                                 },
                                 onMergeAction = {action, options ->
                                     clipsViewModel.onMergeAction(action, options)
+                                },
+                                onInterceptEvent = {
+                                    onInterceptEvent(it)
                                 }
                             )
 
@@ -434,7 +453,8 @@ fun ClipTemplate (
     onMergeAction: (MergeAction, MergeOptions) -> Unit,
     onMenuShowEvent: (Boolean) -> Unit,
     onHover: (Boolean) -> Unit,
-    onClearSelected: () -> Unit
+    onClearSelected: () -> Unit,
+    onInterceptEvent: (KeyEvent) -> Unit
 ) {
     Column (
         modifier = Modifier
@@ -444,6 +464,7 @@ fun ClipTemplate (
         var menuPosition by remember { mutableStateOf(0.dp) }
         var delayedHoverEmits by remember { mutableStateOf(false) }
         val isHovered = interactionSource.collectIsHoveredAsState().value
+        var copiedAt by remember { mutableStateOf(epochToReadableTime(clip.copiedAt)) }
 
         val highLightClip =
             if (rightClickedClip != null) {
@@ -463,9 +484,24 @@ fun ClipTemplate (
 
         LaunchedEffect(isHovered) {
             if (delayedHoverEmits) {
-                if (!isSearching) {
+                if (!isSearching && !showMenu) {
                     onHover(isHovered)
                 }
+            }
+        }
+
+        LaunchedEffect(showMenu) {
+            if (showMenu) {
+                onHover(true)
+            } else {
+                onHover(false)
+            }
+        }
+
+        LaunchedEffect(Unit) {
+            while (true) {
+                copiedAt = epochToReadableTime(clip.copiedAt)
+                delay(3000)
             }
         }
 
@@ -551,6 +587,9 @@ fun ClipTemplate (
                                 onMergeAction(action, options)
                                 onMenuShowEvent(false)
                                 showMenu = false
+                            },
+                            onInterceptEvent = {
+                                onInterceptEvent(it)
                             }
                         )
                     } else {
@@ -566,6 +605,9 @@ fun ClipTemplate (
                                 onClipMenuAction(it)
                                 onMenuShowEvent(false)
                                 showMenu = false
+                            },
+                            onInterceptEvent = {
+                                onInterceptEvent(it)
                             }
                         )
                     }
@@ -741,7 +783,7 @@ fun ClipTemplate (
                         }
 
                         Text (
-                            text = epochToReadableTime(clip.copiedAt),
+                            text = copiedAt,
                             modifier = Modifier
                                 .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
                                 .clip(RoundedCornerShape(90.dp))

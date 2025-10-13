@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -25,17 +26,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.unit.dp
+import com.nullinnix.clippr.misc.Notification
+import com.nullinnix.clippr.misc.NotificationType
 import com.nullinnix.clippr.misc.SearchAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
+import com.nullinnix.clippr.viewmodels.NotificationsViewModel
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
 import com.nullinnix.clippr.views.tabs.Clips
 import com.nullinnix.clippr.views.tabs.Settings
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.awt.Window
+import java.util.UUID
+import kotlin.random.Random
+import kotlin.random.nextInt
 
 @Composable
 @Preview
@@ -44,7 +52,9 @@ fun App (
     isFocused: Boolean,
     clipsViewModel: ClipsViewModel,
     settingsViewModel: SettingsViewModel,
-    miscViewModel: MiscViewModel
+    miscViewModel: MiscViewModel,
+    notificationsViewModel: NotificationsViewModel,
+    onInterceptEvent: (KeyEvent) -> Unit
 ) {
     MaterialTheme {
         val clipState = clipsViewModel.clipsState.collectAsState().value
@@ -87,6 +97,15 @@ fun App (
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .clickable {
+                    if (Random.nextInt(0, 2) == 1) {
+                        val time = Random.nextInt(3, 15).toLong()
+                        notificationsViewModel.postNotification(Notification(id = UUID.randomUUID().toString(), duration = time, type = NotificationType.Info, content = "$time"))
+                    } else {
+                        val time = Random.nextInt(3, 15).toLong()
+                        notificationsViewModel.postNotification(Notification(id = UUID.randomUUID().toString(), duration = time, type = NotificationType.Warning, content = "$time"))
+                    }
+                }
         ) {
             Column (
                 modifier = Modifier
@@ -151,7 +170,10 @@ fun App (
                                 clipsViewModel = clipsViewModel,
                                 miscViewModel = miscViewModel,
                                 scrollStates = Pair(clipLazyColumnScrollState, clipSearchScrollState),
-                                secondsBeforePaste = secondsBeforePaste
+                                secondsBeforePaste = secondsBeforePaste,
+                                onInterceptEvent = {
+                                    onInterceptEvent(it)
+                                }
                             )
                         }
 
@@ -177,6 +199,15 @@ fun App (
                     loadedIcns = miscViewModelState.loadedIcns
                 )
             }
+
+            Notifications (
+                modifier = Modifier
+                    .align(Alignment.BottomEnd),
+                notificationsViewModel = notificationsViewModel,
+                onDismiss = {
+                    notificationsViewModel.popNotification(it)
+                }
+            )
         }
     }
 }

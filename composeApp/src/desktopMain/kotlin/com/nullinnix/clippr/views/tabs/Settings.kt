@@ -302,7 +302,7 @@ fun Settings (
 
             SettingsElement (
                 title = "Seconds before paste",
-                description = "Clippr will execute a paste action after the specified seconds when you click on a clip to paste IN APP"
+                description = "Clippr will execute a paste action after the specified seconds when you manually paste from Clippr"
             ) {
                 var entry by remember { mutableStateOf("$secondsBeforePaste") }
 
