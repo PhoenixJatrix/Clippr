@@ -57,6 +57,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -677,6 +679,7 @@ fun ClipDropDownMenu (
 fun MultiSelectClipDropDownMenu (
     menuXPosition: Dp,
     secondsBeforePaste: Int,
+    numberOfClips: Int,
     onAction: (MultiSelectClipMenuAction) -> Unit,
     onMergeAction: (MergeAction, MergeOptions) -> Unit,
     onDismiss: () -> Unit,
@@ -689,6 +692,8 @@ fun MultiSelectClipDropDownMenu (
     var deleteOriginal by remember { mutableStateOf(false) }
     var copyAfterMerge by remember { mutableStateOf(false) }
     var removeDuplicates by remember { mutableStateOf(false) }
+
+    var selectedMergeType by remember { mutableStateOf<MergeAction?>(null) }
 
     val focusRequester = remember { FocusRequester() }
 
@@ -794,50 +799,7 @@ fun MultiSelectClipDropDownMenu (
             var currentHoverMerge by remember { mutableStateOf<MergeAction?>(null) }
 
             Text (
-                text = "Merge all",
-                color = Color.Black,
-                fontSize = 16.sp
-            )
-
-            Spacer(Modifier.height(5.dp))
-
-            MergeAction.entries.forEach { option ->
-                val interactionSource = remember { MutableInteractionSource() }
-                val isHover = interactionSource.collectIsHoveredAsState().value
-
-                LaunchedEffect(isHover) {
-                    if (isHover) {
-                        currentHoverMerge = option
-                    }
-                }
-
-                DropdownMenuItem (
-                    onClick = {
-                        onMergeAction(option, MergeOptions(removeDuplicates = removeDuplicates, saveToDesktop = saveToDesktop, trim = trim, copyAfterMerge = copyAfterMerge, deleteOriginal = deleteOriginal))
-                    },
-                    content = {
-                        Row(
-                            modifier = Modifier
-                                .widthIn(min = 350.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = option.desc(),
-                                fontSize = 14.sp,
-                                color = Color.Black
-                            )
-                        }
-                    },
-                    modifier = Modifier
-                        .clip(corners(10.dp))
-                        .hoverable(interactionSource)
-                )
-            }
-
-            Spacer(Modifier.height(10.dp))
-
-            Text (
-                text = "Pre-merge",
+                text = "Before merge",
                 color = Color.Black.copy(0.5f)
             )
 
@@ -862,14 +824,72 @@ fun MultiSelectClipDropDownMenu (
             Spacer(Modifier.height(10.dp))
 
             Text (
-                text = "Post-merge",
+                text = "During merge",
+                color = Color.Black.copy(0.5f)
+            )
+
+            Spacer(Modifier.height(5.dp))
+
+            MergeAction.entries.forEach { option ->
+                val interactionSource = remember { MutableInteractionSource() }
+                val isHover = interactionSource.collectIsHoveredAsState().value
+
+                LaunchedEffect(isHover) {
+                    if (isHover) {
+                        currentHoverMerge = option
+                    }
+                }
+
+                DropdownMenuItem (
+                    onClick = {
+                        selectedMergeType = option
+                    },
+                    content = {
+                        Row(
+                            modifier = Modifier
+                                .widthIn(min = 350.dp), verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Canvas(
+                                modifier = Modifier
+                                    .size(15.dp)
+                                    .clip(corners(90.dp))
+                                    .clickable {
+                                        selectedMergeType = option
+                                    }
+                            ) {
+                                drawCircle(color = if (selectedMergeType == option) Color.Black else Color.Black.copy(0.5f), style = Stroke(width = 3f))
+
+                                if (selectedMergeType == option) {
+                                    drawCircle(color = Color.Black, radius = 3f)
+                                }
+                            }
+
+                            Spacer(Modifier.width(10.dp))
+
+                            Text(
+                                text = option.desc(),
+                                fontSize = 14.sp,
+                                color = Color.Black
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .clip(corners(10.dp))
+                        .hoverable(interactionSource)
+                )
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            Text (
+                text = "After merge",
                 color = Color.Black.copy(0.5f)
             )
 
             Spacer(Modifier.height(5.dp))
 
             MergeOption(
-                label = "Save to desktop",
+                label = "Save as txt to desktop",
                 isSelected = saveToDesktop
             ) {
                 saveToDesktop = !saveToDesktop
@@ -883,7 +903,7 @@ fun MultiSelectClipDropDownMenu (
             }
 
             MergeOption(
-                label = "Copy clip after merge",
+                label = "Copy clip content after merge",
                 isSelected = copyAfterMerge
             ) {
                 copyAfterMerge = !copyAfterMerge
@@ -893,6 +913,26 @@ fun MultiSelectClipDropDownMenu (
                 Text (
                     text = it.info(),
                     color = Color.Black.copy(0.5f)
+                )
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .clip(corners())
+                    .background(if (selectedMergeType != null) Color.Black else Color.Black.copy(0.5f))
+                    .clickable (selectedMergeType != null){
+                        selectedMergeType?.let {
+                            onMergeAction(selectedMergeType!!, MergeOptions(removeDuplicates = removeDuplicates, saveToDesktop = saveToDesktop, trim = trim, copyAfterMerge = copyAfterMerge, deleteOriginal = deleteOriginal))
+                        }
+                    }, contentAlignment = Alignment.Center
+            ) {
+                Text (
+                    text = "Merge $numberOfClips clips",
+                    color = Color.White
                 )
             }
         }

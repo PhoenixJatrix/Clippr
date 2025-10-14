@@ -28,7 +28,7 @@ enum class ClipMenuAction() {
 
 enum class MultiSelectClipMenuAction {
     Paste,
-    Copy,
+    CopyFiles,
     Merge,
     PinAll,
     UnpinAll,

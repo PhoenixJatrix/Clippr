@@ -17,6 +17,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
@@ -175,7 +177,8 @@ fun main() {
                                 miscViewModel = miscViewModel,
                                 notificationsViewModel = notificationsViewModel,
                                 onInterceptEvent = { event ->
-                                    manageKeyEvent(event, clipsViewModel, settingsViewModel, miscViewModel)
+                                    if (event.key != Key.Escape)
+                                        manageKeyEvent(event, clipsViewModel, settingsViewModel, miscViewModel)
                                 }
                             )
                         }

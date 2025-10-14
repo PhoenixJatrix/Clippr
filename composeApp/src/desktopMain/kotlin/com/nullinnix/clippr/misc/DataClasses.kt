@@ -132,8 +132,5 @@ data class NotificationsState (
     val pendingNotifications: List<Notification> = emptyList()
 )
 
-const val CLIP_ID = "clipID"
-const val MIME_TYPE = "mimeType"
-
 const val MIME_TYPE_PLAIN_TEXT = "text/plain"
 const val MIME_TYPE_DIR = "dir/folder"

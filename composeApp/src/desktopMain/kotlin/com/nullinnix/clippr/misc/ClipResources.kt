@@ -356,16 +356,22 @@ class CustomTransferable(private val clip: Clip, private val pasteAsFile: Boolea
 }
 
 class MultiFileTransferable(private val clips: Set<Clip>): Transferable {
-    val dataFlavors = clips.map {
-        clipTypeToDataFlavor(it.associatedIcon.toClipType(), true)
+    val allValidFiles = mutableListOf<Clip>()
+
+    init {
+        clips.map {
+            if (it.associatedIcon.toClipType() != ClipType.PLAIN_TEXT && it.associatedIcon.toClipType() != ClipType.WEB) {
+                allValidFiles.add(it)
+            }
+        }
+    }
+
+    val dataFlavors = Array(allValidFiles.size) {
+        DataFlavor.javaFileListFlavor
     }
 
     override fun getTransferDataFlavors(): Array<out DataFlavor?>? {
-        val dataFlavorArray = Array(dataFlavors.size) {
-            dataFlavors[it]
-        }
-
-        return dataFlavorArray
+        return dataFlavors
     }
 
     override fun isDataFlavorSupported(p0: DataFlavor?): Boolean {
@@ -375,7 +381,7 @@ class MultiFileTransferable(private val clips: Set<Clip>): Transferable {
     override fun getTransferData(p0: DataFlavor?): Any {
         val files = mutableListOf<File>()
 
-        clips.forEach {
+        allValidFiles.forEach {
             files.add(File(it.content))
         }
 
@@ -765,16 +771,16 @@ fun ClipMenuAction.desc(secondsBeforePaste: Int): String {
 
 fun ClipMenuAction.shortcut(): String {
     return when(this) {
-        ClipMenuAction.PasteAsText -> "⌘ + V"
-        ClipMenuAction.PasteAsFile -> "⌥ + V"
-        ClipMenuAction.CopyAsText -> "⌘ + C"
-        ClipMenuAction.CopyAsFile -> "⌥ + C"
-        ClipMenuAction.Pin -> "⌘ + P"
-        ClipMenuAction.Unpin -> "⌘ + P"
+        ClipMenuAction.PasteAsText -> "⌘ V"
+        ClipMenuAction.PasteAsFile -> "⌥ V"
+        ClipMenuAction.CopyAsText -> "⌘ C"
+        ClipMenuAction.CopyAsFile -> "⌥ C"
+        ClipMenuAction.Pin -> "⌘ P"
+        ClipMenuAction.Unpin -> "⌘ P"
         ClipMenuAction.Preview -> "⏎"
-        ClipMenuAction.OpenAsLink -> "⌘ + ⏎"
-        ClipMenuAction.RevealInFinder -> "⌘ + ⏎"
-        ClipMenuAction.Delete -> "⌘ + ⌦"
+        ClipMenuAction.OpenAsLink -> "⌘ ⏎"
+        ClipMenuAction.RevealInFinder -> "⌘ ⏎"
+        ClipMenuAction.Delete -> "⌘ ⌦"
     }
 }
 
@@ -796,7 +802,7 @@ fun ClipMenuAction.info(secondsBeforePaste: Int): String {
 fun MultiSelectClipMenuAction.desc(secondsBeforePaste: Int): String {
     return when(this) {
         MultiSelectClipMenuAction.Paste -> "Paste clips in ${secondsBeforePaste}s"
-        MultiSelectClipMenuAction.Copy -> "Copy clips"
+        MultiSelectClipMenuAction.CopyFiles -> "Copy clips as files"
         MultiSelectClipMenuAction.Merge -> "Merge all"
         MultiSelectClipMenuAction.PinAll -> "Pin all"
         MultiSelectClipMenuAction.UnpinAll -> "Unpin all"
@@ -806,19 +812,19 @@ fun MultiSelectClipMenuAction.desc(secondsBeforePaste: Int): String {
 
 fun MultiSelectClipMenuAction.shortcut(): String {
     return when(this) {
-        MultiSelectClipMenuAction.Paste -> "⌘ + V"
-        MultiSelectClipMenuAction.Copy -> "⌘ + C"
+        MultiSelectClipMenuAction.Paste -> "⌘ V"
+        MultiSelectClipMenuAction.CopyFiles -> "⌘ C"
         MultiSelectClipMenuAction.Merge -> ""
-        MultiSelectClipMenuAction.PinAll -> "⌘ + P"
-        MultiSelectClipMenuAction.UnpinAll -> "⌥ + P"
-        MultiSelectClipMenuAction.DeleteAll -> "⌘ + ⌦"
+        MultiSelectClipMenuAction.PinAll -> "⌘ P"
+        MultiSelectClipMenuAction.UnpinAll -> "⌥ P"
+        MultiSelectClipMenuAction.DeleteAll -> "⌘ ⌦"
     }
 }
 
 fun MultiSelectClipMenuAction.info(secondsBeforePaste: Int): String {
     return when(this) {
         MultiSelectClipMenuAction.Paste -> "Paste clips to focused window in ${secondsBeforePaste}s"
-        MultiSelectClipMenuAction.Copy -> "Copy clips to global keyboard"
+        MultiSelectClipMenuAction.CopyFiles -> "Copy only files to global clipboard"
         MultiSelectClipMenuAction.Merge -> "Merge text and or files"
         MultiSelectClipMenuAction.PinAll -> "Pin all selected clips"
         MultiSelectClipMenuAction.UnpinAll -> "Unpin all selected clips"

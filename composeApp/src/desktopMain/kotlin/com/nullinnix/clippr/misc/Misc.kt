@@ -443,7 +443,7 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, settingsView
                     if (clipsState.isSearching) {
                         if (miscViewModelState.metaHeldDown && clipsState.selectedClips.size > 1) {
                             intercepted = true
-                            clipsViewModel.onMultiSelectAction(MultiSelectClipMenuAction.Copy)
+                            clipsViewModel.onMultiSelectAction(MultiSelectClipMenuAction.CopyFiles)
                         }
                     } else {
                         intercepted = true

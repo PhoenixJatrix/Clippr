@@ -277,7 +277,7 @@ class ClipsViewModel(
                 pasteMultipleFilesWithRobot(clips = clipsState.value.selectedClips, wait = settingsViewModel.state.value.secondsBeforePaste)
             }
 
-            MultiSelectClipMenuAction.Copy -> {
+            MultiSelectClipMenuAction.CopyFiles -> {
                 copyMultipleToClipboard(clips = clipsState.value.selectedClips)
 
                 notificationsViewModel.postNotification(

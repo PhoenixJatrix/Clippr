@@ -99,11 +99,8 @@ fun Clips (
     val clipState = clipsViewModel.clipsState.collectAsState().value
     val pinnedClips = clipState.pinnedClips
     val otherClips = clipState.otherClips
-
     val searchResults = clipState.searchResults
-
     val isSearching = clipState.isSearching
-
     val selectedClips = clipState.selectedClips
 
     val loadedIcns = miscViewModel.state.collectAsState().value.loadedIcns
@@ -182,7 +179,7 @@ fun Clips (
                             altHeldDown = altHeldDown,
                             rightClickedClip = rightClickedClip,
                             secondsBeforePaste = secondsBeforePaste,
-                            selectedMultiple = selectedClips.size > 1,
+                            numberOfClips = selectedClips.size,
                             onClipMenuAction = {
                                 clipsViewModel.onClipMenuAction(it, clip)
                             },
@@ -246,7 +243,7 @@ fun Clips (
                             altHeldDown = altHeldDown,
                             rightClickedClip = rightClickedClip,
                             secondsBeforePaste = secondsBeforePaste,
-                            selectedMultiple = selectedClips.size > 1,
+                            numberOfClips = selectedClips.size,
                             onClipMenuAction = {
                                 clipsViewModel.onClipMenuAction(it, clip)
                             },
@@ -342,21 +339,25 @@ fun Clips (
                         item {
                             Row (
                                 modifier = Modifier
-                                    .padding(10.dp), verticalAlignment = Alignment.CenterVertically
+                                    .padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                RadioButton(
-                                    isSelected = searchResults.size == selectedClips.size
-                                ) {
-                                    if (searchResults.size == selectedClips.size) {
-                                        clipsViewModel.setSelectedClips(emptySet())
-                                    } else {
-                                        clipsViewModel.setSelectedClips(searchResults.toSet())
+                                Row (
+                                    verticalAlignment = Alignment.CenterVertically
+                                ){
+                                    RadioButton (
+                                        isSelected = searchResults.size == selectedClips.size
+                                    ) {
+                                        if (searchResults.size == selectedClips.size) {
+                                            clipsViewModel.setSelectedClips(emptySet())
+                                        } else {
+                                            clipsViewModel.setSelectedClips(searchResults.toSet())
+                                        }
                                     }
-                                }
 
-                                Text (
-                                    text = "${selectedClips.size}/${searchResults.size} clips selected"
-                                )
+                                    Text (
+                                        text = "${selectedClips.size}/${searchResults.size} clips selected"
+                                    )
+                                }
                             }
                         }
 
@@ -374,7 +375,7 @@ fun Clips (
                                 altHeldDown = altHeldDown,
                                 rightClickedClip = rightClickedClip,
                                 secondsBeforePaste = secondsBeforePaste,
-                                selectedMultiple = selectedClips.size > 1,
+                                numberOfClips = selectedClips.size,
                                 onClipMenuAction = {
                                     clipsViewModel.onClipMenuAction(it, clip)
                                 },
@@ -439,7 +440,7 @@ fun Clips (
 fun ClipTemplate (
     isSearching: Boolean,
     isSelected: Boolean,
-    selectedMultiple: Boolean,
+    numberOfClips: Int,
     searchParams: String,
     clip: Clip,
     icns: ImageBitmap?,
@@ -570,10 +571,11 @@ fun ClipTemplate (
                 }
 
                 if (showMenu) {
-                    if (isSearching && selectedMultiple) {
+                    if (isSearching && numberOfClips > 1) {
                         MultiSelectClipDropDownMenu (
                             menuXPosition = menuPosition,
                             secondsBeforePaste = secondsBeforePaste,
+                            numberOfClips = numberOfClips,
                             onAction = {
                                 onMultiSelectClipMenuAction(it)
                                 onMenuShowEvent(false)
