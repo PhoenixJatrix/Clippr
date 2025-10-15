@@ -61,7 +61,7 @@ fun FilterView (
     allApps: Map<String, MacApp>,
     loadedIcns: Map<String, ImageBitmap>
 ) {
-    val state = rememberScrollState()
+    val scrollState = rememberScrollState()
     val clipState = clipsViewModel.clipsState.collectAsState().value
     val filters = clipState.protoFilters
 
@@ -136,7 +136,7 @@ fun FilterView (
 
                     Column (
                         modifier = Modifier
-                            .verticalScroll(state)
+                            .verticalScroll(scrollState)
                             .padding(end = 15.dp)
                             .padding(horizontal = 10.dp),
                     ) {
@@ -341,7 +341,7 @@ fun FilterView (
                 }
 
                 VerticalScrollbar (
-                    adapter = rememberScrollbarAdapter(state),
+                    adapter = rememberScrollbarAdapter(scrollState),
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .fillMaxHeight()

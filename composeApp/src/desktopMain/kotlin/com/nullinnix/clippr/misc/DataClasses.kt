@@ -48,7 +48,9 @@ data class ClipsState (
     val customFilterApplied: Boolean = false,
     val searchResults: List<Clip> = emptyList(),
     val isShowingFilters: Boolean = false,
-    val isOnGoingSearch: Boolean = false
+    val isOnGoingSearch: Boolean = false,
+    val showClipPreview: Boolean = false,
+    val currentlyPreviewingClip: Clip? = null
 )
 
 data class Filters (

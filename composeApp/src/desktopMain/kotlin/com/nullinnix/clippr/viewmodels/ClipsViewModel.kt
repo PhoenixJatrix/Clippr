@@ -95,15 +95,12 @@ class ClipsViewModel(
             while(true) {
                 //delay 10 seconds before start
                 delay(10000)
-
-                val settingsState = settingsViewModel.state.value
-
                 log("monitor clips", "monitorOldClips")
-                println("still running the job every ${settingsState.clipDeleteTime.unit * settingsState.clipDeleteTime.timeCode.secondsPer} second")
 
                 deleteOldUnpinnedClips()
 
-                delay((settingsState.clipDeleteTime.unit * settingsState.clipDeleteTime.timeCode.secondsPer).toLong() * 1000)
+                //delay 30 minutes
+                delay((60 * 30) * 1000)
             }
         }
     }
@@ -216,30 +213,16 @@ class ClipsViewModel(
 
             ClipMenuAction.Pin -> {
                 togglePinnedClip(clip)
-
-                notificationsViewModel.postNotification(
-                    Notification(
-                        duration = 6,
-                        content = "Clip pinned",
-                        type = NotificationType.Info()
-                    )
-                )
             }
 
             ClipMenuAction.Unpin -> {
                 togglePinnedClip(clip)
-
-                notificationsViewModel.postNotification(
-                    Notification(
-                        duration = 6,
-                        content = "Clip unpinned",
-                        type = NotificationType.Info()
-                    )
-                )
             }
 
             ClipMenuAction.Preview -> {
-
+                setCurrentlyPreviewingClip(clip)
+                setShowClipPreview(true)
+                miscViewModel.setLastHoveredClip(clip)
             }
 
             ClipMenuAction.OpenAsLink -> {
@@ -257,7 +240,10 @@ class ClipsViewModel(
             ClipMenuAction.Delete -> {
                 if (showMacConfirmDialog("Delete clip", "'${clip.content.coerce(50)}' will be deleted")) {
                     deleteClip(clip)
-                    searchAndFilter(true)
+
+                    if (clipsState.value.isSearching) {
+                        searchAndFilter(true)
+                    }
                 }
             }
         }
@@ -644,6 +630,22 @@ class ClipsViewModel(
     fun setSearchFilters(filters: Filters) {
         _clipsState.update {
             it.copy(searchFilter = filters)
+        }
+    }
+
+    fun setCurrentlyPreviewingClip(clip: Clip?) {
+        _clipsState.update {
+            it.copy(currentlyPreviewingClip = clip)
+        }
+    }
+
+    fun setShowClipPreview(value: Boolean) {
+        if (!value) {
+            miscViewModel.setLastHoveredClip(null)
+        }
+
+        _clipsState.update {
+            it.copy(showClipPreview = value)
         }
     }
 }

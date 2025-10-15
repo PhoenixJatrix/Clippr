@@ -81,6 +81,8 @@ import com.nullinnix.clippr.misc.toClipType
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
 import com.nullinnix.clippr.views.ClipDropDownMenu
+import com.nullinnix.clippr.views.ClipInfo
+import com.nullinnix.clippr.views.ClipPreview
 import com.nullinnix.clippr.views.MultiSelectClipDropDownMenu
 import com.nullinnix.clippr.views.RadioButton
 import kotlinx.coroutines.delay
@@ -102,6 +104,8 @@ fun Clips (
     val searchResults = clipState.searchResults
     val isSearching = clipState.isSearching
     val selectedClips = clipState.selectedClips
+    val showClipPreview = clipState.showClipPreview
+    val currentlyPreviewingClip = clipState.currentlyPreviewingClip
 
     val loadedIcns = miscViewModel.state.collectAsState().value.loadedIcns
     val allApps = miscViewModel.state.collectAsState().value.allApps
@@ -171,7 +175,7 @@ fun Clips (
                     ) { clip ->
                         ClipTemplate (
                             clip = clip,
-                            icns = loadedIcns[clip.source ?: ""],
+                            icon = loadedIcns[clip.source ?: ""],
                             macApp = allApps[clip.source ?: ""],
                             isSelected = clip in selectedClips,
                             isSearching = false,
@@ -235,7 +239,7 @@ fun Clips (
                     ) { clip ->
                         ClipTemplate(
                             clip = clip,
-                            icns = loadedIcns[clip.source ?: ""],
+                            icon = loadedIcns[clip.source ?: ""],
                             macApp = allApps[clip.source ?: ""],
                             isSelected = clip in selectedClips,
                             isSearching = false,
@@ -286,6 +290,18 @@ fun Clips (
                         .padding(end = 10.dp, bottom = 15.dp, top = 25.dp),
                     style = LocalScrollbarStyle.current.copy(minimalHeight = 35.dp)
                 )
+
+                if (showClipPreview) {
+                    ClipPreview(
+                        clip = currentlyPreviewingClip,
+                        icon = loadedIcns[currentlyPreviewingClip?.source ?: ""],
+                        macApp = allApps[currentlyPreviewingClip?.source ?: ""],
+                        secondsBeforePaste = secondsBeforePaste,
+                        onClose = {
+                            clipsViewModel.setShowClipPreview(false)
+                        }
+                    )
+                }
             }
         } else {
             Box(
@@ -367,7 +383,7 @@ fun Clips (
                         ) { clip ->
                             ClipTemplate (
                                 clip = clip,
-                                icns = loadedIcns[clip.source ?: ""],
+                                icon = loadedIcns[clip.source ?: ""],
                                 macApp = allApps[clip.source ?: ""],
                                 isSelected = clip in selectedClips,
                                 isSearching = true,
@@ -443,7 +459,7 @@ fun ClipTemplate (
     numberOfClips: Int,
     searchParams: String,
     clip: Clip,
-    icns: ImageBitmap?,
+    icon: ImageBitmap?,
     macApp: MacApp?,
     altHeldDown: Boolean,
     rightClickedClip: String?,
@@ -664,138 +680,89 @@ fun ClipTemplate (
 
                         if (macApp != null) {
                             clip.source?.let {
-                                Row (
-                                    modifier = Modifier
-                                        .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
-                                        .clip(RoundedCornerShape(90.dp))
-                                        .height(22.dp)
-                                        .background(Color.White)
-                                        .clickable(!isSearching) {
-                                            onAction(ClipAction.FilterBySource(clip.source))
+                                ClipInfo(
+                                    content = highlightedAnnotatedString(macApp.name.coerce(30), listOf(searchParams)),
+                                    enabled = !isSearching,
+                                    prefix = {
+                                        if (icon != null) {
+                                            Image(
+                                                bitmap = icon,
+                                                contentDescription = "",
+                                                modifier = Modifier
+                                                    .size(20.dp)
+                                            )
+                                        } else if (clip.source == "com.apple.finder") {
+                                            Image(
+                                                painter = painterResource(Res.drawable.finder),
+                                                contentDescription = "",
+                                                modifier = Modifier
+                                                    .size(20.dp)
+                                                    .padding(2.dp)
+                                            )
                                         }
-                                        .padding(horizontal = 7.dp), verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    if (icns != null) {
-                                        Image(
-                                            bitmap = icns,
-                                            contentDescription = "",
-                                            modifier = Modifier
-                                                .size(20.dp)
-                                        )
-                                    } else if (clip.source == "com.apple.finder") {
-                                        Image(
-                                            painter = painterResource(Res.drawable.finder),
-                                            contentDescription = "",
-                                            modifier = Modifier
-                                                .size(20.dp)
-                                                .padding(2.dp)
-                                        )
+                                    },
+                                    onClick = {
+                                        onAction(ClipAction.FilterBySource(clip.source))
                                     }
-
-                                    Spacer(Modifier.width(5.dp))
-
-                                    Text (
-                                        text = highlightedAnnotatedString(macApp.name.coerce(30), listOf(searchParams)),
-                                        fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                                        color = Color.Gray,
-                                        fontSize = 11.sp
-                                    )
-                                }
+                                )
 
                                 Spacer(Modifier.width(7.dp))
                             }
                         }
 
-                        Row (
-                            modifier = Modifier
-                                .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
-                                .clip(RoundedCornerShape(90.dp))
-                                .height(22.dp)
-                                .background(Color.White)
-                                .clickable(!isSearching) {
-                                    onAction(ClipAction.FilterByType(clip.associatedIcon.toClipType()))
+                        ClipInfo(
+                            content = highlightedAnnotatedString(clipTypeToDesc(clip.associatedIcon), listOf(searchParams)),
+                            enabled = !isSearching,
+                            prefix = {
+                                Canvas(
+                                    modifier = Modifier
+                                        .size(7.dp)
+                                ) {
+                                    drawCircle(color = clipTypeToColor(clip.associatedIcon))
                                 }
-                                .padding(horizontal = 7.dp), verticalAlignment = Alignment.CenterVertically
-                        ){
-                            Canvas(
-                                modifier = Modifier
-                                    .size(7.dp)
-                            ) {
-                                drawCircle(color = clipTypeToColor(clip.associatedIcon))
+                            },
+                            onClick = {
+                                onAction(ClipAction.FilterByType(clip.associatedIcon.toClipType()))
                             }
-
-                            Spacer(Modifier.width(5.dp))
-
-                            Text (
-                                text = highlightedAnnotatedString(clipTypeToDesc(clip.associatedIcon), listOf(searchParams)),
-                                fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                                color = Color.Gray,
-                                fontSize = 11.sp
-                            )
-                        }
+                        )
 
                         Spacer(Modifier.width(7.dp))
 
                         if (clip.associatedIcon.toClipType() == ClipType.PLAIN_TEXT) {
-                            Row (
-                                modifier = Modifier
-                                    .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
-                                    .clip(RoundedCornerShape(90.dp))
-                                    .height(22.dp)
-                                    .background(Color.White)
-                                    .clickable(false) {}
-                                    .padding(horizontal = 7.dp), verticalAlignment = Alignment.CenterVertically
-                            ){
-                                val lines = clip.content.lines().size
-                                if (lines > 1) {
-                                    Text (
-                                        text = "$lines lines",
-                                        fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                                        color = Color.Gray,
-                                        fontSize = 11.sp
-                                    )
+                            ClipInfo(
+                                content = "${clip.content.length} ${if (clip.content.length == 1) "char" else "chars"}",
+                                enabled = false,
+                                prefix = {
+                                    val lines = clip.content.lines().size
+                                    if (lines > 1) {
+                                        Text (
+                                            text = "$lines lines",
+                                            fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+                                            color = Color.Gray,
+                                            fontSize = 11.sp
+                                        )
 
-                                    Spacer(Modifier.width(5.dp))
+                                        Spacer(Modifier.width(5.dp))
 
-                                    Canvas(
-                                        modifier = Modifier
-                                            .size(5.dp)
-                                    ) {
-                                        drawCircle(color = Color.Gray)
+                                        Canvas(
+                                            modifier = Modifier
+                                                .size(5.dp)
+                                        ) {
+                                            drawCircle(color = Color.Gray)
+                                        }
                                     }
-
-                                    Spacer(Modifier.width(5.dp))
+                                },
+                                onClick = {
+                                    onAction(ClipAction.FilterByType(clip.associatedIcon.toClipType()))
                                 }
-
-                                Text (
-                                    text = "${clip.content.length} ${if (clip.content.length == 1) "char" else "chars"}",
-                                    fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                                    color = Color.Gray,
-                                    fontSize = 11.sp
-                                )
-                            }
+                            )
 
                             Spacer(Modifier.width(7.dp))
                         }
 
-                        LaunchedEffect(Unit) {
-                            while (true) {
-                                delay(5000)
-                            }
-                        }
-
-                        Text (
-                            text = copiedAt,
-                            modifier = Modifier
-                                .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
-                                .clip(RoundedCornerShape(90.dp))
-                                .height(22.dp)
-                                .background(Color.White)
-                                .clickable(false) {}
-                                .padding(horizontal = 7.dp),
-                            fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                            color = Color.Gray,
-                            fontSize = 11.sp
+                        ClipInfo(
+                            content = copiedAt,
+                            enabled = false
                         )
                     }
                 }

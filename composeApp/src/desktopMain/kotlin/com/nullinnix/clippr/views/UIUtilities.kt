@@ -57,16 +57,17 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
@@ -75,6 +76,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
+import clippr.composeapp.generated.resources.Baloo2_Regular
 import clippr.composeapp.generated.resources.Res
 import clippr.composeapp.generated.resources.back
 import clippr.composeapp.generated.resources.check
@@ -108,6 +110,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
 import java.awt.MouseInfo
 import java.awt.Window
@@ -1081,5 +1084,108 @@ fun Notification (
                 )
             }
         }
+    }
+}
+
+@Composable
+fun ClipInfo (
+    content: String,
+    enabled: Boolean,
+    prefix: (@Composable () -> Unit)? = null,
+    onClick: () -> Unit = {}
+){
+    Row (
+        modifier = Modifier
+            .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
+            .clip(RoundedCornerShape(90.dp))
+            .height(22.dp)
+            .background(Color.White)
+            .clickable(enabled) {
+                onClick()
+            }
+            .padding(horizontal = 7.dp), verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (prefix != null) {
+            prefix()
+
+            Spacer(Modifier.width(5.dp))
+        }
+
+        Text(
+            text = content,
+            fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+            color = Color.Gray,
+            fontSize = 11.sp,
+            modifier = Modifier
+                .offset(y = 1.dp)
+        )
+    }
+}
+
+@Composable
+fun ClipInfo (
+    content: AnnotatedString,
+    enabled: Boolean,
+    prefix: (@Composable () -> Unit)? = null,
+    onClick: () -> Unit = {}
+){
+    Row (
+        modifier = Modifier
+            .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
+            .clip(RoundedCornerShape(90.dp))
+            .height(22.dp)
+            .background(Color.White)
+            .clickable(enabled) {
+                onClick()
+            }
+            .padding(horizontal = 7.dp), verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (prefix != null) {
+            prefix()
+
+            Spacer(Modifier.width(5.dp))
+        }
+
+        Text(
+            text = content,
+            fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+            color = Color.Gray,
+            fontSize = 11.sp,
+            modifier = Modifier
+                .offset(y = 1.dp)
+        )
+    }
+}
+
+@Composable
+fun ClipPreviewInfo (
+    content: String,
+    enabled: Boolean,
+    prefix: (@Composable () -> Unit)? = null,
+    onClick: () -> Unit = {}
+){
+    Row (
+        modifier = Modifier
+            .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
+            .clip(RoundedCornerShape(90.dp))
+            .height(30.dp)
+            .background(Color.White)
+            .clickable(enabled) {
+                onClick()
+            }
+            .padding(horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (prefix != null) {
+            prefix()
+
+            Spacer(Modifier.width(5.dp))
+        }
+
+        Text(
+            text = content,
+            fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+            color = Color.Gray,
+            fontSize = 13.sp
+        )
     }
 }

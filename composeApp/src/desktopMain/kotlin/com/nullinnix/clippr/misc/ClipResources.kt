@@ -280,33 +280,45 @@ fun getIconForContent (
 }
 
 fun copyToClipboard(clip: Clip, pasteAsFile: Boolean) {
-    val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-    val customTransferable = CustomTransferable(clip, pasteAsFile)
+    try {
+        val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+        val customTransferable = CustomTransferable(clip, pasteAsFile)
 
-    clipboard.setContents(customTransferable, CustomClipboardOwner())
-    lastCopiedItemHash = clip.content.hash()
+        clipboard.setContents(customTransferable, CustomClipboardOwner())
+        lastCopiedItemHash = clip.content.hash()
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
 }
 
 fun copyMultipleToClipboard(clips: Set<Clip>) {
-    val clipboard = Toolkit.getDefaultToolkit().systemClipboard
-    val multiFileTransferable = MultiFileTransferable(clips)
+    try {
+        val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+        val multiFileTransferable = MultiFileTransferable(clips)
 
-    clipboard.setContents(multiFileTransferable, CustomClipboardOwner())
-    lastCopiedItemHash = clips.toString().hash()
+        clipboard.setContents(multiFileTransferable, CustomClipboardOwner())
+        lastCopiedItemHash = clips.toString().hash()
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
 }
 
-fun clipTypeToDataFlavor(clipType: ClipType, pasteAsFile: Boolean): DataFlavor {
-    return when (clipType) {
+fun clipToDataFlavor(clip: Clip, pasteAsFile: Boolean): DataFlavor {
+    return when (clip.associatedIcon.toClipType()) {
         ClipType.PLAIN_TEXT -> {
             DataFlavor.stringFlavor
         }
 
         ClipType.IMAGE -> {
-            DataFlavor.imageFlavor
+            if (pasteAsFile && File(clip.content).exists() && clip.associatedIcon.toClipType() == ClipType.IMAGE) {
+                DataFlavor.imageFlavor
+            } else {
+                DataFlavor.stringFlavor
+            }
         }
 
         else -> {
-            if (pasteAsFile) {
+            if (pasteAsFile && File(clip.content).exists()) {
                 DataFlavor.javaFileListFlavor
             } else {
                 DataFlavor.stringFlavor
@@ -315,8 +327,8 @@ fun clipTypeToDataFlavor(clipType: ClipType, pasteAsFile: Boolean): DataFlavor {
     }
 }
 
-class CustomTransferable(private val clip: Clip, private val pasteAsFile: Boolean): Transferable {
-    val dataFlavors = listOf(clipTypeToDataFlavor(clip.associatedIcon.toClipType(), pasteAsFile))
+class CustomTransferable(private val clip: Clip, pasteAsFile: Boolean): Transferable {
+    val dataFlavors = listOf(clipToDataFlavor(clip, pasteAsFile))
 
     override fun getTransferDataFlavors(): Array<out DataFlavor?>? {
         val dataFlavorArray = Array(dataFlavors.size) {
@@ -331,31 +343,23 @@ class CustomTransferable(private val clip: Clip, private val pasteAsFile: Boolea
     }
 
     override fun getTransferData(p0: DataFlavor?): Any {
-        return when (clip.associatedIcon.toClipType()) {
-            ClipType.PLAIN_TEXT -> {
+        return when (dataFlavors[0]) {
+            DataFlavor.stringFlavor -> {
                 clip.content
             }
 
-            ClipType.IMAGE -> {
-                if (pasteAsFile && File(clip.content).exists()) {
-                    listOf(File(clip.content))
-                } else {
-                    clip.content
-                }
+            DataFlavor.javaFileListFlavor -> {
+                listOf(File(clip.content))
             }
 
             else -> {
-                if (pasteAsFile && File(clip.content).exists()) {
-                    listOf(File(clip.content))
-                } else {
-                    clip.content
-                }
+                clip.content
             }
         }
     }
 }
 
-class MultiFileTransferable(private val clips: Set<Clip>): Transferable {
+class MultiFileTransferable(clips: Set<Clip>): Transferable {
     val allValidFiles = mutableListOf<Clip>()
 
     init {
