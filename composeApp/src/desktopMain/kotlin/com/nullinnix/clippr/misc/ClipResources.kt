@@ -856,6 +856,20 @@ fun MergeAction.info(): String {
     }
 }
 
+fun SaveAs.desc(): String {
+    return when(this) {
+        SaveAs.Save -> "Save"
+        SaveAs.SaveAsCopy -> "Save as copy"
+    }
+}
+
+fun SaveAs.info(): String {
+    return when(this) {
+        SaveAs.Save -> "Replace original clip with edited clip"
+        SaveAs.SaveAsCopy -> "Save as a new clip and retain old"
+    }
+}
+
 fun getClipMenuActions(clip: Clip): List<ClipMenuAction> {
     val clipActions = ClipMenuAction.entries.toMutableList()
 

@@ -43,6 +43,11 @@ enum class MergeAction {
     NoSeparation
 }
 
+enum class SaveAs {
+    Save,
+    SaveAsCopy
+}
+
 sealed interface Tab {
     object ClipsTab: Tab
     object SettingsTab: Tab

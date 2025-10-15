@@ -159,8 +159,11 @@ class ClipsViewModel(
         }
     }
 
-    fun onClipMenuAction(action: ClipMenuAction, clip: Clip) {
+    fun onClipMenuAction(action: ClipMenuAction, clip: Clip?) {
         println(action.desc(3))
+
+        if (clip == null)
+            return
 
         when (action) {
             ClipMenuAction.PasteAsText -> {
@@ -220,9 +223,13 @@ class ClipsViewModel(
             }
 
             ClipMenuAction.Preview -> {
-                setCurrentlyPreviewingClip(clip)
-                setShowClipPreview(true)
-                miscViewModel.setLastHoveredClip(clip)
+                viewModelScope.launch {
+                    setCurrentlyPreviewingClip(clip)
+                    setShowClipPreview(true)
+
+                    delay(300)
+                    miscViewModel.setLastHoveredClip(clip)
+                }
             }
 
             ClipMenuAction.OpenAsLink -> {
@@ -238,7 +245,7 @@ class ClipsViewModel(
             }
 
             ClipMenuAction.Delete -> {
-                if (showMacConfirmDialog("Delete clip", "'${clip.content.coerce(50)}' will be deleted")) {
+                if (showMacConfirmDialog("Delete clip", "'${clip.content.trimIndent().trimMargin().coerce(50)}' will be deleted")) {
                     deleteClip(clip)
 
                     if (clipsState.value.isSearching) {
@@ -423,7 +430,7 @@ class ClipsViewModel(
             notificationsViewModel.postNotification(
                 Notification(
                     duration = 6,
-                    content = "Deleted ${clip.content.coerce(15)}",
+                    content = "Deleted ${clip.content.trimIndent().trimMargin().coerce(15)}",
                     type = NotificationType.Info()
                 )
             )
@@ -436,7 +443,7 @@ class ClipsViewModel(
         notificationsViewModel.postNotification(
             Notification(
                 duration = 6, 
-                content = if (clip.isPinned) "Unpinned ${clip.content.coerce(15)}" else "Pinned ${clip.content.coerce(15)}",
+                content = if (clip.isPinned) "Unpinned ${clip.content.trimIndent().trimMargin().coerce(15)}" else "Pinned ${clip.content.trimIndent().trimMargin().coerce(15)}",
                 type = NotificationType.Info()
             )
         )

@@ -125,7 +125,7 @@ fun main() {
 
                 LaunchedEffect(composeWindowState) {
                     while (true) {
-                        if (!clipsViewModel.clipsState.value.isSearching && clipsViewModel.clipsState.value.currentTab != Tab.SettingsTab) {
+                        if (!clipsViewModel.clipsState.value.isSearching && clipsViewModel.clipsState.value.currentTab != Tab.SettingsTab && !clipsViewModel.clipsState.value.showClipPreview) {
                             focusRequester.requestFocus()
                         }
 
@@ -160,7 +160,7 @@ fun main() {
                         .focusRequester(focusRequester)
                         .focusable()
                         .onPreviewKeyEvent { event ->
-                            manageKeyEvent(event, clipsViewModel, settingsViewModel, miscViewModel)
+                            manageKeyEvent(event, clipsViewModel, miscViewModel)
                         }
                 ){
                     Theme {
@@ -178,7 +178,7 @@ fun main() {
                                 notificationsViewModel = notificationsViewModel,
                                 onInterceptEvent = { event ->
                                     if (event.key != Key.Escape)
-                                        manageKeyEvent(event, clipsViewModel, settingsViewModel, miscViewModel)
+                                        manageKeyEvent(event, clipsViewModel, miscViewModel)
                                 }
                             )
                         }

@@ -20,7 +20,8 @@ data class ClipEntity (
     val exists: Boolean,
     val pinnedAt: Long,
     val associatedIcon: String,
-    val source: String? = null
+    val source: String? = null,
+    val edited: Boolean? = null
 )
 
 data class Clip (
@@ -34,6 +35,7 @@ data class Clip (
     val pinnedAt: Long,
     val associatedIcon: String,
     val source: String? = null,
+    val edited: Boolean? = null
 )
 
 data class ClipsState (

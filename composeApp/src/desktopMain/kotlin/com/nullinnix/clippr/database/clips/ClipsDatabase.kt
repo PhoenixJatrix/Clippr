@@ -5,7 +5,7 @@ import com.nullinnix.clippr.misc.ClipEntity
 
 @Database(
     entities = [ClipEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class ClipsDatabase: RoomDatabase() {

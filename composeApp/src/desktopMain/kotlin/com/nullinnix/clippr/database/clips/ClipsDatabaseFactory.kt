@@ -20,7 +20,7 @@ class ClipsDatabaseFactory {
         val dbFile = File(appDataDir, "clips")
         return Room.databaseBuilder<ClipsDatabase>(dbFile.absolutePath)
             .setDriver(BundledSQLiteDriver())
-            .addMigrations(Migration3to1(), Migration1to2())
+            .addMigrations(Migration3to1(), Migration1to2(), Migration2to3())
             .build()
     }
 }
@@ -34,5 +34,11 @@ class Migration3to1: Migration(3, 1) {
 class Migration1to2: Migration(1, 2) {
     override fun migrate(connection: SQLiteConnection) {
         connection.execSQL("ALTER TABLE clips ADD COLUMN source TEXT DEFAULT NULL")
+    }
+}
+
+class Migration2to3: Migration(2, 3) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE clips ADD COLUMN edited INTEGER DEFAULT NULL")
     }
 }

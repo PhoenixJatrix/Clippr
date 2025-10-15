@@ -299,6 +299,9 @@ fun Clips (
                         secondsBeforePaste = secondsBeforePaste,
                         onClose = {
                             clipsViewModel.setShowClipPreview(false)
+                        },
+                        onClipMenuAction = {
+                            clipsViewModel.onClipMenuAction(it, currentlyPreviewingClip)
                         }
                     )
                 }

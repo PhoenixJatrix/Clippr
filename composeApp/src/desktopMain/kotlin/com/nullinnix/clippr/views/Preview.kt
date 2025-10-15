@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
@@ -35,10 +36,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import clippr.composeapp.generated.resources.Baloo2_Regular
@@ -50,6 +55,7 @@ import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipMenuAction
 import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.MacApp
+import com.nullinnix.clippr.misc.SearchAction
 import com.nullinnix.clippr.misc.clipTypeToColor
 import com.nullinnix.clippr.misc.clipTypeToDesc
 import com.nullinnix.clippr.misc.coerce
@@ -57,6 +63,7 @@ import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.misc.desc
 import com.nullinnix.clippr.misc.epochToReadableTime
 import com.nullinnix.clippr.misc.getClipMenuActions
+import com.nullinnix.clippr.misc.hash
 import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.misc.shortcut
 import com.nullinnix.clippr.misc.toClipType
@@ -71,6 +78,7 @@ fun ClipPreview (
     macApp: MacApp?,
     icon: ImageBitmap?,
     secondsBeforePaste: Int,
+    onClipMenuAction: (ClipMenuAction) -> Unit,
     onClose: () -> Unit
 ) {
     PopupMenu (
@@ -82,6 +90,9 @@ fun ClipPreview (
                 val scrollState = rememberScrollState()
                 val contentScrollState = rememberScrollState()
                 var copiedAt by remember { mutableStateOf(epochToReadableTime(clip.copiedAt)) }
+                var clipContentEdit by remember { mutableStateOf(clip.content) }
+                var edited by remember { mutableStateOf(false) }
+                val originalHash by remember { mutableStateOf(clip.content.hash()) }
 
                 LaunchedEffect(Unit) {
                     while (true) {
@@ -112,7 +123,7 @@ fun ClipPreview (
                             Row(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
+                                Icon (
                                     painter = painterResource(Res.drawable.back),
                                     contentDescription = "",
                                     tint = Color.Black,
@@ -130,7 +141,7 @@ fun ClipPreview (
                                 Spacer(Modifier.width(10.dp))
 
                                 Text(
-                                    text = "Filters",
+                                    text = "Edit",
                                     color = Color.Black,
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 18.sp
@@ -156,8 +167,28 @@ fun ClipPreview (
                             ) {
                                 Spacer(Modifier.height(20.dp))
 
-                                Text(
-                                    text = clip.content
+                                BasicTextField(
+                                    value = clipContentEdit,
+                                    onValueChange = {
+                                        clipContentEdit = it
+
+                                        edited = it.hash() != originalHash
+                                    },
+                                    textStyle = TextStyle (
+                                        color = Color.Black,
+                                        fontSize = 14.sp
+                                    ),
+                                    cursorBrush = SolidColor(Color.Black),
+                                    decorationBox = {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                        ) {
+                                            it()
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
                                 )
 
                                 Spacer(Modifier.height(20.dp))
@@ -289,7 +320,7 @@ fun ClipPreview (
                                     .clip(corners(10.dp))
                                     .background(Color.White)
                                     .clickable {
-
+                                        onClipMenuAction(option)
                                     }
                                     .padding(20.dp),
                                 contentAlignment = Alignment.CenterStart

@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
-import com.nullinnix.clippr.viewmodels.SettingsViewModel
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -274,7 +273,8 @@ fun ClipEntity.toClip(): Clip {
         exists = this.exists,
         pinnedAt = this.pinnedAt,
         associatedIcon = this.associatedIcon,
-        source = this.source
+        source = this.source,
+        edited = this.edited
     )
 }
 
@@ -289,7 +289,8 @@ fun Clip.toClipEntity(): ClipEntity {
         exists = this.exists,
         pinnedAt = this.pinnedAt,
         associatedIcon = this.associatedIcon,
-        source = this.source
+        source = this.source,
+        edited = this.edited
     )
 }
 
@@ -401,8 +402,7 @@ fun highlightedAnnotatedString (
     return builder.toAnnotatedString()
 }
 
-fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, settingsViewModel: SettingsViewModel, miscViewModel: MiscViewModel): Boolean {
-    println("event = ${event.key}")
+fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewModel: MiscViewModel): Boolean {
     var intercepted = false
     val clipsState = clipsViewModel.clipsState.value
     val miscViewModelState = miscViewModel.state.value
@@ -429,7 +429,6 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, settingsView
                     } else {
                         if (miscViewModelState.metaHeldDown) {
                             clipsViewModel.onClipMenuAction(ClipMenuAction.PasteAsText, miscViewModelState.lastHoveredClip)
-
                         } else {
                             clipsViewModel.onClipMenuAction(ClipMenuAction.PasteAsFile, miscViewModelState.lastHoveredClip)
                         }
@@ -580,6 +579,8 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, settingsView
             }
         }
     }
+
+    println("event = ${event.key}. ${if (event.type == KeyEventType.KeyDown) "down event" else "up event"}. ${if (intercepted) "intercepted" else "passed to children"}")
 
     return intercepted
 }
