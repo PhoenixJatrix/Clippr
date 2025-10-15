@@ -87,14 +87,18 @@ import clippr.composeapp.generated.resources.right
 import clippr.composeapp.generated.resources.search
 import com.nullinnix.clippr.misc.Clip
 import com.nullinnix.clippr.misc.ClipMenuAction
+import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.ClipsState
 import com.nullinnix.clippr.misc.MergeAction
 import com.nullinnix.clippr.misc.MergeOptions
 import com.nullinnix.clippr.misc.MultiSelectClipMenuAction
 import com.nullinnix.clippr.misc.Notification
 import com.nullinnix.clippr.misc.NotificationType
+import com.nullinnix.clippr.misc.SaveAs
 import com.nullinnix.clippr.misc.SearchAction
 import com.nullinnix.clippr.misc.Tab
+import com.nullinnix.clippr.misc.clipTypeToColor
+import com.nullinnix.clippr.misc.clipTypeToDesc
 import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.misc.desc
 import com.nullinnix.clippr.misc.getClipMenuActions
@@ -912,9 +916,16 @@ fun MultiSelectClipDropDownMenu (
                 copyAfterMerge = !copyAfterMerge
             }
 
-            currentHoverMerge?.let {
+            if (currentHoverMerge != null) {
+                currentHoverMerge?.let {
+                    Text (
+                        text = it.info(),
+                        color = Color.Black.copy(0.5f)
+                    )
+                }
+            } else {
                 Text (
-                    text = it.info(),
+                    text = " \n Select merge type \n ",
                     color = Color.Black.copy(0.5f)
                 )
             }
@@ -925,7 +936,7 @@ fun MultiSelectClipDropDownMenu (
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
-                    .clip(corners())
+                    .clip(corners(18.dp))
                     .background(if (selectedMergeType != null) Color.Black else Color.Black.copy(0.5f))
                     .clickable (selectedMergeType != null){
                         selectedMergeType?.let {
@@ -938,6 +949,157 @@ fun MultiSelectClipDropDownMenu (
                     color = Color.White
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun SaveAsDropDown (
+    menuPosition: DpOffset,
+    onAction: (SaveAs) -> Unit,
+    onDismiss: () -> Unit,
+    onInterceptEvent: (KeyEvent) -> Unit
+) {
+    var currentHoverAction by remember { mutableStateOf<SaveAs?>(null) }
+
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(500)
+            focusRequester.requestFocus()
+        }
+    }
+
+    DropdownMenu(
+        expanded = true,
+        onDismissRequest = {
+            onDismiss()
+        },
+        offset = menuPosition,
+        properties = PopupProperties(focusable = true),
+        modifier = Modifier
+            .padding(7.dp)
+            .clip(corners(10.dp))
+            .animateContentSize()
+            .focusRequester(focusRequester)
+            .focusable(true)
+            .onPreviewKeyEvent { event ->
+                onInterceptEvent(event)
+                true
+            }
+    ) {
+        SaveAs.entries.forEach { option ->
+            val interactionSource = remember { MutableInteractionSource() }
+            val isHover = interactionSource.collectIsHoveredAsState().value
+
+            LaunchedEffect(isHover) {
+                if (isHover) {
+                    currentHoverAction = option
+                }
+            }
+
+            DropdownMenuItem (
+                onClick = {
+                    onAction(option)
+                },
+                content = {
+                    Row(
+                        modifier = Modifier
+                            .widthIn(min = 350.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = option.desc(),
+                            fontSize = 14.sp,
+                            color = Color.Black
+                        )
+
+                        Text(
+                            text = option.shortcut(),
+                            fontSize = 14.sp,
+                            color = Color.Black.copy(0.5f)
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .clip(corners(10.dp))
+                    .hoverable(interactionSource)
+            )
+        }
+
+        currentHoverAction?.let {
+            Text (
+                text = it.info(),
+                color = Color.Black.copy(0.5f)
+            )
+        }
+    }
+}
+
+@Composable
+fun ClipTypeDropDown (
+    menuPosition: DpOffset,
+    onAction: (ClipType) -> Unit,
+    onDismiss: () -> Unit,
+    onInterceptEvent: (KeyEvent) -> Unit
+) {
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(500)
+            focusRequester.requestFocus()
+        }
+    }
+
+    DropdownMenu(
+        expanded = true,
+        onDismissRequest = {
+            onDismiss()
+        },
+        offset = menuPosition,
+        properties = PopupProperties(focusable = true),
+        modifier = Modifier
+            .padding(7.dp)
+            .clip(corners(10.dp))
+            .animateContentSize()
+            .focusRequester(focusRequester)
+            .focusable(true)
+            .onPreviewKeyEvent { event ->
+                onInterceptEvent(event)
+                true
+            }
+    ) {
+        ClipType.entries.minus(ClipType.BROKEN).forEach { option ->
+            DropdownMenuItem (
+                onClick = {
+                    onAction(option)
+                },
+                content = {
+                    Row(
+                        modifier = Modifier
+                            .widthIn(min = 350.dp), verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Canvas(
+                            modifier = Modifier
+                                .size(15.dp)
+                        ) {
+                            drawCircle(color = clipTypeToColor(option.id))
+                        }
+
+                        Spacer(Modifier.width(10.dp))
+
+                        Text(
+                            text = clipTypeToDesc(option.id),
+                            fontSize = 14.sp,
+                            color = Color.Black
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .clip(corners(10.dp))
+            )
         }
     }
 }
@@ -1116,6 +1278,7 @@ fun ClipInfo (
             fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
             color = Color.Gray,
             fontSize = 11.sp,
+            maxLines = 1,
             modifier = Modifier
                 .offset(y = 1.dp)
         )
@@ -1151,6 +1314,7 @@ fun ClipInfo (
             fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
             color = Color.Gray,
             fontSize = 11.sp,
+            maxLines = 1,
             modifier = Modifier
                 .offset(y = 1.dp)
         )
@@ -1158,7 +1322,7 @@ fun ClipInfo (
 }
 
 @Composable
-fun ClipPreviewInfo (
+fun ClipEditInfo (
     content: String,
     enabled: Boolean,
     prefix: (@Composable () -> Unit)? = null,
@@ -1185,7 +1349,8 @@ fun ClipPreviewInfo (
             text = content,
             fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
             color = Color.Gray,
-            fontSize = 13.sp
+            fontSize = 13.sp,
+            maxLines = 1
         )
     }
 }

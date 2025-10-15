@@ -20,7 +20,7 @@ enum class ClipMenuAction() {
     CopyAsFile,
     Pin,
     Unpin,
-    Preview,
+    Edit,
     OpenAsLink,
     RevealInFinder,
     Delete
@@ -98,6 +98,7 @@ sealed interface SearchAction {
 }
 
 enum class EscPriorityConsumers {
+    PreviewEsc,
     FilterEsc,
     SearchEsc
 }

@@ -766,7 +766,7 @@ fun ClipMenuAction.desc(secondsBeforePaste: Int): String {
         ClipMenuAction.CopyAsFile -> "Copy as file"
         ClipMenuAction.Pin -> "Pin"
         ClipMenuAction.Unpin -> "Unpin"
-        ClipMenuAction.Preview -> "Preview clip"
+        ClipMenuAction.Edit -> "Edit clip"
         ClipMenuAction.OpenAsLink -> "Open in browser"
         ClipMenuAction.RevealInFinder -> "Reveal in Finder"
         ClipMenuAction.Delete -> "Delete"
@@ -781,7 +781,7 @@ fun ClipMenuAction.shortcut(): String {
         ClipMenuAction.CopyAsFile -> "⌥ C"
         ClipMenuAction.Pin -> "⌘ P"
         ClipMenuAction.Unpin -> "⌘ P"
-        ClipMenuAction.Preview -> "⏎"
+        ClipMenuAction.Edit -> "⏎"
         ClipMenuAction.OpenAsLink -> "⌘ ⏎"
         ClipMenuAction.RevealInFinder -> "⌘ ⏎"
         ClipMenuAction.Delete -> "⌘ ⌦"
@@ -796,7 +796,7 @@ fun ClipMenuAction.info(secondsBeforePaste: Int): String {
         ClipMenuAction.CopyAsFile -> "Copy this clip to global clipboard a file"
         ClipMenuAction.Pin -> "Pin this clip"
         ClipMenuAction.Unpin -> "Unpin this clip"
-        ClipMenuAction.Preview -> "Open this clip in preview window"
+        ClipMenuAction.Edit -> "Edit clip in another window"
         ClipMenuAction.OpenAsLink -> "Open in a browser"
         ClipMenuAction.RevealInFinder -> "Open the location of this clip if it exists"
         ClipMenuAction.Delete -> "Delete clip"
@@ -866,11 +866,18 @@ fun SaveAs.desc(): String {
 fun SaveAs.info(): String {
     return when(this) {
         SaveAs.Save -> "Replace original clip with edited clip"
-        SaveAs.SaveAsCopy -> "Save as a new clip and retain old"
+        SaveAs.SaveAsCopy -> "Save as a new clip and retain old clip"
     }
 }
 
-fun getClipMenuActions(clip: Clip): List<ClipMenuAction> {
+fun SaveAs.shortcut(): String {
+    return when(this) {
+        SaveAs.Save -> "⌘ S"
+        SaveAs.SaveAsCopy -> "⌘ ⇧ S"
+    }
+}
+
+fun getClipMenuActions(clip: Clip, editing: Boolean = false): List<ClipMenuAction> {
     val clipActions = ClipMenuAction.entries.toMutableList()
 
     if (clip.isPinned) {
@@ -881,22 +888,29 @@ fun getClipMenuActions(clip: Clip): List<ClipMenuAction> {
 
     clipActions.remove(ClipMenuAction.OpenAsLink)
 
-    return when (clip.associatedIcon.toClipType()) {
+    when (clip.associatedIcon.toClipType()) {
         ClipType.PLAIN_TEXT -> {
             clipActions.remove(ClipMenuAction.PasteAsFile)
             clipActions.remove(ClipMenuAction.CopyAsFile)
             clipActions.remove(ClipMenuAction.RevealInFinder)
-            clipActions
         }
         ClipType.WEB -> {
             clipActions.remove(ClipMenuAction.PasteAsFile)
             clipActions.remove(ClipMenuAction.CopyAsFile)
             clipActions.remove(ClipMenuAction.RevealInFinder)
             clipActions.add(ClipMenuAction.OpenAsLink)
-            clipActions
         }
         else -> {
             clipActions
         }
     }
+
+    if (editing) {
+        clipActions.remove(ClipMenuAction.Pin)
+        clipActions.remove(ClipMenuAction.Unpin)
+        clipActions.remove(ClipMenuAction.Edit)
+        clipActions.remove(ClipMenuAction.Delete)
+    }
+
+    return clipActions
 }

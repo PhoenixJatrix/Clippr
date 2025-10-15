@@ -48,6 +48,12 @@ class MiscViewModel: ViewModel() {
         }
     }
 
+    fun setShiftHeldDown(value: Boolean) {
+        _state.update {
+            it.copy(shiftHeldDown = value)
+        }
+    }
+
     fun setLastHoveredClip(value: Clip?) {
         _state.update {
             it.copy(lastHoveredClip = value)

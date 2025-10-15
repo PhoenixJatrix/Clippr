@@ -106,7 +106,7 @@ fun App (
             ) {
                 Spacer(Modifier.height(15.dp))
 
-                AnimatedVisibility(!isSearching, enter = fadeIn(tween(200)) + expandHorizontally(tween(200))) {
+                AnimatedVisibility(!isSearching && !clipState.showClipPreview, enter = fadeIn(tween(200)) + expandHorizontally(tween(200))) {
                     Tabs (
                         isFocused = isFocused,
                         currentTab = currentTab
@@ -126,7 +126,7 @@ fun App (
                     Spacer(Modifier.height(15.dp))
                 }
 
-                AnimatedVisibility(currentTab == Tab.ClipsTab) {
+                AnimatedVisibility(currentTab == Tab.ClipsTab && !clipState.showClipPreview) {
                     SearchBar (
                         window = window,
                         isSearching = isSearching,

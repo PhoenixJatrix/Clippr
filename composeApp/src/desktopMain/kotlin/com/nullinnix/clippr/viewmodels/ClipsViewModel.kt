@@ -15,6 +15,7 @@ import com.nullinnix.clippr.misc.MergeOptions
 import com.nullinnix.clippr.misc.MultiSelectClipMenuAction
 import com.nullinnix.clippr.misc.Notification
 import com.nullinnix.clippr.misc.NotificationType
+import com.nullinnix.clippr.misc.SaveAs
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.desc
@@ -22,6 +23,7 @@ import com.nullinnix.clippr.misc.focusWindow
 import com.nullinnix.clippr.misc.log
 import com.nullinnix.clippr.misc.copyMultipleToClipboard
 import com.nullinnix.clippr.misc.copyToClipboard
+import com.nullinnix.clippr.misc.epoch
 import com.nullinnix.clippr.misc.pasteMultipleFilesWithRobot
 import com.nullinnix.clippr.misc.pasteWithRobot
 import com.nullinnix.clippr.misc.search
@@ -222,7 +224,7 @@ class ClipsViewModel(
                 togglePinnedClip(clip)
             }
 
-            ClipMenuAction.Preview -> {
+            ClipMenuAction.Edit -> {
                 viewModelScope.launch {
                     setCurrentlyPreviewingClip(clip)
                     setShowClipPreview(true)
@@ -257,6 +259,8 @@ class ClipsViewModel(
     }
     
     fun onMultiSelectAction(action: MultiSelectClipMenuAction) {
+        println(action.desc(3))
+
         when (action) {
             MultiSelectClipMenuAction.Paste -> {
                 notificationsViewModel.postNotification(
@@ -303,6 +307,8 @@ class ClipsViewModel(
     }
     
     fun onMergeAction(action: MergeAction, options: MergeOptions) {
+        println(action.desc())
+
         var content = ""
         val clips = clipsState.value.selectedClips.toList()
 
@@ -411,6 +417,53 @@ class ClipsViewModel(
                 type = NotificationType.Info()
             )
         )
+    }
+
+    fun onSaveAction(action: SaveAs) {
+        println(action.desc())
+
+        if (clipsState.value.editedClip != null && clipsState.value.currentlyPreviewingClip != null) {
+            val newClip = clipsState.value.editedClip!!
+            val oldClip = clipsState.value.currentlyPreviewingClip!!
+
+            when (action) {
+                SaveAs.Save -> {
+                    addClip(
+                        clip = newClip.copy(
+                            pinnedAt = if (oldClip.isPinned != newClip.isPinned) LocalDateTime.now().epoch() else oldClip.pinnedAt,
+                            edited = true
+                        )
+                    )
+
+                    notificationsViewModel.postNotification(
+                        Notification(
+                            duration = 6,
+                            content = "Saved",
+                            type = NotificationType.Info()
+                        )
+                    )
+                }
+
+                SaveAs.SaveAsCopy -> {
+                    addClip(
+                        clip = newClip.copy(
+                            clipID = UUID.randomUUID().toString(),
+                            pinnedAt = if (oldClip.isPinned != newClip.isPinned) LocalDateTime.now().epoch() else oldClip.pinnedAt,
+                            copiedAt = LocalDateTime.now().epoch(),
+                            edited = false
+                        )
+                    )
+
+                    notificationsViewModel.postNotification(
+                        Notification(
+                            duration = 6,
+                            content = "Copy saved",
+                            type = NotificationType.Info()
+                        )
+                    )
+                }
+            }
+        }
     }
 
     fun addClip(clip: Clip) {
@@ -653,6 +706,12 @@ class ClipsViewModel(
 
         _clipsState.update {
             it.copy(showClipPreview = value)
+        }
+    }
+
+    fun setEditedClip(clip: Clip?) {
+        _clipsState.update {
+            it.copy(editedClip = clip)
         }
     }
 }

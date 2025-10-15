@@ -52,7 +52,8 @@ data class ClipsState (
     val isShowingFilters: Boolean = false,
     val isOnGoingSearch: Boolean = false,
     val showClipPreview: Boolean = false,
-    val currentlyPreviewingClip: Clip? = null
+    val currentlyPreviewingClip: Clip? = null,
+    val editedClip: Clip? = null,
 )
 
 data class Filters (
@@ -88,6 +89,7 @@ data class MiscViewModelState (
     val loadedIcns: Map<String, ImageBitmap> = emptyMap(),
     val metaHeldDown: Boolean = false,
     val altHeldDown: Boolean = false,
+    val shiftHeldDown: Boolean = false,
     val lastHoveredClip: Clip? = null
 )
 

@@ -410,13 +410,18 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
     if (event.type == KeyEventType.KeyDown) {
         when (event.key) {
             Key.MetaLeft, Key.MetaRight -> {
-                intercepted = true
+//                intercepted = true
                 miscViewModel.setMetaHeldDown(true)
             }
 
             Key.AltLeft, Key.AltRight -> {
-                intercepted = true
+//                intercepted = true
                 miscViewModel.setAltHeldDown(true)
+            }
+
+            Key.ShiftLeft, Key.ShiftRight -> {
+//                intercepted = true
+                miscViewModel.setShiftHeldDown(true)
             }
 
             Key.V -> {
@@ -475,11 +480,23 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
                 }
             }
 
+            Key.S -> {
+                if ((miscViewModelState.metaHeldDown || miscViewModelState.shiftHeldDown) && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null && clipsState.showClipPreview && clipsState.currentlyPreviewingClip != null) {
+                    if (miscViewModelState.metaHeldDown && miscViewModelState.shiftHeldDown) {
+                        intercepted = true
+                        clipsViewModel.onSaveAction(SaveAs.SaveAsCopy)
+                    } else {
+                        intercepted = true
+                        clipsViewModel.onSaveAction(SaveAs.Save)
+                    }
+                }
+            }
+
             Key.Enter -> {
                 if (clipsState.isShowingFilters) {
                     intercepted = true
                     clipsViewModel.searchAndFilter(true)
-                } else if (!clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                } else if (!clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null && !clipsState.showClipPreview) {
                     if (miscViewModelState.metaHeldDown) {
                         val action = if (miscViewModelState.lastHoveredClip.associatedIcon.toClipType() == ClipType.WEB) {
                             ClipMenuAction.OpenAsLink
@@ -497,7 +514,7 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
                         }
                     } else {
                         intercepted = true
-                        clipsViewModel.onClipMenuAction(ClipMenuAction.Preview, miscViewModelState.lastHoveredClip)
+                        clipsViewModel.onClipMenuAction(ClipMenuAction.Edit, miscViewModelState.lastHoveredClip)
                     }
                 }
             }
@@ -541,6 +558,14 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
                                 break
                             }
                         }
+
+                        EscPriorityConsumers.PreviewEsc -> {
+                            if (clipsState.showClipPreview) {
+                                intercepted = true
+                                clipsViewModel.setShowClipPreview(false)
+                                break
+                            }
+                        }
                     }
                 }
             }
@@ -566,21 +591,26 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
                 }
             }
         }
+
+        println("event = ${event.key}. ${if (intercepted) "intercepted" else "passed to children"}")
     } else if (event.type == KeyEventType.KeyUp) {
         when (event.key) {
             Key.MetaLeft, Key.MetaRight -> {
-                intercepted = true
+//                intercepted = true
                 miscViewModel.setMetaHeldDown(false)
             }
 
             Key.AltLeft, Key.AltRight -> {
-                intercepted = true
+//                intercepted = true
                 miscViewModel.setAltHeldDown(false)
+            }
+
+            Key.ShiftLeft, Key.ShiftRight -> {
+//                intercepted = true
+                miscViewModel.setShiftHeldDown(false)
             }
         }
     }
-
-    println("event = ${event.key}. ${if (event.type == KeyEventType.KeyDown) "down event" else "up event"}. ${if (intercepted) "intercepted" else "passed to children"}")
 
     return intercepted
 }

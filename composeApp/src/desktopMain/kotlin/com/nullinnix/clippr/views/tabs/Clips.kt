@@ -82,7 +82,7 @@ import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
 import com.nullinnix.clippr.views.ClipDropDownMenu
 import com.nullinnix.clippr.views.ClipInfo
-import com.nullinnix.clippr.views.ClipPreview
+import com.nullinnix.clippr.views.ClipEdit
 import com.nullinnix.clippr.views.MultiSelectClipDropDownMenu
 import com.nullinnix.clippr.views.RadioButton
 import kotlinx.coroutines.delay
@@ -292,16 +292,25 @@ fun Clips (
                 )
 
                 if (showClipPreview) {
-                    ClipPreview(
+                    ClipEdit(
                         clip = currentlyPreviewingClip,
                         icon = loadedIcns[currentlyPreviewingClip?.source ?: ""],
                         macApp = allApps[currentlyPreviewingClip?.source ?: ""],
                         secondsBeforePaste = secondsBeforePaste,
+                        onSaveAction = {
+                            clipsViewModel.onSaveAction(it)
+                        },
                         onClose = {
                             clipsViewModel.setShowClipPreview(false)
                         },
                         onClipMenuAction = {
                             clipsViewModel.onClipMenuAction(it, currentlyPreviewingClip)
+                        },
+                        onInterceptEvent = {
+                            onInterceptEvent(it)
+                        },
+                        onClipEdited = {
+                            clipsViewModel.setEditedClip(it)
                         }
                     )
                 }
@@ -680,6 +689,15 @@ fun ClipTemplate (
 
                             Spacer(Modifier.width(7.dp))
                         }
+
+                        if (clip.edited == true) {
+                            ClipInfo(
+                                content = "Edited",
+                                enabled = false
+                            )
+                        }
+
+                        Spacer(Modifier.width(7.dp))
 
                         if (macApp != null) {
                             clip.source?.let {
