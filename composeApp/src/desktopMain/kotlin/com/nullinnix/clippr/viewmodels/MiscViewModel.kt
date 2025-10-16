@@ -15,6 +15,9 @@ class MiscViewModel: ViewModel() {
     private val _state = MutableStateFlow(MiscViewModelState())
     val state = _state.asStateFlow()
 
+    private val _hasAccessibilityAccess = MutableStateFlow(false)
+    val hasAccessibilityAccess = _hasAccessibilityAccess.asStateFlow()
+
     init {
         getAllApps { apps ->
             setAllApps(apps)
@@ -57,6 +60,12 @@ class MiscViewModel: ViewModel() {
     fun setLastHoveredClip(value: Clip?) {
         _state.update {
             it.copy(lastHoveredClip = value)
+        }
+    }
+
+    fun setHasAccessibilityAccess (value: Boolean) {
+        _hasAccessibilityAccess.update {
+            value
         }
     }
 }

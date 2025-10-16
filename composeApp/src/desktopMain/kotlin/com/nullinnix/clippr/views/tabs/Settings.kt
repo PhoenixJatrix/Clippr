@@ -80,6 +80,7 @@ fun Settings (
     val sourcesExceptions = settingsState.sourcesExceptions
     val clipTypesExceptions = settingsState.clipTypesExceptions
     val maximumRememberableUnpinnedClips = settingsState.maximumRememberableUnpinnedClips
+    val autoPaste = settingsState.autoPaste
 
     val allApps = miscViewModelState.allApps
     val loadedIcns = miscViewModelState.loadedIcns
@@ -118,6 +119,17 @@ fun Settings (
                 extras = if (!settingsState.startAtLogin) "Go to System Settings -> General -> Login Items and Extensions. Click + then add Clippr" else null
             ) {
                 settingsViewModel.onAction(SettingsAction.ToggleStartAtLogin)
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            SettingsCheckBoxElement(
+                title = "Auto paste",
+                description = "Automatically paste clip contents when you copy from status bar",
+                isChecked = autoPaste,
+                enabled = autoPaste
+            ) {
+                settingsViewModel.onAction(SettingsAction.SetAutoPaste(!autoPaste))
             }
 
             Spacer(Modifier.height(20.dp))

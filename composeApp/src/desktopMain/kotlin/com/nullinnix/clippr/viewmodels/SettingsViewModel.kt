@@ -112,6 +112,12 @@ class SettingsViewModel (
                     it.copy(pasteFilesAsText = action.value)
                 }
             }
+
+            is SettingsAction.SetAutoPaste -> {
+                _state.update {
+                    it.copy(autoPaste = action.value)
+                }
+            }
         }
 
         save()

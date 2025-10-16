@@ -524,7 +524,7 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
                     if (clipsState.selectedClips.isNotEmpty() && clipsState.isSearching) {
                         intercepted = true
 
-                        if (showMacConfirmDialog("Delete selected clips?", "${clipsState.selectedClips.size }${if (clipsState.selectedClips.size == 1) " clip" else " clips"} will be deleted")) {
+                        if (showConfirmDialog("Delete selected clips?", "${clipsState.selectedClips.size }${if (clipsState.selectedClips.size == 1) " clip" else " clips"} will be deleted")) {
                             clipsViewModel.deleteSelected()
                             clipsViewModel.setIsSearching(false)
                         }
@@ -532,7 +532,7 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
                         if (!clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
                             intercepted = true
 
-                            if (showMacConfirmDialog("Delete clip", "'${miscViewModelState.lastHoveredClip.content.coerce(50)}' will be deleted")) {
+                            if (showConfirmDialog("Delete clip", "'${miscViewModelState.lastHoveredClip.content.coerce(50)}' will be deleted")) {
                                 clipsViewModel.onClipMenuAction(ClipMenuAction.Delete, miscViewModelState.lastHoveredClip)
                             }
                         }

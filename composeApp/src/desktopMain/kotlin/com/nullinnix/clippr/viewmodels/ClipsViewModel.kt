@@ -27,7 +27,7 @@ import com.nullinnix.clippr.misc.epoch
 import com.nullinnix.clippr.misc.pasteMultipleFilesWithRobot
 import com.nullinnix.clippr.misc.pasteWithRobot
 import com.nullinnix.clippr.misc.search
-import com.nullinnix.clippr.misc.showMacConfirmDialog
+import com.nullinnix.clippr.misc.showConfirmDialog
 import com.nullinnix.clippr.misc.toClip
 import com.nullinnix.clippr.misc.toClipEntity
 import com.nullinnix.clippr.showMain
@@ -59,6 +59,8 @@ class ClipsViewModel(
 
     init {
         monitorOldClips()
+
+        log("clipsVm initialized", "clipsvm")
 
         clipsDao
             .getOtherClips()
@@ -123,6 +125,7 @@ class ClipsViewModel(
 
             is ClipAction.OnAddClip -> {
                 if (settingsViewModel.state.value.recordingEnabled) {
+                    log("saving ${action.clip.content}", "clipsvm on action")
                     addClip(action.clip)
                 }
             }
@@ -177,7 +180,7 @@ class ClipsViewModel(
                     )
                 )
 
-                pasteWithRobot(clip = clip, pasteAsFile = false, wait = settingsViewModel.state.value.secondsBeforePaste)
+                pasteWithRobot(clip = clip, pasteAsFile = false, wait = settingsViewModel.state.value.secondsBeforePaste, hasAccessibilityAccess = miscViewModel.hasAccessibilityAccess.value, autoPaste = true)
             }
 
             ClipMenuAction.PasteAsFile -> {
@@ -189,7 +192,7 @@ class ClipsViewModel(
                     )
                 )
 
-                pasteWithRobot(clip = clip, pasteAsFile = true, wait = settingsViewModel.state.value.secondsBeforePaste)
+                pasteWithRobot(clip = clip, pasteAsFile = true, wait = settingsViewModel.state.value.secondsBeforePaste, hasAccessibilityAccess = miscViewModel.hasAccessibilityAccess.value, autoPaste = true)
             }
 
             ClipMenuAction.CopyAsText -> {
@@ -247,7 +250,7 @@ class ClipsViewModel(
             }
 
             ClipMenuAction.Delete -> {
-                if (showMacConfirmDialog("Delete clip", "'${clip.content.trimIndent().trimMargin().coerce(50)}' will be deleted")) {
+                if (showConfirmDialog("Delete clip", "'${clip.content.trimIndent().trimMargin().coerce(50)}' will be deleted")) {
                     deleteClip(clip)
 
                     if (clipsState.value.isSearching) {
@@ -271,7 +274,7 @@ class ClipsViewModel(
                     )
                 )
 
-                pasteMultipleFilesWithRobot(clips = clipsState.value.selectedClips, wait = settingsViewModel.state.value.secondsBeforePaste)
+                pasteMultipleFilesWithRobot(clips = clipsState.value.selectedClips, wait = settingsViewModel.state.value.secondsBeforePaste, hasAccessibilityAccess = miscViewModel.hasAccessibilityAccess.value, autoPaste = true)
             }
 
             MultiSelectClipMenuAction.CopyFiles -> {
@@ -297,7 +300,7 @@ class ClipsViewModel(
             }
 
             MultiSelectClipMenuAction.DeleteAll -> {
-                if (showMacConfirmDialog("Delete selected clips?", "${clipsState.value.selectedClips.size }${if (clipsState.value.selectedClips.size == 1) " clip" else " clips"} will be deleted")) {
+                if (showConfirmDialog("Delete selected clips?", "${clipsState.value.selectedClips.size }${if (clipsState.value.selectedClips.size == 1) " clip" else " clips"} will be deleted")) {
                     deleteSpecified(clips = clipsState.value.selectedClips.toList())
 
                     searchAndFilter(true)
@@ -707,6 +710,8 @@ class ClipsViewModel(
         _clipsState.update {
             it.copy(showClipPreview = value)
         }
+
+        setIsSearching(false)
     }
 
     fun setEditedClip(clip: Clip?) {

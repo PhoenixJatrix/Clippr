@@ -75,11 +75,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.PopupProperties
+import androidx.compose.ui.window.Tray
+import androidx.compose.ui.window.rememberTrayState
 import clippr.composeapp.generated.resources.Baloo2_Regular
 import clippr.composeapp.generated.resources.Res
 import clippr.composeapp.generated.resources.back
 import clippr.composeapp.generated.resources.check
+import clippr.composeapp.generated.resources.clippr_status_icon
 import clippr.composeapp.generated.resources.close
 import clippr.composeapp.generated.resources.filter
 import clippr.composeapp.generated.resources.full_screen
@@ -96,20 +100,28 @@ import com.nullinnix.clippr.misc.Notification
 import com.nullinnix.clippr.misc.NotificationType
 import com.nullinnix.clippr.misc.SaveAs
 import com.nullinnix.clippr.misc.SearchAction
+import com.nullinnix.clippr.misc.SettingsAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.clipTypeToColor
 import com.nullinnix.clippr.misc.clipTypeToDesc
+import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.corners
 import com.nullinnix.clippr.misc.desc
+import com.nullinnix.clippr.misc.formatText
 import com.nullinnix.clippr.misc.getClipMenuActions
 import com.nullinnix.clippr.misc.info
 import com.nullinnix.clippr.misc.name
 import com.nullinnix.clippr.misc.noGleamCombinedClickable
 import com.nullinnix.clippr.misc.noGleamTaps
+import com.nullinnix.clippr.misc.pasteWithRobot
 import com.nullinnix.clippr.misc.shortcut
+import com.nullinnix.clippr.misc.showConfirmDialog
 import com.nullinnix.clippr.theme.HeaderColor
 import com.nullinnix.clippr.theme.Transparent
+import com.nullinnix.clippr.viewmodels.ClipsViewModel
+import com.nullinnix.clippr.viewmodels.MiscViewModel
 import com.nullinnix.clippr.viewmodels.NotificationsViewModel
+import com.nullinnix.clippr.viewmodels.SettingsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -1351,6 +1363,92 @@ fun ClipEditInfo (
             color = Color.Gray,
             fontSize = 13.sp,
             maxLines = 1
+        )
+    }
+}
+
+@Composable
+fun ClipprTray (
+    scope: ApplicationScope,
+    clipsViewModel: ClipsViewModel,
+    settingsViewModel: SettingsViewModel,
+    miscViewModel: MiscViewModel
+) {
+    val trayState = rememberTrayState()
+    val clipsState = clipsViewModel.clipsState.collectAsState().value
+    val settingsState = settingsViewModel.state.collectAsState().value
+    val miscViewModelState = miscViewModel.state.collectAsState().value
+    val hasAccessibilityAccess = miscViewModel.hasAccessibilityAccess.collectAsState().value
+
+    scope.run {
+        Tray (
+            state = trayState,
+            icon = painterResource(Res.drawable.clippr_status_icon),
+            menu = {
+                val pinned = if (clipsState.pinnedClips.size > 5) clipsState.pinnedClips.subList(0, 5) else clipsState.pinnedClips
+                val others = if (clipsState.otherClips.size > 20) clipsState.otherClips.subList(0, 20) else clipsState.otherClips
+
+                Item(text = "Select a clip to paste in a focused window", enabled = false) {}
+
+                Separator()
+
+                Item(text = "\uD83D\uDCC2 Open Clippr") {
+                    clipsViewModel.forceShowMainApp()
+                }
+
+                Separator()
+
+                Item(text = "\uD83D\uDCCE Pinned clips", enabled = false) {}
+
+                for (clip in pinned) {
+                    Item(formatText(clip.content.trimIndent().trimMargin().coerce(50))) {
+                        pasteWithRobot(clip, !settingsState.pasteFilesAsText, hasAccessibilityAccess = miscViewModel.hasAccessibilityAccess.value, autoPaste = settingsState.autoPaste)
+                    }
+                }
+
+                Separator()
+
+                Item(text = "\uD83D\uDDC2 Other clips", enabled = false) {}
+
+                for (clip in others) {
+                    Item(formatText(clip.content.trimIndent().trimMargin().coerce(50))) {
+                        pasteWithRobot(clip, !settingsState.pasteFilesAsText, hasAccessibilityAccess = hasAccessibilityAccess, autoPaste = settingsState.autoPaste)
+                    }
+                }
+
+                Separator()
+
+                Item(text = "Options", enabled = false) {}
+
+                Item(text = "${if(settingsState.pasteFilesAsText) "✅" else "❌"} Toggle paste files as text") {
+                    settingsViewModel.onAction(SettingsAction.SetPasteFilesAsText(!settingsState.pasteFilesAsText))
+                }
+
+                Item(text = "${if(settingsState.autoPaste) "✅" else "❌"} Toggle auto paste") {
+                    settingsViewModel.onAction(SettingsAction.SetAutoPaste(!settingsState.autoPaste))
+                }
+
+                Item(text = "\uD83D\uDDD1\uFE0F Clear unpinned") {
+                    if (showConfirmDialog("Delete all unpinned clips?", "Delete all your unpinned clips")) {
+                        clipsViewModel.deleteAllUnpinned()
+                    }
+                }
+
+                Item(text = "⚙\uFE0F Settings") {
+                    clipsViewModel.switchTab(Tab.SettingsTab)
+                    clipsViewModel.forceShowMainApp()
+                }
+
+                Separator()
+
+                Item(text = "❌ Quit") {
+                    exitApplication()
+                }
+            },
+            onAction = {
+                println("action")
+            },
+            tooltip = "Clippr"
         )
     }
 }

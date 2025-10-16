@@ -21,27 +21,21 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import androidx.compose.ui.window.rememberTrayState
 import androidx.compose.ui.window.rememberWindowState
-import clippr.composeapp.generated.resources.Res
-import clippr.composeapp.generated.resources.clippr_status_icon
 import com.nullinnix.clippr.database.clips.ClipsDatabaseFactory
 import com.nullinnix.clippr.database.settings.SettingsDatabaseFactory
 import com.nullinnix.clippr.misc.ClipAction
 import com.nullinnix.clippr.misc.SettingsAction
 import com.nullinnix.clippr.misc.Tab
-import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.corners
-import com.nullinnix.clippr.misc.formatText
+import com.nullinnix.clippr.misc.hasAccessibilityAccessChecker
 import com.nullinnix.clippr.misc.isInLoginItemsChecker
 import com.nullinnix.clippr.misc.listenForCopy
+import com.nullinnix.clippr.misc.log
 import com.nullinnix.clippr.misc.manageKeyEvent
-import com.nullinnix.clippr.misc.pasteWithRobot
 import com.nullinnix.clippr.misc.registerKeyStroke
-import com.nullinnix.clippr.misc.showMacConfirmDialog
 import com.nullinnix.clippr.misc.toggleFullscreen
 import com.nullinnix.clippr.theme.Theme
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
@@ -49,17 +43,19 @@ import com.nullinnix.clippr.viewmodels.MiscViewModel
 import com.nullinnix.clippr.viewmodels.NotificationsViewModel
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
 import com.nullinnix.clippr.views.App
+import com.nullinnix.clippr.views.ClipprTray
 import com.nullinnix.clippr.views.WindowBar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import org.jetbrains.compose.resources.painterResource
 import java.awt.Dimension
 import java.awt.Point
 import java.awt.Toolkit
 import java.awt.Window
 
-fun main() {
+fun main(args: Array<String>) {
+    println("app start ${args.toList()}")
+
     val clipsDatabase = ClipsDatabaseFactory().create()
     val settingsDatabase = SettingsDatabaseFactory().create()
     val settingsViewModel = SettingsViewModel(settingsDatabase.settingsDao())
@@ -69,6 +65,8 @@ fun main() {
 
     val composeWindowStateRaw = MutableStateFlow<Window?>(null)
     var coercedWindowPositionAndSize = false
+
+    log("app started", "main")
 
     registerKeyStroke {
         if (settingsViewModel.state.value.enableMetaShiftVPopup) {
@@ -90,6 +88,10 @@ fun main() {
         if (it != settingsViewModel.state.value.startAtLogin) {
             settingsViewModel.onAction(SettingsAction.SetStartAtLogin(it))
         }
+    }
+
+    hasAccessibilityAccessChecker {
+        miscViewModel.setHasAccessibilityAccess(it)
     }
 
     application {
@@ -198,74 +200,11 @@ fun main() {
             }
         }
 
-        val trayState = rememberTrayState()
-        val clipsState = clipsViewModel.clipsState.collectAsState().value
-        val settingsState = settingsViewModel.state.collectAsState().value
-
-        Tray (
-            state = trayState,
-            icon = painterResource(Res.drawable.clippr_status_icon),
-            menu = {
-                val pinned = if (clipsState.pinnedClips.size > 5) clipsState.pinnedClips.subList(0, 5) else clipsState.pinnedClips
-                val others = if (clipsState.otherClips.size > 25) clipsState.otherClips.subList(0, 25) else clipsState.otherClips
-
-                Item(text = "Select a clip to paste in a focused window", enabled = false) {}
-
-                Separator()
-
-                Item(text = "\uD83D\uDCC2 Open Clippr") {
-                    clipsViewModel.forceShowMainApp()
-                }
-
-                Separator()
-
-                Item(text = "\uD83D\uDCCE Pinned clips", enabled = false) {}
-
-                for (clip in pinned) {
-                    Item(formatText(clip.content.trimIndent().trimMargin().coerce(50))) {
-                        pasteWithRobot(clip, !settingsState.pasteFilesAsText)
-                    }
-                }
-
-                Separator()
-
-                Item(text = "\uD83D\uDDC2 Other clips", enabled = false) {}
-
-                for (clip in others) {
-                    Item(formatText(clip.content.trimIndent().trimMargin().coerce(50))) {
-                        pasteWithRobot(clip, !settingsState.pasteFilesAsText)
-                    }
-                }
-
-                Separator()
-
-                Item(text = "Options", enabled = false) {}
-
-                Item(text = "${if(settingsState.pasteFilesAsText) "✅" else "❌"} Toggle paste files as text") {
-                    settingsViewModel.onAction(SettingsAction.SetPasteFilesAsText(!settingsState.pasteFilesAsText))
-                }
-
-                Item(text = "\uD83D\uDDD1\uFE0F Clear unpinned") {
-                    if (showMacConfirmDialog("Delete all unpinned clips?", "Delete all your unpinned clips")) {
-                        clipsViewModel.deleteAllUnpinned()
-                    }
-                }
-
-                Item(text = "⚙\uFE0F Settings") {
-                    clipsViewModel.switchTab(Tab.SettingsTab)
-                    clipsViewModel.forceShowMainApp()
-                }
-
-                Separator()
-
-                Item(text = "❌ Quit") {
-                    exitApplication()
-                }
-            },
-            onAction = {
-                println("action")
-            },
-            tooltip = "Clippr"
+        ClipprTray(
+            scope = this,
+            clipsViewModel = clipsViewModel,
+            settingsViewModel = settingsViewModel,
+            miscViewModel = miscViewModel
         )
     }
 }

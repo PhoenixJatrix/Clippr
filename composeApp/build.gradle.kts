@@ -60,7 +60,7 @@ compose.desktop {
                     """.trimIndent()
                 }
                 appCategory = "public.app-category.productivity"
-                iconFile.set(project.file("src/desktopMain/composeResources/drawable/MyIcon.icns"))
+                iconFile.set(project.file("src/desktopMain/composeResources/drawable/icon.icns"))
                 jvmArgs("-Dapple.awt.enableTemplateImages=true")
             }
         }

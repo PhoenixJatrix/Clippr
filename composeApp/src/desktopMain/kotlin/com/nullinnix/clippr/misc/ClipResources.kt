@@ -15,9 +15,6 @@ import clippr.composeapp.generated.resources.video
 import clippr.composeapp.generated.resources.web
 import clippr.composeapp.generated.resources.zip
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
-import com.sun.jna.Library
-import com.sun.jna.Native
-import com.sun.jna.Pointer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -35,7 +32,6 @@ import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
-import javax.swing.JOptionPane
 
 var lastCopiedItemHash = ""
 
@@ -60,6 +56,8 @@ fun getClipboard (
                         log("dir ${path.path} to dir from $source", "")
                         println("dir ${path.path} to dir from $source")
 
+                        log("resolved ${path.path} to dir", "")
+
                         if (!sourceExceptions.contains(source ?: ClipType.UNKNOWN) && !clipTypeExceptions.contains(ClipType.FOLDER)) {
                             onCopy(
                                 Clip(
@@ -81,12 +79,14 @@ fun getClipboard (
                     } else {
                         val path = paths[index] as File
                         val source = getClipSource()
-                        val mimeType = Files.probeContentType(Paths.get(path.path))
+                        val mimeType = probeContentType(path.path) ?: ClipType.UNKNOWN.id
 
                         log("file ${path.path} to $mimeType from $source", "")
                         println("file ${path.path} to $mimeType from $source")
 
                         val resolvedType = getIconForContent(mimeType, path.path.lowercase())
+
+                        log("resolved ${path.path} to $resolvedType", "")
 
                         if (!sourceExceptions.contains(source ?: ClipType.UNKNOWN) && !clipTypeExceptions.contains(resolvedType.toClipType())) {
                             onCopy(
@@ -120,6 +120,8 @@ fun getClipboard (
                 println("str $content from $source")
 
                 val resolvedType = getIconForContent(MIME_TYPE_PLAIN_TEXT, content)
+
+                log("resolved $content to $resolvedType", "")
 
                 if (!sourceExceptions.contains(source ?: ClipType.UNKNOWN) && !clipTypeExceptions.contains(resolvedType.toClipType())) {
                     onCopy(
@@ -169,6 +171,10 @@ fun getIconForContent (
     mimeType: String,
     content: String
 ): String {
+    if (!mimeType.contains("/")) {
+        return ClipType.UNKNOWN.id
+    }
+
     val mediaType = mimeType.split("/")[0]
     val subType = mimeType.split("/")[1]
 
@@ -283,6 +289,8 @@ fun copyToClipboard(clip: Clip, pasteAsFile: Boolean) {
     try {
         val clipboard = Toolkit.getDefaultToolkit().systemClipboard
         val customTransferable = CustomTransferable(clip, pasteAsFile)
+
+        log("copying ${clip.content} to clipboard", "copyToClipboard")
 
         clipboard.setContents(customTransferable, CustomClipboardOwner())
         lastCopiedItemHash = clip.content.hash()
@@ -402,44 +410,19 @@ class CustomClipboardOwner: ClipboardOwner {
     }
 }
 
-fun pasteWithRobot(clip: Clip, pasteAsFile: Boolean, wait: Int = 0) {
+fun pasteWithRobot(clip: Clip, pasteAsFile: Boolean, wait: Int = 0, hasAccessibilityAccess: Boolean, autoPaste: Boolean) {
     CoroutineScope(Dispatchers.Default).launch {
         delay(wait * 1000L)
+
+        log("preparing to paste", "pasteWithRobot")
+
+        if (!hasAccessibilityAccess) {
+            showMessage("Auto paste disabled", "To enable auto pasting, grant Accessibility access.\n\nGo to:\n-> System Settings\n-> Privacy & Security\n-> Accessibility\nClick + then add Clippr")
+        }
 
         copyToClipboard(clip = clip, pasteAsFile = pasteAsFile)
 
-        Thread.sleep(50)
-
-        val cg = CoreGraphics.INSTANCE
-        val source = cg.CGEventSourceCreate(CoreGraphics.kCGEventSourceStateHIDSystemState)
-
-        val vDown = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, true)
-        cg.CGEventSetFlags(vDown, CoreGraphics.kCGEventFlagMaskCommand)
-        cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vDown)
-        Thread.sleep(30)
-
-        val vUp = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, false)
-        cg.CGEventSetFlags(vUp, CoreGraphics.kCGEventFlagMaskCommand)
-        cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vUp)
-        Thread.sleep(30)
-
-        val metaUp = cg.CGEventCreateKeyboardEvent(source, 55, false)
-        cg.CGEventPost(CoreGraphics.kCGSessionEventTap, metaUp)
-
-        cg.CFRelease(vDown)
-        cg.CFRelease(vUp)
-        cg.CFRelease(metaUp)
-        cg.CFRelease(source)
-    }
-}
-
-fun pasteMultipleFilesWithRobot(clips: Set<Clip>, wait: Int = 0) {
-    CoroutineScope(Dispatchers.Default).launch {
-        delay(wait * 1000L)
-
-        clips.forEach { clip ->
-            copyToClipboard(clip = clip, pasteAsFile = true)
-
+        if (autoPaste) {
             Thread.sleep(50)
 
             val cg = CoreGraphics.INSTANCE
@@ -455,56 +438,58 @@ fun pasteMultipleFilesWithRobot(clips: Set<Clip>, wait: Int = 0) {
             cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vUp)
             Thread.sleep(30)
 
-            val cmdUp = cg.CGEventCreateKeyboardEvent(source, 55, false)
-            cg.CGEventPost(CoreGraphics.kCGSessionEventTap, cmdUp)
+            val metaUp = cg.CGEventCreateKeyboardEvent(source, 55, false)
+            cg.CGEventPost(CoreGraphics.kCGSessionEventTap, metaUp)
 
             cg.CFRelease(vDown)
             cg.CFRelease(vUp)
-            cg.CFRelease(cmdUp)
+            cg.CFRelease(metaUp)
             cg.CFRelease(source)
+        }
 
-            Thread.sleep(50)
+        log("done pasting", "pasteWithRobot")
+    }
+}
+
+fun pasteMultipleFilesWithRobot(clips: Set<Clip>, wait: Int = 0, hasAccessibilityAccess: Boolean, autoPaste: Boolean) {
+    CoroutineScope(Dispatchers.Default).launch {
+        delay(wait * 1000L)
+
+        if (!hasAccessibilityAccess) {
+            showMessage("Auto paste disabled", "To enable auto pasting, grant Accessibility access.\n\nGo to:\n-> System Settings\n-> Privacy & Security\n-> Accessibility\nClick + then add Clippr")
+        }
+
+        clips.forEach { clip ->
+            copyToClipboard(clip = clip, pasteAsFile = true)
+
+            if (autoPaste) {
+                Thread.sleep(50)
+
+                val cg = CoreGraphics.INSTANCE
+                val source = cg.CGEventSourceCreate(CoreGraphics.kCGEventSourceStateHIDSystemState)
+
+                val vDown = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, true)
+                cg.CGEventSetFlags(vDown, CoreGraphics.kCGEventFlagMaskCommand)
+                cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vDown)
+                Thread.sleep(30)
+
+                val vUp = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, false)
+                cg.CGEventSetFlags(vUp, CoreGraphics.kCGEventFlagMaskCommand)
+                cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vUp)
+                Thread.sleep(30)
+
+                val cmdUp = cg.CGEventCreateKeyboardEvent(source, 55, false)
+                cg.CGEventPost(CoreGraphics.kCGSessionEventTap, cmdUp)
+
+                cg.CFRelease(vDown)
+                cg.CFRelease(vUp)
+                cg.CFRelease(cmdUp)
+                cg.CFRelease(source)
+
+                Thread.sleep(50)
+            }
         }
     }
-}
-
-fun showMacConfirmDialog(
-    title: String,
-    description: String,
-): Boolean {
-    val result = JOptionPane.showConfirmDialog(
-        null,
-        description,
-        title,
-        JOptionPane.OK_CANCEL_OPTION,
-        JOptionPane.WARNING_MESSAGE
-    )
-    return result == JOptionPane.OK_OPTION
-}
-
-interface CoreGraphics : Library {
-    companion object {
-        val INSTANCE: CoreGraphics = Native.load("CoreGraphics", CoreGraphics::class.java)
-        const val kCGEventSourceStateHIDSystemState = 1
-        const val kCGSessionEventTap = 1
-        const val kCGEventFlagMaskCommand: Long = 1L shl 20
-
-        const val kVK_ANSI_V = 9
-    }
-
-    fun CGEventSourceCreate(stateID: Int): Pointer
-    fun CGEventCreateKeyboardEvent(source: Pointer?, virtualKey: Int, keyDown: Boolean): Pointer
-    fun CGEventSetFlags(event: Pointer, flags: Long)
-    fun CGEventPost(tap: Int, event: Pointer)
-    fun CFRelease(ref: Pointer)
-}
-
-fun getClipSource(): String? {
-    val process = ProcessBuilder(
-        "osascript", "-e",
-        "tell application \"System Events\" to get bundle identifier of (first process whose frontmost is true)"
-    ).start()
-    return process.inputStream.bufferedReader().readText().trim().ifBlank { null }
 }
 
 val urlExtensions = setOf (
@@ -913,4 +898,14 @@ fun getClipMenuActions(clip: Clip, editing: Boolean = false): List<ClipMenuActio
     }
 
     return clipActions
+}
+
+fun probeContentType (path: String): String? {
+    try {
+        return Files.probeContentType(Paths.get(path))
+    } catch (e: Exception) {
+        e.printStackTrace()
+
+        return null
+    }
 }

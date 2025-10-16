@@ -88,6 +88,7 @@ sealed interface SettingsAction {
     data class SetMaximumRememberableUnpinnedClips(val value: Int): SettingsAction
     data class SetSecondsBeforePaste(val value: Int): SettingsAction
     data class SetPasteFilesAsText(val value: Boolean): SettingsAction
+    data class SetAutoPaste(val value: Boolean): SettingsAction
 }
 
 sealed interface SearchAction {

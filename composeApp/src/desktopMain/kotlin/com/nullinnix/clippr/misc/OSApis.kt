@@ -2,7 +2,6 @@ package com.nullinnix.clippr.misc
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
-import com.nullinnix.clippr.viewmodels.SettingsViewModel
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.Pointer
@@ -127,6 +126,19 @@ fun isInLoginItemsChecker (
     }
 }
 
+fun hasAccessibilityAccessChecker (
+    onDone: (Boolean) -> Unit
+) {
+    CoroutineScope(Dispatchers.IO).launch {
+        while(true) {
+            delay(5000)
+
+            val appServices = Native.load("ApplicationServices", ApplicationServices::class.java)
+            onDone(appServices.AXIsProcessTrusted())
+        }
+    }
+}
+
 fun getAllApps(
     onDone: (Map<String, MacApp>) -> Unit
 ) {
@@ -193,8 +205,6 @@ fun loadIcns(apps: List<MacApp>, onDone: (Map<String, ImageBitmap>) -> Unit){
                     if (file.exists()) {
                         val img = ImageIO.read(file).toComposeImageBitmap()
                         loadedIcns[app.bundleId] = img
-                    } else {
-                        println("${app.bundleId} = $file doesn't exist")
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -204,4 +214,65 @@ fun loadIcns(apps: List<MacApp>, onDone: (Map<String, ImageBitmap>) -> Unit){
 
         onDone(loadedIcns)
     }
+}
+
+interface ApplicationServices : Library {
+    fun AXIsProcessTrusted(): Boolean
+}
+
+fun showConfirmDialog(
+    title: String,
+    description: String,
+): Boolean {
+    val script = """
+        display dialog "${title.replace("\"", "\\\"")}" ¬
+        with title "${description.replace("\"", "\\\"")}" ¬
+        buttons {"No", "Yes"} ¬
+        default button "Yes"
+    """.trimIndent()
+
+    val process = ProcessBuilder("osascript", "-e", script).start()
+    val output = process.inputStream.bufferedReader().readText()
+    return output.contains("Yes")
+}
+
+fun showMessage (
+    title: String,
+    message: String,
+) {
+    val script = """
+        display dialog "${message.replace("\"", "\\\"")}" ¬
+        with title "${title.replace("\"", "\\\"")}" ¬
+        buttons {"Ok"} ¬
+        default button "Ok"
+    """.trimIndent()
+
+    ProcessBuilder("osascript", "-e", script)
+        .start()
+        .waitFor()
+}
+
+interface CoreGraphics : Library {
+    companion object {
+        val INSTANCE: CoreGraphics = Native.load("CoreGraphics", CoreGraphics::class.java)
+        const val kCGEventSourceStateHIDSystemState = 1
+        const val kCGSessionEventTap = 1
+        const val kCGEventFlagMaskCommand: Long = 1L shl 20
+
+        const val kVK_ANSI_V = 9
+    }
+
+    fun CGEventSourceCreate(stateID: Int): Pointer
+    fun CGEventCreateKeyboardEvent(source: Pointer?, virtualKey: Int, keyDown: Boolean): Pointer
+    fun CGEventSetFlags(event: Pointer, flags: Long)
+    fun CGEventPost(tap: Int, event: Pointer)
+    fun CFRelease(ref: Pointer)
+}
+
+fun getClipSource(): String? {
+    val process = ProcessBuilder(
+        "osascript", "-e",
+        "tell application \"System Events\" to get bundle identifier of (first process whose frontmost is true)"
+    ).start()
+    return process.inputStream.bufferedReader().readText().trim().ifBlank { null }
 }
