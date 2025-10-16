@@ -124,7 +124,6 @@ fun Clips (
     Box {
         if (!isSearching) {
             if (pinnedClips.isNotEmpty() || otherClips.isNotEmpty()) {
-
                 LazyColumn (
                     state = scrollState,
                     modifier = Modifier
@@ -145,7 +144,7 @@ fun Clips (
                                 Row (
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(
+                                    Text (
                                         text = "Pinned Clips",
                                         color = Color.Black,
                                         fontSize = 18.sp,
