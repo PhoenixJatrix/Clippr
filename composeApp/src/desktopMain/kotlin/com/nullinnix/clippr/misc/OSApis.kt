@@ -157,7 +157,7 @@ fun getAllApps(
                 if (!infoPlist.exists()) return@mapNotNull null
 
                 val bundleId = runCommand("defaults", "read", infoPlist.absolutePath, "CFBundleIdentifier") ?: return@mapNotNull null
-                val name = runCommand("defaults", "read", infoPlist.absolutePath, "CFBundleName")
+                var name = runCommand("defaults", "read", infoPlist.absolutePath, "CFBundleName")
                     ?: app.nameWithoutExtension
 
                 val iconFile = runCommand("defaults", "read", infoPlist.absolutePath, "CFBundleIconFile")
@@ -166,6 +166,7 @@ fun getAllApps(
                     File(app, "Contents/Resources/$clean").absolutePath
                 }
 
+                name = if (name.contains("does not exist")) { bundleId.split(".").lastOrNull() ?: bundleId } else name
                 apps[bundleId] = MacApp(name, bundleId, iconPath)
             }
         }
@@ -173,7 +174,7 @@ fun getAllApps(
         val sorted = mutableMapOf(Pair("unknown", MacApp("Unknown sources", "unknown", null)))
 
         apps.values.sortedBy {
-            it.name
+            it.name.lowercase()
         }.forEach {
             sorted[it.bundleId] = it
         }
@@ -223,12 +224,13 @@ interface ApplicationServices : Library {
 fun showConfirmDialog(
     title: String,
     description: String,
+    usePositiveAsDefault: Boolean = true,
 ): Boolean {
     val script = """
         display dialog "${title.replace("\"", "\\\"")}" ¬
         with title "${description.replace("\"", "\\\"")}" ¬
         buttons {"No", "Yes"} ¬
-        default button "Yes"
+        default button ${if (usePositiveAsDefault) "\"Yes\"" else "\"No\""}
     """.trimIndent()
 
     val process = ProcessBuilder("osascript", "-e", script).start()

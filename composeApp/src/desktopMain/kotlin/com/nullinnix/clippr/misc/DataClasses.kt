@@ -82,7 +82,7 @@ data class SettingsState (
     val clipDeleteTime: ClipDeleteTime = ClipDeleteTime(TimeCode.Day, 7),
     val secondsBeforePaste: Int = 3,
     val pasteFilesAsText: Boolean = true,
-    val autoPaste: Boolean = true,
+    val autoPaste: Boolean = true
 )
 
 data class MiscViewModelState (

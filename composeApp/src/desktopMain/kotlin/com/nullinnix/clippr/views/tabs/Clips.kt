@@ -28,7 +28,6 @@ import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -81,8 +80,8 @@ import com.nullinnix.clippr.misc.toClipType
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
 import com.nullinnix.clippr.views.ClipDropDownMenu
-import com.nullinnix.clippr.views.ClipInfo
 import com.nullinnix.clippr.views.ClipEdit
+import com.nullinnix.clippr.views.ClipInfo
 import com.nullinnix.clippr.views.MultiSelectClipDropDownMenu
 import com.nullinnix.clippr.views.RadioButton
 import kotlinx.coroutines.delay
@@ -122,9 +121,10 @@ fun Clips (
 
     var rightClickedClip by remember { mutableStateOf<String?>(null) }
 
-    if (!isSearching) {
-        if (pinnedClips.isNotEmpty() || otherClips.isNotEmpty()) {
-            Box {
+    Box {
+        if (!isSearching) {
+            if (pinnedClips.isNotEmpty() || otherClips.isNotEmpty()) {
+
                 LazyColumn (
                     state = scrollState,
                     modifier = Modifier
@@ -290,71 +290,43 @@ fun Clips (
                         .padding(end = 10.dp, bottom = 15.dp, top = 25.dp),
                     style = LocalScrollbarStyle.current.copy(minimalHeight = 35.dp)
                 )
+            } else {
 
-                if (showClipPreview) {
-                    ClipEdit(
-                        clip = currentlyPreviewingClip,
-                        icon = loadedIcns[currentlyPreviewingClip?.source ?: ""],
-                        macApp = allApps[currentlyPreviewingClip?.source ?: ""],
-                        secondsBeforePaste = secondsBeforePaste,
-                        onSaveAction = {
-                            clipsViewModel.onSaveAction(it)
-                        },
-                        onClose = {
-                            clipsViewModel.setShowClipPreview(false)
-                        },
-                        onClipMenuAction = {
-                            clipsViewModel.onClipMenuAction(it, currentlyPreviewingClip)
-                        },
-                        onInterceptEvent = {
-                            onInterceptEvent(it)
-                        },
-                        onClipEdited = {
-                            clipsViewModel.setEditedClip(it)
-                        }
-                    )
-                }
-            }
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(), contentAlignment = Alignment.Center
-            ) {
                 Text(
                     text = "Try copying something...",
                     fontWeight = FontWeight.ExtraBold,
-                    fontSize = 25.sp
-                )
-            }
-        }
-    } else {
-        if (clipState.isOnGoingSearch) {
-            Column (
-                modifier = Modifier
-                    .fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                LaunchedEffect(Unit) {
-                    coroutine.launch {
-                        searchScrollState.scrollToItem(0)
-                    }
-                }
-
-                Text(
-                    text = "Searching all clips...",
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 25.sp
-                )
-
-                CircularProgressIndicator(
-                    strokeWidth = 10.dp,
-                    color = Color.Black,
+                    fontSize = 25.sp,
                     modifier = Modifier
-                        .size(70.dp)
+                        .align(Alignment.Center)
                 )
             }
         } else {
-            if (searchResults.isNotEmpty()) {
-                Box {
+            if (clipState.isOnGoingSearch) {
+                Column (
+                    modifier = Modifier
+                        .fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    LaunchedEffect(Unit) {
+                        coroutine.launch {
+                            searchScrollState.scrollToItem(0)
+                        }
+                    }
+
+                    Text(
+                        text = "Searching all clips...",
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 25.sp
+                    )
+
+                    CircularProgressIndicator(
+                        strokeWidth = 10.dp,
+                        color = Color.Black,
+                        modifier = Modifier
+                            .size(70.dp)
+                    )
+                }
+            } else {
+                if (searchResults.isNotEmpty()) {
                     LazyColumn (
                         state = searchScrollState,
                         modifier = Modifier
@@ -446,24 +418,45 @@ fun Clips (
                             .padding(end = 10.dp, bottom = 15.dp, top = 25.dp),
                         style = LocalScrollbarStyle.current.copy(minimalHeight = 35.dp)
                     )
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize(), contentAlignment = Alignment.Center
-                ) {
+                } else {
                     Text(
                         text = "No clips match keywords",
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 25.sp
+                        fontSize = 25.sp,
+                        modifier = Modifier
+                            .align(Alignment.Center)
                     )
                 }
             }
         }
+
+        if (showClipPreview) {
+            ClipEdit(
+                clip = currentlyPreviewingClip,
+                icon = loadedIcns[currentlyPreviewingClip?.source ?: ""],
+                macApp = allApps[currentlyPreviewingClip?.source ?: ""],
+                secondsBeforePaste = secondsBeforePaste,
+                onSaveAction = {
+                    clipsViewModel.onSaveAction(it)
+                },
+                onClose = {
+                    clipsViewModel.setShowClipPreview(false)
+                },
+                onClipMenuAction = {
+                    clipsViewModel.onClipMenuAction(it, currentlyPreviewingClip)
+                },
+                onInterceptEvent = {
+                    onInterceptEvent(it)
+                },
+                onClipEdited = {
+                    clipsViewModel.setEditedClip(it)
+                }
+            )
+        }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ClipTemplate (
     isSearching: Boolean,
@@ -513,7 +506,7 @@ fun ClipTemplate (
 
         LaunchedEffect(isHovered) {
             if (delayedHoverEmits) {
-                if (!isSearching && !showMenu) {
+                if (!showMenu) {
                     onHover(isHovered)
                 }
             }

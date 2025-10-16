@@ -183,7 +183,7 @@ fun ClipEdit (
                                 modifier = Modifier
                                     .height(40.dp)
                                     .clip(corners(90.dp))
-                                    .background(if (edited) Color.Black else Color.DarkGray)
+                                    .background(if (edited) Color.Black else Color.LightGray)
                                     .clickable (edited){
                                         showSaveAsDropDown = true
                                     }
@@ -194,7 +194,7 @@ fun ClipEdit (
                             ) {
                                 Text (
                                     text = "Save as",
-                                    color = Color.White,
+                                    color = if (edited) Color.White else Color.White.copy(0.6f),
                                     fontWeight = FontWeight.SemiBold
                                 )
 
@@ -203,7 +203,7 @@ fun ClipEdit (
                                 Icon (
                                     painter = painterResource(Res.drawable.down),
                                     contentDescription = "",
-                                    tint = Color.White,
+                                    tint = if (edited) Color.White else Color.White.copy(0.6f),
                                     modifier = Modifier
                                         .size(20.dp)
                                 )
@@ -480,6 +480,8 @@ fun ClipEdit (
                         )
                     }
                 }
+            } else {
+                println("null")
             }
         }
     )

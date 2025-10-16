@@ -53,8 +53,9 @@ import java.awt.Point
 import java.awt.Toolkit
 import java.awt.Window
 
-fun main(args: Array<String>) {
-    println("app start ${args.toList()}")
+fun main() {
+    println("app start ${System.getenv().toList()}")
+    log("app start ${System.getenv().toList()}", "main")
 
     val clipsDatabase = ClipsDatabaseFactory().create()
     val settingsDatabase = SettingsDatabaseFactory().create()

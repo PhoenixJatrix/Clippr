@@ -5,7 +5,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -28,10 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.unit.dp
-import com.nullinnix.clippr.misc.Notification
-import com.nullinnix.clippr.misc.NotificationType
 import com.nullinnix.clippr.misc.SearchAction
 import com.nullinnix.clippr.misc.Tab
+import com.nullinnix.clippr.misc.showConfirmDialog
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
 import com.nullinnix.clippr.viewmodels.NotificationsViewModel
@@ -41,9 +39,6 @@ import com.nullinnix.clippr.views.tabs.Settings
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.awt.Window
-import java.util.UUID
-import kotlin.random.Random
-import kotlin.random.nextInt
 
 @Composable
 @Preview
@@ -174,6 +169,11 @@ fun App (
                                 miscViewModelState = miscViewModelState,
                                 restartClipsMonitor = {
                                     clipsViewModel.monitorOldClips()
+                                },
+                                deleteUnpinned = {
+                                    if (showConfirmDialog("Delete all unpinned clips?", "Delete all your unpinned clips", false)) {
+                                        clipsViewModel.deleteAllUnpinned()
+                                    }
                                 }
                             )
                         }

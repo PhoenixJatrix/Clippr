@@ -250,7 +250,7 @@ class ClipsViewModel(
             }
 
             ClipMenuAction.Delete -> {
-                if (showConfirmDialog("Delete clip", "'${clip.content.trimIndent().trimMargin().coerce(50)}' will be deleted")) {
+                if (showConfirmDialog("Delete clip", "'${clip.content.trimIndent().trimMargin().coerce(50)}' will be deleted", false)) {
                     deleteClip(clip)
 
                     if (clipsState.value.isSearching) {
@@ -300,7 +300,7 @@ class ClipsViewModel(
             }
 
             MultiSelectClipMenuAction.DeleteAll -> {
-                if (showConfirmDialog("Delete selected clips?", "${clipsState.value.selectedClips.size }${if (clipsState.value.selectedClips.size == 1) " clip" else " clips"} will be deleted")) {
+                if (showConfirmDialog("Delete selected clips?", "${clipsState.value.selectedClips.size }${if (clipsState.value.selectedClips.size == 1) " clip" else " clips"} will be deleted", false)) {
                     deleteSpecified(clips = clipsState.value.selectedClips.toList())
 
                     searchAndFilter(true)
@@ -710,8 +710,6 @@ class ClipsViewModel(
         _clipsState.update {
             it.copy(showClipPreview = value)
         }
-
-        setIsSearching(false)
     }
 
     fun setEditedClip(clip: Clip?) {

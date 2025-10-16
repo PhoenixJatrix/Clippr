@@ -1,26 +1,12 @@
 package com.nullinnix.clippr.misc
 
 import androidx.compose.ui.graphics.Color
-import clippr.composeapp.generated.resources.Res
-import clippr.composeapp.generated.resources.audio
-import clippr.composeapp.generated.resources.blank
-import clippr.composeapp.generated.resources.broken
-import clippr.composeapp.generated.resources.code
-import clippr.composeapp.generated.resources.directory
-import clippr.composeapp.generated.resources.image
-import clippr.composeapp.generated.resources.runnable
-import clippr.composeapp.generated.resources.text
-import clippr.composeapp.generated.resources.unknown
-import clippr.composeapp.generated.resources.video
-import clippr.composeapp.generated.resources.web
-import clippr.composeapp.generated.resources.zip
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.jetbrains.compose.resources.DrawableResource
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.ClipboardOwner
@@ -585,21 +571,6 @@ val runnableExtensions = listOf(
     ".apk",
     ".aab",
     ".ipa"
-)
-
-val drawableMap: Map<String, DrawableResource> = mapOf(
-    ClipType.AUDIO.id to Res.drawable.audio,
-    ClipType.PLAIN_TEXT.id to Res.drawable.blank,
-    ClipType.BROKEN.id to Res.drawable.broken,
-    ClipType.CODE.id to Res.drawable.code,
-    ClipType.FOLDER.id to Res.drawable.directory,
-    ClipType.IMAGE.id to Res.drawable.image,
-    ClipType.RUNNABLE.id to Res.drawable.runnable,
-    ClipType.TEXT.id to Res.drawable.text,
-    ClipType.UNKNOWN.id to Res.drawable.unknown,
-    ClipType.VIDEO.id to Res.drawable.video,
-    ClipType.WEB.id to Res.drawable.web,
-    ClipType.ZIP.id to Res.drawable.zip,
 )
 
 fun clipTypeToDesc(type: String): String {

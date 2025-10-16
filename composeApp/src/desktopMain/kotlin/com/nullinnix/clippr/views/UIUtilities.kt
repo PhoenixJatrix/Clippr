@@ -1429,7 +1429,7 @@ fun ClipprTray (
                 }
 
                 Item(text = "\uD83D\uDDD1\uFE0F Clear unpinned") {
-                    if (showConfirmDialog("Delete all unpinned clips?", "Delete all your unpinned clips")) {
+                    if (showConfirmDialog("Delete all unpinned clips?", "Delete all your unpinned clips", false)) {
                         clipsViewModel.deleteAllUnpinned()
                     }
                 }

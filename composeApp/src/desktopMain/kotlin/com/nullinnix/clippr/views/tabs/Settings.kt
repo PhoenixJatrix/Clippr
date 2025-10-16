@@ -8,6 +8,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -70,12 +71,12 @@ import org.jetbrains.compose.resources.painterResource
 fun Settings (
     settingsViewModel: SettingsViewModel,
     miscViewModelState: MiscViewModelState,
+    deleteUnpinned: () -> Unit,
     restartClipsMonitor: () -> Unit
 ) {
     val settingsState = settingsViewModel.state.collectAsState().value
     val recordingEnabled = settingsState.recordingEnabled
     val enableMetaShiftVPopup = settingsState.enableMetaShiftVPopup
-    val clearAllUnpinnedClipsOnDeviceStart = settingsState.clearAllUnpinnedClipsOnDeviceStart
     val startAtLogin = settingsState.startAtLogin
     val sourcesExceptions = settingsState.sourcesExceptions
     val clipTypesExceptions = settingsState.clipTypesExceptions
@@ -142,15 +143,15 @@ fun Settings (
                 settingsViewModel.onAction(SettingsAction.ToggleEnableMetaShiftV)
             }
 
-            Spacer(Modifier.height(20.dp))
-
-            SettingsCheckBoxElement(
-                title = "Clear unpinned on login",
-                description = "Delete all unpinned clips when the device is started",
-                isChecked = clearAllUnpinnedClipsOnDeviceStart
-            ) {
-                settingsViewModel.onAction(SettingsAction.ToggleClearAllUnpinnedDevicesOnStart)
-            }
+//            Spacer(Modifier.height(20.dp))
+//
+//            SettingsCheckBoxElement(
+//                title = "Clear unpinned on login",
+//                description = "Delete all unpinned clips when the device is started",
+//                isChecked = clearAllUnpinnedClipsOnDeviceStart
+//            ) {
+//                settingsViewModel.onAction(SettingsAction.ToggleClearAllUnpinnedDevicesOnStart)
+//            }
 
             Spacer(Modifier.height(20.dp))
 
@@ -366,6 +367,32 @@ fun Settings (
 
                 Spacer(Modifier.height(10.dp))
             }
+
+            Spacer(Modifier.height(20.dp))
+
+            SettingsElement (
+                title = "Clear unpinned",
+                description = "Delete all unpinned clips",
+                content = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(15.dp)
+                            .clip(corners(90.dp))
+                            .border(2.dp, Color.Red, corners(90.dp))
+                            .clickable {
+                                deleteUnpinned()
+                            }
+                            .padding(15.dp), contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Delete all",
+                            color = Color.Red,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            )
 
             Spacer(Modifier.height(20.dp))
 

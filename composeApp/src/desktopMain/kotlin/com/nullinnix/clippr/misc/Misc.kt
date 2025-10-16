@@ -496,8 +496,8 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
                 if (clipsState.isShowingFilters) {
                     intercepted = true
                     clipsViewModel.searchAndFilter(true)
-                } else if (!clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null && !clipsState.showClipPreview) {
-                    if (miscViewModelState.metaHeldDown) {
+                } else if (clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null && !clipsState.showClipPreview) {
+                    if (!clipsState.isSearching && miscViewModelState.metaHeldDown) {
                         val action = if (miscViewModelState.lastHoveredClip.associatedIcon.toClipType() == ClipType.WEB) {
                             ClipMenuAction.OpenAsLink
                         } else {
@@ -512,7 +512,9 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
                             intercepted = true
                             clipsViewModel.onClipMenuAction(action, miscViewModelState.lastHoveredClip)
                         }
-                    } else {
+                    }
+
+                    if (!miscViewModelState.metaHeldDown){
                         intercepted = true
                         clipsViewModel.onClipMenuAction(ClipMenuAction.Edit, miscViewModelState.lastHoveredClip)
                     }
@@ -524,7 +526,7 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
                     if (clipsState.selectedClips.isNotEmpty() && clipsState.isSearching) {
                         intercepted = true
 
-                        if (showConfirmDialog("Delete selected clips?", "${clipsState.selectedClips.size }${if (clipsState.selectedClips.size == 1) " clip" else " clips"} will be deleted")) {
+                        if (showConfirmDialog("Delete selected clips?", "${clipsState.selectedClips.size }${if (clipsState.selectedClips.size == 1) " clip" else " clips"} will be deleted", false)) {
                             clipsViewModel.deleteSelected()
                             clipsViewModel.setIsSearching(false)
                         }
@@ -532,7 +534,7 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
                         if (!clipsState.isSearching && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
                             intercepted = true
 
-                            if (showConfirmDialog("Delete clip", "'${miscViewModelState.lastHoveredClip.content.coerce(50)}' will be deleted")) {
+                            if (showConfirmDialog("Delete clip", "'${miscViewModelState.lastHoveredClip.content.coerce(50)}' will be deleted", false)) {
                                 clipsViewModel.onClipMenuAction(ClipMenuAction.Delete, miscViewModelState.lastHoveredClip)
                             }
                         }
