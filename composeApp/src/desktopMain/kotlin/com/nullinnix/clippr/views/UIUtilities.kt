@@ -144,9 +144,9 @@ fun Tabs (
         modifier = Modifier
             .width(200.dp)
             .height(50.dp)
-            .shadow(5.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.White, spotColor = Color.White)
+            .shadow(5.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(corners(15.dp))
-            .background(GrayBG)
+            .background(Color.White)
     ) {
         TabElement(
             isFocused = isFocused,
@@ -173,7 +173,7 @@ fun TabElement (
     tab: Tab,
     onClick: (Tab) -> Unit
 ) {
-    val textColorAnim by animateColorAsState(if (isSelected) Color.White else Color.DarkGray)
+    val textColorAnim by animateColorAsState(if (isSelected) Color.Black else Color.LightGray)
 
     Box(
         modifier = Modifier
@@ -229,18 +229,18 @@ fun WindowBar (
                 Box (
                     modifier = Modifier
                         .size(30.dp)
-                        .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = closeShadowColor, spotColor = closeShadowColor)
+                        .shadow(7.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = closeShadowColor, spotColor = closeShadowColor)
                         .clip(corners(90.dp))
                         .noGleamTaps {
                             onHideMainApp()
                         }
-                        .background(GrayBG)
+                        .background(Color.White)
                         .padding(10.dp), contentAlignment = Alignment.Center
                 ) {
                     Icon (
                         painter = painterResource(Res.drawable.close),
                         contentDescription = "",
-                        tint = Color.White.copy(closeOpacityAnim)
+                        tint = Color.Black.copy(closeOpacityAnim)
                     )
                 }
 
@@ -249,18 +249,18 @@ fun WindowBar (
                 Box (
                     modifier = Modifier
                         .size(30.dp)
-                        .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = maximizeShadowColor, spotColor = maximizeShadowColor)
+                        .shadow(7.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = maximizeShadowColor, spotColor = maximizeShadowColor)
                         .clip(corners(90.dp))
                         .noGleamTaps {
                             onToggleFullScreen()
                         }
-                        .background(GrayBG)
+                        .background(Color.White)
                         .padding(10.dp), contentAlignment = Alignment.Center
                 ) {
                     Icon (
                         painter = painterResource(Res.drawable.full_screen),
                         contentDescription = "",
-                        tint = Color.White.copy(closeOpacityAnim)
+                        tint = Color.Black.copy(closeOpacityAnim)
                     )
                 }
             }
@@ -299,7 +299,7 @@ fun WindowBar (
 
         Text(
             text = "Clippr",
-            color = if (isFocused) Color.White else Color.DarkGray,
+            color = if (isFocused) Color.Black else Color.LightGray,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier
@@ -385,12 +385,12 @@ fun SearchBar (
             Icon(
                 painter = painterResource(Res.drawable.back),
                 contentDescription = "",
-                tint = Color.White,
+                tint = Color.Black,
                 modifier = Modifier
                     .size(40.dp)
-                    .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.White, spotColor = Color.White)
+                    .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.White, spotColor = Color.White)
                     .clip(corners(90.dp))
-                    .background(GrayBG)
+                    .background(Color.White)
                     .clickable {
                         onAction(SearchAction.OnExit)
                     }

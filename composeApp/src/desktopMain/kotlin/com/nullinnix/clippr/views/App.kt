@@ -97,7 +97,7 @@ fun App (
             Column (
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(GrayBG),
+                    .background(Color.White),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(Modifier.height(15.dp))
