@@ -34,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.SolidColor
@@ -70,6 +69,7 @@ import com.nullinnix.clippr.misc.epochToReadableTime
 import com.nullinnix.clippr.misc.getClipMenuActions
 import com.nullinnix.clippr.misc.hash
 import com.nullinnix.clippr.misc.noGleamTaps
+import com.nullinnix.clippr.misc.relaxedShadow
 import com.nullinnix.clippr.misc.shortcut
 import com.nullinnix.clippr.misc.toClipType
 import com.nullinnix.clippr.theme.HeaderColor
@@ -160,7 +160,7 @@ fun ClipEdit (
                                     tint = Color.Black,
                                     modifier = Modifier
                                         .size(40.dp)
-                                        .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                                        .relaxedShadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
                                         .clip(corners(90.dp))
                                         .background(Color.White)
                                         .clickable {
@@ -216,7 +216,7 @@ fun ClipEdit (
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(500.dp)
-                                .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                                .relaxedShadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
                                 .clip(corners(15.dp))
                                 .background(HeaderColor)
                         ) {
@@ -280,7 +280,7 @@ fun ClipEdit (
                             //clip type editable
                             Row (
                                 modifier = Modifier
-                                    .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
+                                    .relaxedShadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
                                     .clip(RoundedCornerShape(90.dp))
                                     .height(30.dp)
                                     .background(Color.Black)
@@ -399,7 +399,7 @@ fun ClipEdit (
                             Box (
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .shadow(3.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                                    .relaxedShadow(3.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
                                     .clip(corners(10.dp))
                                     .background(Color.White)
                                     .clickable {

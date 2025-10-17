@@ -41,7 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +58,7 @@ import com.nullinnix.clippr.misc.TimeCode
 import com.nullinnix.clippr.misc.clipTypeToColor
 import com.nullinnix.clippr.misc.clipTypeToDesc
 import com.nullinnix.clippr.misc.corners
+import com.nullinnix.clippr.misc.relaxedShadow
 import com.nullinnix.clippr.theme.HeaderColor
 import com.nullinnix.clippr.theme.Transparent
 import com.nullinnix.clippr.viewmodels.SettingsViewModel
@@ -188,7 +188,7 @@ fun Settings (
                         modifier = Modifier
                             .width(100.dp)
                             .height(50.dp)
-                            .shadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = entryShadowAnim, spotColor = entryShadowAnim)
+                            .relaxedShadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = entryShadowAnim, spotColor = entryShadowAnim)
                             .clip(corners(10.dp))
                             .background(Color.White),
                         colors = TextFieldDefaults.colors(
@@ -208,7 +208,7 @@ fun Settings (
                             modifier = Modifier
                                 .width(100.dp)
                                 .height(50.dp)
-                                .shadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                                .relaxedShadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
                                 .clip(corners(10.dp))
                                 .background(Color.White)
                                 .clickable {
@@ -286,7 +286,7 @@ fun Settings (
                         modifier = Modifier
                             .width(100.dp)
                             .height(50.dp)
-                            .shadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = entryShadowAnim, spotColor = entryShadowAnim)
+                            .relaxedShadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = entryShadowAnim, spotColor = entryShadowAnim)
                             .clip(corners(10.dp))
                             .background(Color.White),
                         colors = TextFieldDefaults.colors(
@@ -343,7 +343,7 @@ fun Settings (
                         modifier = Modifier
                             .width(100.dp)
                             .height(50.dp)
-                            .shadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                            .relaxedShadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
                             .clip(corners(10.dp))
                             .background(Color.White),
                         colors = TextFieldDefaults.colors(
@@ -562,7 +562,7 @@ fun SettingsCheckBoxElement (
     Column (
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+            .relaxedShadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(corners(10.dp))
             .background(Color.White)
     ){
@@ -627,7 +627,7 @@ fun SettingsElement (
     Column (
         modifier = Modifier
             .fillMaxWidth()
-            .shadow( if (isMainHeading) 7.dp else 2.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+            .relaxedShadow( if (isMainHeading) 7.dp else 2.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(corners(10.dp))
             .background(Color.White)
             .animateContentSize()

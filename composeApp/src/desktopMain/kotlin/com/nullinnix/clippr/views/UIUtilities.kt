@@ -51,7 +51,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
@@ -114,9 +113,9 @@ import com.nullinnix.clippr.misc.name
 import com.nullinnix.clippr.misc.noGleamCombinedClickable
 import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.misc.pasteWithRobot
+import com.nullinnix.clippr.misc.relaxedShadow
 import com.nullinnix.clippr.misc.shortcut
 import com.nullinnix.clippr.misc.showConfirmDialog
-import com.nullinnix.clippr.theme.GrayBG
 import com.nullinnix.clippr.theme.HeaderColor
 import com.nullinnix.clippr.theme.Transparent
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
@@ -144,7 +143,7 @@ fun Tabs (
         modifier = Modifier
             .width(200.dp)
             .height(50.dp)
-            .shadow(5.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+            .relaxedShadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(corners(15.dp))
             .background(Color.White)
     ) {
@@ -229,7 +228,7 @@ fun WindowBar (
                 Box (
                     modifier = Modifier
                         .size(30.dp)
-                        .shadow(7.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = closeShadowColor, spotColor = closeShadowColor)
+                        .relaxedShadow(7.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = closeShadowColor, spotColor = closeShadowColor)
                         .clip(corners(90.dp))
                         .noGleamTaps {
                             onHideMainApp()
@@ -249,7 +248,7 @@ fun WindowBar (
                 Box (
                     modifier = Modifier
                         .size(30.dp)
-                        .shadow(7.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = maximizeShadowColor, spotColor = maximizeShadowColor)
+                        .relaxedShadow(7.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = maximizeShadowColor, spotColor = maximizeShadowColor)
                         .clip(corners(90.dp))
                         .noGleamTaps {
                             onToggleFullScreen()
@@ -340,7 +339,7 @@ fun CheckBox(
         modifier = Modifier
             .width(checkboxWidth.dp)
             .height(28.dp)
-            .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+            .relaxedShadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(corners(90.dp))
             .hoverable(interactionSource, enabled)
             .background(Color.White)
@@ -388,7 +387,7 @@ fun SearchBar (
                 tint = Color.Black,
                 modifier = Modifier
                     .size(40.dp)
-                    .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.White, spotColor = Color.White)
+                    .relaxedShadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
                     .clip(corners(90.dp))
                     .background(Color.White)
                     .clickable {
@@ -404,7 +403,7 @@ fun SearchBar (
             modifier = Modifier
                 .weight(1f)
                 .height(40.dp)
-                .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                .relaxedShadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
                 .clip(corners(90.dp))
                 .background(HeaderColor)
                 .noGleamTaps (!isSearching) {
@@ -455,7 +454,7 @@ fun SearchBar (
                         ) {
                             if (searchParams.isEmpty()) {
                                 Text(
-                                    text = "69 ideas for Grindr dates",
+                                    text = "Search content, source, type",
                                     color = Color.Gray,
                                     fontSize = 14.sp,
                                     maxLines = 1,
@@ -485,7 +484,7 @@ fun SearchBar (
                     tint = Color.Black,
                     modifier = Modifier
                         .size(40.dp)
-                        .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                        .relaxedShadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
                         .clip(corners(90.dp))
                         .background(Color.White)
                         .clickable {
@@ -1209,7 +1208,7 @@ fun Notification (
         modifier = Modifier
             .width(300.dp)
             .offset(x = notificationXOffsetAnim)
-            .shadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+            .relaxedShadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(corners(10.dp))
             .background(color)
             .clickable {
@@ -1271,7 +1270,7 @@ fun ClipInfo (
 ){
     Row (
         modifier = Modifier
-            .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
+            .relaxedShadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
             .clip(RoundedCornerShape(90.dp))
             .height(22.dp)
             .background(Color.White)
@@ -1307,7 +1306,7 @@ fun ClipInfo (
 ){
     Row (
         modifier = Modifier
-            .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
+            .relaxedShadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
             .clip(RoundedCornerShape(90.dp))
             .height(22.dp)
             .background(Color.White)
@@ -1343,7 +1342,7 @@ fun ClipEditInfo (
 ){
     Row (
         modifier = Modifier
-            .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
+            .relaxedShadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
             .clip(RoundedCornerShape(90.dp))
             .height(30.dp)
             .background(Color.White)
@@ -1378,7 +1377,6 @@ fun ClipprTray (
     val trayState = rememberTrayState()
     val clipsState = clipsViewModel.clipsState.collectAsState().value
     val settingsState = settingsViewModel.state.collectAsState().value
-    val miscViewModelState = miscViewModel.state.collectAsState().value
     val hasAccessibilityAccess = miscViewModel.hasAccessibilityAccess.collectAsState().value
 
     scope.run {

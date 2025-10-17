@@ -1,5 +1,6 @@
 package com.nullinnix.clippr.views.tabs
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalScrollbarStyle
@@ -42,7 +43,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.key.KeyEvent
@@ -76,6 +76,7 @@ import com.nullinnix.clippr.misc.epochToReadableTime
 import com.nullinnix.clippr.misc.formatText
 import com.nullinnix.clippr.misc.highlightedAnnotatedString
 import com.nullinnix.clippr.misc.noGleamTaps
+import com.nullinnix.clippr.misc.relaxedShadow
 import com.nullinnix.clippr.misc.toClipType
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
@@ -105,13 +106,13 @@ fun Clips (
     val selectedClips = clipState.selectedClips
     val showClipPreview = clipState.showClipPreview
     val currentlyPreviewingClip = clipState.currentlyPreviewingClip
+    val allPinnedClipsExpanded = clipState.allPinnedClipsExpanded
 
     val loadedIcns = miscViewModel.state.collectAsState().value.loadedIcns
     val allApps = miscViewModel.state.collectAsState().value.allApps
 
     val showAllInteractionSource = remember { MutableInteractionSource() }
     val isHovered by showAllInteractionSource.collectIsHoveredAsState()
-    var allPinnedClipsExpanded by remember { mutableStateOf(false) }
 
     val scrollState = scrollStates.first
     val searchScrollState = scrollStates.second
@@ -127,6 +128,7 @@ fun Clips (
                 LazyColumn (
                     state = scrollState,
                     modifier = Modifier
+                        .animateContentSize()
                         .padding(end = 15.dp)
                 ){
                     item {
@@ -158,7 +160,7 @@ fun Clips (
                                         color = Color.Gray,
                                         modifier = Modifier
                                             .noGleamTaps {
-                                                allPinnedClipsExpanded = !allPinnedClipsExpanded
+                                                clipsViewModel.setAllPinnedClipsExpanded(!allPinnedClipsExpanded)
                                             }
                                             .hoverable(showAllInteractionSource),
                                         textDecoration = if (isHovered) TextDecoration.Underline else TextDecoration.None
@@ -562,7 +564,7 @@ fun ClipTemplate (
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(end = 10.dp)
-                    .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
+                    .relaxedShadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
                     .clip(corners(15.dp))
                     .background(Color.White)
                     .onPointerEvent(PointerEventType.Press) { event ->
@@ -662,7 +664,7 @@ fun ClipTemplate (
                         if (isSearching && clip.isPinned) {
                             Row (
                                 modifier = Modifier
-                                    .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
+                                    .relaxedShadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Gray, spotColor = Color.Gray)
                                     .clip(RoundedCornerShape(90.dp))
                                     .height(22.dp)
                                     .background(Color.Black)

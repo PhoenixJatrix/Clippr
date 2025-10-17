@@ -18,12 +18,12 @@ import com.nullinnix.clippr.misc.NotificationType
 import com.nullinnix.clippr.misc.SaveAs
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.coerce
-import com.nullinnix.clippr.misc.desc
-import com.nullinnix.clippr.misc.focusWindow
-import com.nullinnix.clippr.misc.log
 import com.nullinnix.clippr.misc.copyMultipleToClipboard
 import com.nullinnix.clippr.misc.copyToClipboard
+import com.nullinnix.clippr.misc.desc
 import com.nullinnix.clippr.misc.epoch
+import com.nullinnix.clippr.misc.focusWindow
+import com.nullinnix.clippr.misc.log
 import com.nullinnix.clippr.misc.pasteMultipleFilesWithRobot
 import com.nullinnix.clippr.misc.pasteWithRobot
 import com.nullinnix.clippr.misc.search
@@ -165,14 +165,14 @@ class ClipsViewModel(
     }
 
     fun onClipMenuAction(action: ClipMenuAction, clip: Clip?) {
-        println(action.desc(3))
+        println("content ${clip?.content}, action = ${action.desc(3)}")
 
         if (clip == null)
             return
 
         when (action) {
             ClipMenuAction.PasteAsText -> {
-                notificationsViewModel.postNotification(
+                notificationsViewModel.postNotification (
                     Notification(
                         duration = 6,
                         content = "",
@@ -301,7 +301,7 @@ class ClipsViewModel(
 
             MultiSelectClipMenuAction.DeleteAll -> {
                 if (showConfirmDialog("Delete selected clips?", "${clipsState.value.selectedClips.size }${if (clipsState.value.selectedClips.size == 1) " clip" else " clips"} will be deleted", false)) {
-                    deleteSpecified(clips = clipsState.value.selectedClips.toList())
+                    deleteSelected()
 
                     searchAndFilter(true)
                 }
@@ -486,7 +486,7 @@ class ClipsViewModel(
             notificationsViewModel.postNotification(
                 Notification(
                     duration = 6,
-                    content = "Deleted ${clip.content.trimIndent().trimMargin().coerce(15)}",
+                    content = "Deleted '${clip.content.trimIndent().trimMargin().coerce(15)}'",
                     type = NotificationType.Info()
                 )
             )
@@ -499,7 +499,7 @@ class ClipsViewModel(
         notificationsViewModel.postNotification(
             Notification(
                 duration = 6, 
-                content = if (clip.isPinned) "Unpinned ${clip.content.trimIndent().trimMargin().coerce(15)}" else "Pinned ${clip.content.trimIndent().trimMargin().coerce(15)}",
+                content = if (clip.isPinned) "Unpinned '${clip.content.trimIndent().trimMargin().coerce(15)}'" else "Pinned '${clip.content.trimIndent().trimMargin().coerce(15)}'",
                 type = NotificationType.Info()
             )
         )
@@ -573,6 +573,7 @@ class ClipsViewModel(
     fun deleteSpecified(clips: List<Clip>) {
         viewModelScope.launch {
             log("delete all specified clips", "deleteSpecified")
+            clipsDao.deleteSelected(clips.map { it.clipID })
 
             notificationsViewModel.postNotification(
                 Notification(
@@ -715,6 +716,12 @@ class ClipsViewModel(
     fun setEditedClip(clip: Clip?) {
         _clipsState.update {
             it.copy(editedClip = clip)
+        }
+    }
+
+    fun setAllPinnedClipsExpanded (value: Boolean) {
+        _clipsState.update {
+            it.copy(allPinnedClipsExpanded = value)
         }
     }
 }

@@ -54,6 +54,7 @@ data class ClipsState (
     val showClipPreview: Boolean = false,
     val currentlyPreviewingClip: Clip? = null,
     val editedClip: Clip? = null,
+    val allPinnedClipsExpanded: Boolean = false
 )
 
 data class Filters (

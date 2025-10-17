@@ -8,12 +8,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.DefaultShadowColor
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.unit.Dp
@@ -619,4 +625,28 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
 
 fun LocalDateTime.epoch (): Long {
     return this.toEpochSecond(ZoneOffset.UTC)
+}
+
+@Composable
+fun Modifier.relaxedShadow (
+    elevation: Dp,
+    shape: Shape = RectangleShape,
+    clip: Boolean = elevation > 0.dp,
+    ambientColor: Color = DefaultShadowColor,
+    spotColor: Color = DefaultShadowColor,
+): Modifier {
+    val density = LocalDensity.current
+
+    val windowWidth = with(density) {LocalWindowInfo.current.containerSize.width.toDp()}
+
+    return this
+        .then(
+            Modifier.shadow(
+                elevation = if (windowWidth > 500.dp) elevation / 2 else elevation,
+                shape = shape,
+                clip = clip,
+                ambientColor = ambientColor,
+                spotColor = spotColor
+            )
+        )
 }

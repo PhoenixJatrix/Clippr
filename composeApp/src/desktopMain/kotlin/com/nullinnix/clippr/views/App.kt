@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import com.nullinnix.clippr.misc.SearchAction
 import com.nullinnix.clippr.misc.Tab
 import com.nullinnix.clippr.misc.showConfirmDialog
-import com.nullinnix.clippr.theme.GrayBG
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import com.nullinnix.clippr.viewmodels.MiscViewModel
 import com.nullinnix.clippr.viewmodels.NotificationsViewModel

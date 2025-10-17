@@ -34,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -50,6 +49,7 @@ import com.nullinnix.clippr.misc.MacApp
 import com.nullinnix.clippr.misc.clipTypeToColor
 import com.nullinnix.clippr.misc.clipTypeToDesc
 import com.nullinnix.clippr.misc.corners
+import com.nullinnix.clippr.misc.relaxedShadow
 import com.nullinnix.clippr.theme.HeaderColor
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
 import kotlinx.coroutines.delay
@@ -98,7 +98,7 @@ fun FilterView (
                                 tint = Color.Black,
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                                    .relaxedShadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
                                     .clip(corners(90.dp))
                                     .background(Color.White)
                                     .clickable {
@@ -361,7 +361,7 @@ fun FilterTemplate (
     Column (
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(10.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+            .relaxedShadow(10.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(corners(10.dp))
             .background(Color.White)
     ) {

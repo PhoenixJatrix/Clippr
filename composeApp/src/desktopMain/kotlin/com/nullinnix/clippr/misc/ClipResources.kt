@@ -763,10 +763,10 @@ fun MultiSelectClipMenuAction.desc(secondsBeforePaste: Int): String {
     return when(this) {
         MultiSelectClipMenuAction.Paste -> "Paste clips in ${secondsBeforePaste}s"
         MultiSelectClipMenuAction.CopyFiles -> "Copy clips as files"
-        MultiSelectClipMenuAction.Merge -> "Merge all"
-        MultiSelectClipMenuAction.PinAll -> "Pin all"
-        MultiSelectClipMenuAction.UnpinAll -> "Unpin all"
-        MultiSelectClipMenuAction.DeleteAll -> "Delete all"
+        MultiSelectClipMenuAction.Merge -> "Merge selected"
+        MultiSelectClipMenuAction.PinAll -> "Pin selected"
+        MultiSelectClipMenuAction.UnpinAll -> "Unpin selected"
+        MultiSelectClipMenuAction.DeleteAll -> "Delete selected"
     }
 }
 
@@ -836,6 +836,8 @@ fun SaveAs.shortcut(): String {
 fun getClipMenuActions(clip: Clip, editing: Boolean = false): List<ClipMenuAction> {
     val clipActions = ClipMenuAction.entries.toMutableList()
 
+    clipActions.remove(ClipMenuAction.Delete)
+
     if (clip.isPinned) {
         clipActions.remove(ClipMenuAction.Pin)
     } else {
@@ -867,6 +869,8 @@ fun getClipMenuActions(clip: Clip, editing: Boolean = false): List<ClipMenuActio
         clipActions.remove(ClipMenuAction.Edit)
         clipActions.remove(ClipMenuAction.Delete)
     }
+
+    clipActions.add(ClipMenuAction.Delete)
 
     return clipActions
 }
