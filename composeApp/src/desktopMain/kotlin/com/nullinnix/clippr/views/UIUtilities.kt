@@ -116,6 +116,7 @@ import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.misc.pasteWithRobot
 import com.nullinnix.clippr.misc.shortcut
 import com.nullinnix.clippr.misc.showConfirmDialog
+import com.nullinnix.clippr.theme.GrayBG
 import com.nullinnix.clippr.theme.HeaderColor
 import com.nullinnix.clippr.theme.Transparent
 import com.nullinnix.clippr.viewmodels.ClipsViewModel
@@ -143,9 +144,9 @@ fun Tabs (
         modifier = Modifier
             .width(200.dp)
             .height(50.dp)
-            .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+            .shadow(5.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = Color.White, spotColor = Color.White)
             .clip(corners(15.dp))
-            .background(Color.White)
+            .background(GrayBG)
     ) {
         TabElement(
             isFocused = isFocused,
@@ -172,7 +173,7 @@ fun TabElement (
     tab: Tab,
     onClick: (Tab) -> Unit
 ) {
-    val textColorAnim by animateColorAsState(if (isSelected) Color.Black else Color.Gray)
+    val textColorAnim by animateColorAsState(if (isSelected) Color.White else Color.DarkGray)
 
     Box(
         modifier = Modifier
@@ -228,18 +229,18 @@ fun WindowBar (
                 Box (
                     modifier = Modifier
                         .size(30.dp)
-                        .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = closeShadowColor, spotColor = closeShadowColor)
-                        .clip(corners())
+                        .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = closeShadowColor, spotColor = closeShadowColor)
+                        .clip(corners(90.dp))
                         .noGleamTaps {
                             onHideMainApp()
                         }
-                        .background(Color.White)
+                        .background(GrayBG)
                         .padding(10.dp), contentAlignment = Alignment.Center
                 ) {
                     Icon (
                         painter = painterResource(Res.drawable.close),
                         contentDescription = "",
-                        tint = Color.DarkGray.copy(closeOpacityAnim)
+                        tint = Color.White.copy(closeOpacityAnim)
                     )
                 }
 
@@ -248,18 +249,18 @@ fun WindowBar (
                 Box (
                     modifier = Modifier
                         .size(30.dp)
-                        .shadow(10.dp, RoundedCornerShape(15.dp), clip = false, ambientColor = maximizeShadowColor, spotColor = maximizeShadowColor)
-                        .clip(corners())
+                        .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = maximizeShadowColor, spotColor = maximizeShadowColor)
+                        .clip(corners(90.dp))
                         .noGleamTaps {
                             onToggleFullScreen()
                         }
-                        .background(Color.White)
+                        .background(GrayBG)
                         .padding(10.dp), contentAlignment = Alignment.Center
                 ) {
                     Icon (
                         painter = painterResource(Res.drawable.full_screen),
                         contentDescription = "",
-                        tint = Color.DarkGray.copy(closeOpacityAnim)
+                        tint = Color.White.copy(closeOpacityAnim)
                     )
                 }
             }
@@ -298,7 +299,7 @@ fun WindowBar (
 
         Text(
             text = "Clippr",
-            color = if (isFocused) Color.Black else Color.LightGray,
+            color = if (isFocused) Color.White else Color.DarkGray,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier
@@ -384,12 +385,12 @@ fun SearchBar (
             Icon(
                 painter = painterResource(Res.drawable.back),
                 contentDescription = "",
-                tint = Color.Black,
+                tint = Color.White,
                 modifier = Modifier
                     .size(40.dp)
-                    .shadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                    .shadow(5.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = Color.White, spotColor = Color.White)
                     .clip(corners(90.dp))
-                    .background(Color.White)
+                    .background(GrayBG)
                     .clickable {
                         onAction(SearchAction.OnExit)
                     }
