@@ -1,3 +1,11 @@
+
+[![Compose-Multiplatform](https://img.shields.io/badge/UI-Compose%20Multiplatform-3a7af2?logo=jetpackcompose&logoColor=white)](https://github.com/JetBrains/compose-multiplatform)
+![Static Badge](https://img.shields.io/badge/Database-RoomDB-red)
+![Kotlin](https://img.shields.io/badge/Lang-Kotlin-0095D5.svg?logo=kotlin&logoColor=white)
+![OS](https://img.shields.io/badge/OS-macOS-blue)
+[![Static Badge](https://img.shields.io/badge/License-MIT-silver)](https://github.com/PhoenixJatrix/Clippr/blob/main/LICENSE)
+  
+
 # 🧷 Clippr
 
 **Clippr** is a minimalist clipboard manager built for macOS.  
@@ -68,12 +76,16 @@ Feel free to modify with attribution.
 
 ## 🧩 Cloning & Running
 
-```bash
-# Clone the repository
+1.  Clone the repo
+``` bash
 git clone https://github.com/phoenixjatrix/clippr.git
+```
 
-# Open the project directory
-cd clippr
-
-# Build and run (Gradle)
+2. Compile and run
+``` bash
 ./gradlew run
+```
+
+## 🤝 Support Clippr
+- **🌟 Star this repo**: If you like Clippr, clip a star
+- **🪲 Tell us about those bugs**: Report any bugs you find -> [issue tracker](https://github.com/phoenixjatrix/clippr/issues/new/choose).
