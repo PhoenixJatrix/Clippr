@@ -158,8 +158,9 @@ fun main() {
                 Box (
                     modifier = Modifier
                         .clip(corners(10.dp))
-                        .border(1.dp, color = Color.Black.copy(0.25f), shape = corners(10.dp))
-                        .background(Color.Black)
+                        .border(1.dp, color = Color.Black.copy(5f), shape = corners(10.dp))
+                        .border(1.dp, color = Color.White.copy(5f), shape = corners(10.dp))
+                        .background(Color.White)
                         .focusRequester(focusRequester)
                         .focusable()
                         .onPreviewKeyEvent { event ->

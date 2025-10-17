@@ -165,7 +165,7 @@ fun getIconForContent (
     val subType = mimeType.split("/")[1]
 
     for (tld in urlExtensions) {
-        if (content.endsWith(tld) || content.contains("$tld/")) {
+        if (content.endsWith(tld) || content.contains("$tld/") && !content.contains(" ")) {
             return ClipType.WEB.id
         }
     }
