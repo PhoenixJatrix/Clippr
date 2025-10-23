@@ -398,42 +398,46 @@ class CustomClipboardOwner: ClipboardOwner {
 
 fun pasteWithRobot(clip: Clip, pasteAsFile: Boolean, wait: Int = 0, hasAccessibilityAccess: Boolean, autoPaste: Boolean) {
     CoroutineScope(Dispatchers.Default).launch {
-        delay(wait * 1000L)
+        try {
+            delay(wait * 1000L)
 
-        log("preparing to paste", "pasteWithRobot")
+            log("preparing to paste", "pasteWithRobot")
 
-        if (!hasAccessibilityAccess) {
-            showMessage("Auto paste disabled", "To enable auto pasting, grant Accessibility access.\n\nGo to:\n-> System Settings\n-> Privacy & Security\n-> Accessibility\nClick + then add Clippr")
+            if (!hasAccessibilityAccess) {
+                showMessage("Auto paste disabled", "To enable auto pasting, grant Accessibility access.\n\nGo to:\n-> System Settings\n-> Privacy & Security\n-> Accessibility\nClick + then add Clippr")
+            }
+
+            copyToClipboard(clip = clip, pasteAsFile = pasteAsFile)
+
+            if (autoPaste) {
+                Thread.sleep(50)
+
+                val cg = CoreGraphics.INSTANCE
+                val source = cg.CGEventSourceCreate(CoreGraphics.kCGEventSourceStateHIDSystemState)
+
+                val vDown = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, true)
+                cg.CGEventSetFlags(vDown, CoreGraphics.kCGEventFlagMaskCommand)
+                cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vDown)
+                Thread.sleep(30)
+
+                val vUp = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, false)
+                cg.CGEventSetFlags(vUp, CoreGraphics.kCGEventFlagMaskCommand)
+                cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vUp)
+                Thread.sleep(30)
+
+                val metaUp = cg.CGEventCreateKeyboardEvent(source, 55, false)
+                cg.CGEventPost(CoreGraphics.kCGSessionEventTap, metaUp)
+
+                cg.CFRelease(vDown)
+                cg.CFRelease(vUp)
+                cg.CFRelease(metaUp)
+                cg.CFRelease(source)
+            }
+
+            log("done pasting", "pasteWithRobot")
+        } catch (e: Exception) {
+            log("${e.message} -> ${e.stackTrace.firstOrNull()?.let {it::class.java.name}}", "pasteWithRobot")
         }
-
-        copyToClipboard(clip = clip, pasteAsFile = pasteAsFile)
-
-        if (autoPaste) {
-            Thread.sleep(50)
-
-            val cg = CoreGraphics.INSTANCE
-            val source = cg.CGEventSourceCreate(CoreGraphics.kCGEventSourceStateHIDSystemState)
-
-            val vDown = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, true)
-            cg.CGEventSetFlags(vDown, CoreGraphics.kCGEventFlagMaskCommand)
-            cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vDown)
-            Thread.sleep(30)
-
-            val vUp = cg.CGEventCreateKeyboardEvent(source, CoreGraphics.kVK_ANSI_V, false)
-            cg.CGEventSetFlags(vUp, CoreGraphics.kCGEventFlagMaskCommand)
-            cg.CGEventPost(CoreGraphics.kCGSessionEventTap, vUp)
-            Thread.sleep(30)
-
-            val metaUp = cg.CGEventCreateKeyboardEvent(source, 55, false)
-            cg.CGEventPost(CoreGraphics.kCGSessionEventTap, metaUp)
-
-            cg.CFRelease(vDown)
-            cg.CFRelease(vUp)
-            cg.CFRelease(metaUp)
-            cg.CFRelease(source)
-        }
-
-        log("done pasting", "pasteWithRobot")
     }
 }
 

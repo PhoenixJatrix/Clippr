@@ -550,11 +550,6 @@ class ClipsViewModel(
     fun deleteSelected() {
         viewModelScope.launch {
             log("delete all selected clips", "deleteSelected")
-            clipsDao.deleteSelected(
-                clipsToDelete = clipsState.value.selectedClips.map {
-                    it.clipID
-                }
-            )
 
             notificationsViewModel.postNotification(
                 Notification(
@@ -562,6 +557,12 @@ class ClipsViewModel(
                     content = "Deleted ${clipsState.value.selectedClips.size} clips",
                     type = NotificationType.Info()
                 )
+            )
+
+            clipsDao.deleteSelected(
+                clipsToDelete = clipsState.value.selectedClips.map {
+                    it.clipID
+                }
             )
 
             if (clipsState.value.isSearching) {

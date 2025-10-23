@@ -228,7 +228,7 @@ fun WindowBar (
                 Box (
                     modifier = Modifier
                         .size(30.dp)
-                        .relaxedShadow(7.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = closeShadowColor, spotColor = closeShadowColor)
+                        .relaxedShadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = closeShadowColor, spotColor = closeShadowColor)
                         .clip(corners(90.dp))
                         .noGleamTaps {
                             onHideMainApp()
@@ -248,7 +248,7 @@ fun WindowBar (
                 Box (
                     modifier = Modifier
                         .size(30.dp)
-                        .relaxedShadow(7.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = maximizeShadowColor, spotColor = maximizeShadowColor)
+                        .relaxedShadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = maximizeShadowColor, spotColor = maximizeShadowColor)
                         .clip(corners(90.dp))
                         .noGleamTaps {
                             onToggleFullScreen()

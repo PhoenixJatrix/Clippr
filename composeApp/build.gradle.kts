@@ -44,12 +44,21 @@ kotlin {
 
 compose.desktop {
     application {
+        buildTypes.release.proguard {
+            configurationFiles.from(rootProject.file("compose-desktop.pro"))
+            optimize.set(true)
+            isEnabled = false
+        }
+
         mainClass = "com.nullinnix.clippr.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Deb)
+            targetFormats(TargetFormat.Dmg)
             packageName = "Clippr"
             packageVersion = "1.0.0"
+            description = "Clippr is an open source and private clipboard manager for MacOS"
+            copyright = "© 2025 Phoenix Jatrix. Copyright free"
+            licenseFile.set(rootProject.file("LICENSE"))
 
             macOS {
                 bundleID = "com.nullinnix.clippr"
