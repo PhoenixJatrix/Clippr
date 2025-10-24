@@ -328,38 +328,36 @@ fun Clips (
                 }
             } else {
                 if (searchResults.isNotEmpty()) {
+                    Row (
+                        modifier = Modifier
+                            .padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row (
+                            verticalAlignment = Alignment.CenterVertically
+                        ){
+                            RadioButton (
+                                isSelected = searchResults.size == selectedClips.size
+                            ) {
+                                if (searchResults.size == selectedClips.size) {
+                                    clipsViewModel.setSelectedClips(emptySet())
+                                } else {
+                                    clipsViewModel.setSelectedClips(searchResults.toSet())
+                                }
+                            }
+
+                            Text (
+                                text = "${selectedClips.size}/${searchResults.size} clips selected"
+                            )
+                        }
+                    }
+
                     LazyColumn (
                         state = searchScrollState,
                         modifier = Modifier
-                            .padding(end = 15.dp)
+                            .padding(end = 15.dp, top = 40.dp)
                     ){
                         item {
-                            Spacer(Modifier.height(15.dp))
-                        }
-
-                        item {
-                            Row (
-                                modifier = Modifier
-                                    .padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row (
-                                    verticalAlignment = Alignment.CenterVertically
-                                ){
-                                    RadioButton (
-                                        isSelected = searchResults.size == selectedClips.size
-                                    ) {
-                                        if (searchResults.size == selectedClips.size) {
-                                            clipsViewModel.setSelectedClips(emptySet())
-                                        } else {
-                                            clipsViewModel.setSelectedClips(searchResults.toSet())
-                                        }
-                                    }
-
-                                    Text (
-                                        text = "${selectedClips.size}/${searchResults.size} clips selected"
-                                    )
-                                }
-                            }
+                            Spacer(Modifier.height(25.dp))
                         }
 
                         items(
@@ -420,13 +418,17 @@ fun Clips (
                         style = LocalScrollbarStyle.current.copy(minimalHeight = 35.dp)
                     )
                 } else {
-                    Text(
-                        text = "No clips match keywords",
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 25.sp,
+                    Column (
                         modifier = Modifier
-                            .align(Alignment.Center)
-                    )
+                            .fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "No clips match keywords",
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 25.sp,
+                            modifier = Modifier
+                        )
+                    }
                 }
             }
         }

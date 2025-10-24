@@ -928,13 +928,11 @@ fun MultiSelectClipDropDownMenu (
                 copyAfterMerge = !copyAfterMerge
             }
 
-            if (currentHoverMerge != null) {
-                currentHoverMerge?.let {
-                    Text (
-                        text = it.info(),
-                        color = Color.Black.copy(0.5f)
-                    )
-                }
+            if (currentHoverMerge != null || selectedMergeType != null) {
+                Text (
+                    text = (selectedMergeType ?: currentHoverMerge)?.info() ?: " \n Select merge type \n ",
+                    color = Color.Black.copy(0.5f)
+                )
             } else {
                 Text (
                     text = " \n Select merge type \n ",

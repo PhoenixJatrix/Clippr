@@ -33,7 +33,19 @@ fun getClipboard (
         if (contents.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
             val paths = contents.getTransferData(DataFlavor.javaFileListFlavor) as List<*>
 
-            if (lastCopiedItemHash != paths.toString().hash()) {
+            val pathsStr = mutableListOf<String>()
+
+            paths.forEach { any ->
+                (any as File?)?.also {file ->
+                    pathsStr.add(file.path)
+                }
+            }
+
+            println("on copy trigger = ${pathsStr.joinToString(separator = "'")}")
+
+            val hash = pathsStr.joinToString(separator = "'").hash()
+
+            if (lastCopiedItemHash != hash) {
                 for (index in paths.indices) {
                     if ((paths[index] as File).isDirectory) {
                         val path = paths[index] as File
@@ -60,7 +72,7 @@ fun getClipboard (
                                 )
                             )
 
-                            lastCopiedItemHash = paths.toString().hash()
+                            lastCopiedItemHash = hash
                         }
                     } else {
                         val path = paths[index] as File
@@ -90,14 +102,16 @@ fun getClipboard (
                                 )
                             )
 
-                            lastCopiedItemHash = paths.toString().hash()
+                            lastCopiedItemHash = hash
                         }
                     }
                 }
             }
         } else if (contents.isDataFlavorSupported(DataFlavor.stringFlavor)) {
             val content = contents.getTransferData(DataFlavor.stringFlavor) as String
-            val hash = content.hash()
+            val hash = listOf(content).joinToString(separator = "'").hash()
+
+            println("on copy trigger = ${listOf(content).joinToString(separator = "'")}")
 
             if (lastCopiedItemHash != hash) {
                 val source = getClipSource()
@@ -158,6 +172,20 @@ fun getIconForContent (
     content: String
 ): String {
     if (!mimeType.contains("/")) {
+        val ext = if (content.contains(".")) content.substring(content.lastIndexOf(".")) else null
+
+        ext?.let {
+            if (ext in codeExtensions) {
+                return ClipType.CODE.id
+            }
+        }
+
+        ext?.let {
+            if (ext in runnableExtensions) {
+                return ClipType.RUNNABLE.id
+            }
+        }
+
         return ClipType.UNKNOWN.id
     }
 
@@ -278,8 +306,10 @@ fun copyToClipboard(clip: Clip, pasteAsFile: Boolean) {
 
         log("copying ${clip.content} to clipboard", "copyToClipboard")
 
+        println("on copy to clipboard = ${listOf(clip.content).joinToString(separator = "'")}")
+
+        lastCopiedItemHash = listOf(clip.content).joinToString(separator = "'").hash()
         clipboard.setContents(customTransferable, CustomClipboardOwner())
-        lastCopiedItemHash = clip.content.hash()
     } catch (e: Exception) {
         e.printStackTrace()
     }
@@ -291,7 +321,6 @@ fun copyMultipleToClipboard(clips: Set<Clip>) {
         val multiFileTransferable = MultiFileTransferable(clips)
 
         clipboard.setContents(multiFileTransferable, CustomClipboardOwner())
-        lastCopiedItemHash = clips.toString().hash()
     } catch (e: Exception) {
         e.printStackTrace()
     }
