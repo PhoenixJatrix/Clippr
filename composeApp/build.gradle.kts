@@ -45,9 +45,10 @@ kotlin {
 compose.desktop {
     application {
         buildTypes.release.proguard {
-            configurationFiles.from(rootProject.file("compose-desktop.pro"))
+            configurationFiles.from(rootProject.file("composeApp/proguard-rules.pro"))
             optimize.set(true)
-            isEnabled = false
+            obfuscate.set(false)
+            isEnabled = true
         }
 
         mainClass = "com.nullinnix.clippr.MainKt"

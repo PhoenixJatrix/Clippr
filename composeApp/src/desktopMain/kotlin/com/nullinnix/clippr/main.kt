@@ -54,9 +54,6 @@ import java.awt.Toolkit
 import java.awt.Window
 
 fun main() {
-    println("app start ${System.getenv().toList()}")
-    log("app start ${System.getenv().toList()}", "main")
-
     val clipsDatabase = ClipsDatabaseFactory().create()
     val settingsDatabase = SettingsDatabaseFactory().create()
     val settingsViewModel = SettingsViewModel(settingsDatabase.settingsDao())
@@ -67,7 +64,7 @@ fun main() {
     val composeWindowStateRaw = MutableStateFlow<Window?>(null)
     var coercedWindowPositionAndSize = false
 
-    log("app started", "main")
+    log("app started red 69", "main")
 
     registerKeyStroke {
         if (settingsViewModel.state.value.enableMetaShiftVPopup) {

@@ -120,7 +120,7 @@ fun isInLoginItemsChecker (
 ) {
     CoroutineScope(Dispatchers.IO).launch {
         while(true) {
-            delay(5000)
+            delay(3000)
             onDone(isInLoginItems())
         }
     }
@@ -131,10 +131,17 @@ fun hasAccessibilityAccessChecker (
 ) {
     CoroutineScope(Dispatchers.IO).launch {
         while(true) {
-            delay(5000)
+            delay(3000)
 
-            val appServices = Native.load("ApplicationServices", ApplicationServices::class.java)
-            onDone(appServices.AXIsProcessTrusted())
+            try {
+                val appServices = Native.load("ApplicationServices", ApplicationServices::class.java)
+                onDone(appServices.AXIsProcessTrusted())
+
+                log("has access = ${appServices.AXIsProcessTrusted()}", "hasAccessibilityAccessChecker")
+            } catch (e: Exception) {
+                e.printStackTrace()
+                log("has access error = ${e.message}", "hasAccessibilityAccessChecker")
+            }
         }
     }
 }
