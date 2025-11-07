@@ -37,6 +37,7 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.Calendar
 import java.util.Locale
+import java.util.UUID
 
 fun String.hash(): String {
     val digest = MessageDigest.getInstance("SHA-256")
@@ -431,7 +432,7 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
             }
 
             Key.V -> {
-                if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null && !clipsState.showClipEditView) {
                     if (clipsState.isSearching) {
                         if (miscViewModelState.metaHeldDown && clipsState.selectedClips.size > 1) {
                             intercepted = true
@@ -449,7 +450,7 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
             }
 
             Key.C -> {
-                if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null) {
+                if ((miscViewModelState.metaHeldDown || miscViewModelState.altHeldDown) && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null && !clipsState.showClipEditView) {
                     if (clipsState.isSearching) {
                         if (miscViewModelState.metaHeldDown && clipsState.selectedClips.size > 1) {
                             intercepted = true
@@ -487,7 +488,7 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
             }
 
             Key.S -> {
-                if ((miscViewModelState.metaHeldDown || miscViewModelState.shiftHeldDown) && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null && clipsState.showClipPreview && clipsState.currentlyPreviewingClip != null) {
+                if ((miscViewModelState.metaHeldDown || miscViewModelState.shiftHeldDown) && clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null && clipsState.showClipEditView && clipsState.currentlyPreviewingClip != null) {
                     if (miscViewModelState.metaHeldDown && miscViewModelState.shiftHeldDown) {
                         intercepted = true
                         clipsViewModel.onSaveAction(SaveAs.SaveAsCopy)
@@ -498,11 +499,18 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
                 }
             }
 
+            Key.N -> {
+                if (miscViewModelState.metaHeldDown && clipsState.currentTab == Tab.ClipsTab && !clipsState.showClipEditView) {
+                    clipsViewModel.setIsNewClip(true)
+                    clipsViewModel.setShowClipEditView(true)
+                }
+            }
+
             Key.Enter -> {
                 if (clipsState.isShowingFilters) {
                     intercepted = true
                     clipsViewModel.searchAndFilter(true)
-                } else if (clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null && !clipsState.showClipPreview) {
+                } else if (clipsState.currentTab == Tab.ClipsTab && miscViewModelState.lastHoveredClip != null && !clipsState.showClipEditView) {
                     if (!clipsState.isSearching && miscViewModelState.metaHeldDown) {
                         val action = if (miscViewModelState.lastHoveredClip.associatedIcon.toClipType() == ClipType.WEB) {
                             ClipMenuAction.OpenAsLink
@@ -568,9 +576,9 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
                         }
 
                         EscPriorityConsumers.PreviewEsc -> {
-                            if (clipsState.showClipPreview) {
+                            if (clipsState.showClipEditView) {
                                 intercepted = true
-                                clipsViewModel.setShowClipPreview(false)
+                                clipsViewModel.setShowClipEditView(false)
                                 break
                             }
                         }
@@ -593,7 +601,7 @@ fun manageKeyEvent(event: KeyEvent, clipsViewModel: ClipsViewModel, miscViewMode
             }
 
             Key.A -> {
-                if (miscViewModelState.metaHeldDown && clipsState.isSearching && clipsState.searchResults.isNotEmpty()) {
+                if (miscViewModelState.metaHeldDown && clipsState.isSearching && clipsState.searchResults.isNotEmpty() && !clipsState.showClipEditView) {
                     intercepted = true
                     clipsViewModel.setSelectedClips(clipsState.searchResults.toSet())
                 }
@@ -649,4 +657,18 @@ fun Modifier.relaxedShadow (
                 spotColor = spotColor
             )
         )
+}
+
+fun emptyClip (): Clip {
+    return Clip (
+        clipID = UUID.randomUUID().toString(),
+        content = "",
+        copiedAt = LocalDateTime.now().epoch(),
+        isPinned = false,
+        mimeType = MIME_TYPE_PLAIN_TEXT,
+        isImage = false,
+        exists = false,
+        pinnedAt = LocalDateTime.now().epoch(),
+        associatedIcon = ClipType.PLAIN_TEXT.id
+    )
 }

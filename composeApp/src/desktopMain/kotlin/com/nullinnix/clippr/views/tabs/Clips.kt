@@ -49,10 +49,13 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import clippr.composeapp.generated.resources.Baloo2_Regular
@@ -72,6 +75,7 @@ import com.nullinnix.clippr.misc.clipTypeToColor
 import com.nullinnix.clippr.misc.clipTypeToDesc
 import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.corners
+import com.nullinnix.clippr.misc.emptyClip
 import com.nullinnix.clippr.misc.epochToReadableTime
 import com.nullinnix.clippr.misc.formatText
 import com.nullinnix.clippr.misc.highlightedAnnotatedString
@@ -104,9 +108,10 @@ fun Clips (
     val searchResults = clipState.searchResults
     val isSearching = clipState.isSearching
     val selectedClips = clipState.selectedClips
-    val showClipPreview = clipState.showClipPreview
+    val showClipEditView = clipState.showClipEditView
     val currentlyPreviewingClip = clipState.currentlyPreviewingClip
     val allPinnedClipsExpanded = clipState.allPinnedClipsExpanded
+    val isNewClip = clipState.isNewClip
 
     val loadedIcns = miscViewModel.state.collectAsState().value.loadedIcns
     val allApps = miscViewModel.state.collectAsState().value.allApps
@@ -122,6 +127,14 @@ fun Clips (
 
     var rightClickedClip by remember { mutableStateOf<String?>(null) }
 
+    LaunchedEffect(showClipEditView) {
+        delay(250)
+
+        if (!showClipEditView) {
+            clipsViewModel.setIsNewClip(false)
+        }
+    }
+
     Box {
         if (!isSearching) {
             if (pinnedClips.isNotEmpty() || otherClips.isNotEmpty()) {
@@ -133,6 +146,38 @@ fun Clips (
                 ){
                     item {
                         Spacer(Modifier.height(15.dp))
+                    }
+
+                    item {
+                        Box(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .padding(end = 15.dp)
+                                    .clip(corners(90.dp))
+                                    .background(Color.Black)
+                                    .padding(horizontal = 25.dp, vertical = 7.dp)
+                                    .clickable {
+                                        clipsViewModel.setIsNewClip(true)
+                                        clipsViewModel.setShowClipEditView(true)
+                                    }, contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = buildAnnotatedString {
+                                        append("New Clip  ")
+
+                                        withStyle(SpanStyle(color = Color.White.copy(0.5f))) {
+                                            append("⌘N")
+                                        }
+                                    },
+                                    color = Color.White
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(10.dp))
                     }
 
                     item {
@@ -433,20 +478,17 @@ fun Clips (
             }
         }
 
-        if (showClipPreview) {
+        if (showClipEditView) {
             ClipEdit(
-                clip = currentlyPreviewingClip,
-                icon = loadedIcns[currentlyPreviewingClip?.source ?: ""],
-                macApp = allApps[currentlyPreviewingClip?.source ?: ""],
-                secondsBeforePaste = secondsBeforePaste,
+                clip = if (isNewClip) emptyClip() else currentlyPreviewingClip,
+                icon = if (isNewClip) loadedIcns["com.nullinnix.clippr"] else loadedIcns[currentlyPreviewingClip?.source ?: ""],
+                macApp = if (isNewClip) allApps["com.nullinnix.clippr"] else allApps[currentlyPreviewingClip?.source ?: ""],
+                isNewClip = isNewClip,
                 onSaveAction = {
                     clipsViewModel.onSaveAction(it)
                 },
                 onClose = {
-                    clipsViewModel.setShowClipPreview(false)
-                },
-                onClipMenuAction = {
-                    clipsViewModel.onClipMenuAction(it, currentlyPreviewingClip)
+                    clipsViewModel.setShowClipEditView(false)
                 },
                 onInterceptEvent = {
                     onInterceptEvent(it)

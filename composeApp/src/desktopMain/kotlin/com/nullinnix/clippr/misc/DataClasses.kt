@@ -51,10 +51,11 @@ data class ClipsState (
     val searchResults: List<Clip> = emptyList(),
     val isShowingFilters: Boolean = false,
     val isOnGoingSearch: Boolean = false,
-    val showClipPreview: Boolean = false,
+    val showClipEditView: Boolean = false,
     val currentlyPreviewingClip: Clip? = null,
     val editedClip: Clip? = null,
-    val allPinnedClipsExpanded: Boolean = false
+    val allPinnedClipsExpanded: Boolean = false,
+    val isNewClip: Boolean = false
 )
 
 data class Filters (

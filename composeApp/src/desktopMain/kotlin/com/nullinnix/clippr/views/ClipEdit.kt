@@ -56,7 +56,6 @@ import clippr.composeapp.generated.resources.clippr_status_icon_thicker
 import clippr.composeapp.generated.resources.down
 import clippr.composeapp.generated.resources.finder
 import com.nullinnix.clippr.misc.Clip
-import com.nullinnix.clippr.misc.ClipMenuAction
 import com.nullinnix.clippr.misc.ClipType
 import com.nullinnix.clippr.misc.MacApp
 import com.nullinnix.clippr.misc.SaveAs
@@ -64,13 +63,10 @@ import com.nullinnix.clippr.misc.clipTypeToColor
 import com.nullinnix.clippr.misc.clipTypeToDesc
 import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.corners
-import com.nullinnix.clippr.misc.desc
 import com.nullinnix.clippr.misc.epochToReadableTime
-import com.nullinnix.clippr.misc.getClipMenuActions
 import com.nullinnix.clippr.misc.hash
 import com.nullinnix.clippr.misc.noGleamTaps
 import com.nullinnix.clippr.misc.relaxedShadow
-import com.nullinnix.clippr.misc.shortcut
 import com.nullinnix.clippr.misc.toClipType
 import com.nullinnix.clippr.theme.HeaderColor
 import kotlinx.coroutines.delay
@@ -82,8 +78,7 @@ fun ClipEdit (
     clip: Clip?,
     macApp: MacApp?,
     icon: ImageBitmap?,
-    secondsBeforePaste: Int,
-    onClipMenuAction: (ClipMenuAction) -> Unit,
+    isNewClip: Boolean,
     onSaveAction: (SaveAs) -> Unit,
     onInterceptEvent: (KeyEvent) -> Unit,
     onClipEdited: (Clip?) -> Unit,
@@ -113,7 +108,7 @@ fun ClipEdit (
                 val originalHash by remember { mutableStateOf(clip.content.hash()) }
                 val originalClipType by remember { mutableStateOf(clip.associatedIcon.toClipType()) }
 
-                val edited = (originalHash != clipContentEdit.hash()) || (originalPinState != isPinned) || (originalClipType != clipType)
+                val edited = ((originalHash != clipContentEdit.hash()) || (originalPinState != isPinned) || (originalClipType != clipType)) && clipContentEdit.isNotEmpty()
 
                 LaunchedEffect(clipContentEdit, isPinned, clipType) {
                     onClipEdited (
@@ -171,8 +166,8 @@ fun ClipEdit (
 
                                 Spacer(Modifier.width(10.dp))
 
-                                Text(
-                                    text = "Edit",
+                                Text (
+                                    text = if (isNewClip) "New Clip" else "Edit",
                                     color = Color.Black,
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 18.sp
@@ -185,7 +180,11 @@ fun ClipEdit (
                                     .clip(corners(90.dp))
                                     .background(if (edited) Color.Black else Color.LightGray)
                                     .clickable (edited){
-                                        showSaveAsDropDown = true
+                                        if (isNewClip) {
+                                            onSaveAction(SaveAs.Save)
+                                        } else {
+                                            showSaveAsDropDown = true
+                                        }
                                     }
                                     .padding(horizontal = 15.dp)
                                     .onGloballyPositioned {
@@ -193,20 +192,22 @@ fun ClipEdit (
                                     }, verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text (
-                                    text = "Save as",
+                                    text = if (isNewClip) "Save" else "Save as",
                                     color = if (edited) Color.White else Color.White.copy(0.6f),
                                     fontWeight = FontWeight.SemiBold
                                 )
 
-                                Spacer(Modifier.width(5.dp))
+                                if (!isNewClip) {
+                                    Spacer(Modifier.width(5.dp))
 
-                                Icon (
-                                    painter = painterResource(Res.drawable.down),
-                                    contentDescription = "",
-                                    tint = if (edited) Color.White else Color.White.copy(0.6f),
-                                    modifier = Modifier
-                                        .size(20.dp)
-                                )
+                                    Icon (
+                                        painter = painterResource(Res.drawable.down),
+                                        contentDescription = "",
+                                        tint = if (edited) Color.White else Color.White.copy(0.6f),
+                                        modifier = Modifier
+                                            .size(20.dp)
+                                    )
+                                }
                             }
                         }
 
@@ -320,14 +321,14 @@ fun ClipEdit (
 
                             Spacer(Modifier.width(7.dp))
 
-                            if (clip.edited == true) {
+                            if (clip.edited == true && !isNewClip) {
                                 ClipEditInfo (
                                     content = "Edited",
                                     enabled = false
                                 )
-                            }
 
-                            Spacer(Modifier.width(7.dp))
+                                Spacer(Modifier.width(7.dp))
+                            }
 
                             if (macApp != null) {
                                 clip.source?.let {
@@ -358,77 +359,44 @@ fun ClipEdit (
                                 }
                             }
 
-                            if (clip.associatedIcon.toClipType() == ClipType.PLAIN_TEXT) {
-                                ClipEditInfo(
-                                    content = "${clip.content.length} ${if (clip.content.length == 1) "character" else "characters"}",
-                                    enabled = false,
-                                    prefix = {
-                                        val lines = clip.content.lines().size
-                                        if (lines > 1) {
-                                            Text(
-                                                text = "$lines lines",
-                                                fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
-                                                color = Color.Gray,
-                                                fontSize = 13.sp
-                                            )
+                            if (!isNewClip) {
+                                if (clip.associatedIcon.toClipType() == ClipType.PLAIN_TEXT) {
+                                    ClipEditInfo(
+                                        content = "${clip.content.length} ${if (clip.content.length == 1) "character" else "characters"}",
+                                        enabled = false,
+                                        prefix = {
+                                            val lines = clip.content.lines().size
+                                            if (lines > 1) {
+                                                Text(
+                                                    text = "$lines lines",
+                                                    fontFamily = FontFamily(Font(Res.font.Baloo2_Regular)),
+                                                    color = Color.Gray,
+                                                    fontSize = 13.sp
+                                                )
 
-                                            Spacer(Modifier.width(5.dp))
+                                                Spacer(Modifier.width(5.dp))
 
-                                            Canvas(
-                                                modifier = Modifier
-                                                    .size(5.dp)
-                                            ) {
-                                                drawCircle(color = Color.Gray)
+                                                Canvas(
+                                                    modifier = Modifier
+                                                        .size(5.dp)
+                                                ) {
+                                                    drawCircle(color = Color.Gray)
+                                                }
                                             }
                                         }
-                                    }
+                                    )
+
+                                    Spacer(Modifier.width(7.dp))
+                                }
+
+                                ClipEditInfo(
+                                    content = "Copied $copiedAt",
+                                    enabled = false,
                                 )
-
-                                Spacer(Modifier.width(7.dp))
                             }
-
-                            ClipEditInfo(
-                                content = "Copied $copiedAt",
-                                enabled = false,
-                            )
                         }
 
                         Spacer(Modifier.height(20.dp))
-
-                        getClipMenuActions(clip, true).forEach { option ->
-                            Box (
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .relaxedShadow(3.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
-                                    .clip(corners(10.dp))
-                                    .background(Color.White)
-                                    .clickable {
-                                        onClipMenuAction(option)
-                                    }
-                                    .padding(25.dp),
-                                contentAlignment = Alignment.CenterStart
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = option.desc(secondsBeforePaste),
-                                        fontSize = 16.sp,
-                                        color = if (option == ClipMenuAction.Delete) Color.Red else Color.Black
-                                    )
-
-                                    Text(
-                                        text = option.shortcut(),
-                                        fontSize = 16.sp,
-                                        color = Color.Black.copy(0.5f)
-                                    )
-                                }
-                            }
-
-                            Spacer(Modifier.height(20.dp))
-                        }
                     }
 
                     VerticalScrollbar (

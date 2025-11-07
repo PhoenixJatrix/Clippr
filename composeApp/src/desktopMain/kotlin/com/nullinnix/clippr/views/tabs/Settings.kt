@@ -143,16 +143,6 @@ fun Settings (
                 settingsViewModel.onAction(SettingsAction.ToggleEnableMetaShiftV)
             }
 
-//            Spacer(Modifier.height(20.dp))
-//
-//            SettingsCheckBoxElement(
-//                title = "Clear unpinned on login",
-//                description = "Delete all unpinned clips when the device is started",
-//                isChecked = clearAllUnpinnedClipsOnDeviceStart
-//            ) {
-//                settingsViewModel.onAction(SettingsAction.ToggleClearAllUnpinnedDevicesOnStart)
-//            }
-
             Spacer(Modifier.height(20.dp))
 
             SettingsElement(
@@ -535,6 +525,93 @@ fun Settings (
                     }
                 }
             )
+
+            Spacer(Modifier.height(20.dp))
+
+            Column (
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .relaxedShadow(7.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                    .clip(corners(10.dp))
+                    .background(Color.White)
+                    .padding(15.dp)
+            ){
+                Text(
+                    text = "Clippr",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 23.sp
+                )
+
+                Text(
+                    text = "Version 1.0.0", color = Color.Black.copy(0.8f)
+                )
+
+                Text(
+                    text = "2025 Phoenix Jatrix", color = Color.Black.copy(0.8f)
+                )
+
+                Spacer(Modifier.height(15.dp))
+
+                Row (
+                    modifier = Modifier
+                        .fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround
+                ){
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .relaxedShadow(5.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                            .clip(corners(10.dp))
+                            .background(Color.White)
+                            .clickable {
+                                ProcessBuilder("open", "https://discord.com/users/749432869822398466").start()
+                            }
+                            .padding(10.dp), contentAlignment = Alignment.Center
+                    ) {
+                        Text (
+                            text = "Discord",
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    Spacer(Modifier.width(15.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .relaxedShadow(5.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                            .clip(corners(10.dp))
+                            .background(Color.White)
+                            .clickable {
+                                ProcessBuilder("open", "https://x.com/phoenixjatrix").start()
+                            }
+                            .padding(10.dp), contentAlignment = Alignment.Center
+                    ) {
+                        Text (
+                            text = "Twitter",
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    Spacer(Modifier.width(15.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .relaxedShadow(5.dp, RoundedCornerShape(10.dp), clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                            .clip(corners(10.dp))
+                            .background(Color.White)
+                            .clickable {
+                                ProcessBuilder("open", "https://github.com/phoenixjatrix/clippr").start()
+                            }
+                            .padding(10.dp), contentAlignment = Alignment.Center
+                    ) {
+                        Text (
+                            text = "Source code",
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
 
             Spacer(Modifier.height(20.dp))
         }

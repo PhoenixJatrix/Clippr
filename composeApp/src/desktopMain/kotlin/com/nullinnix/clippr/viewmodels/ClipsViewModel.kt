@@ -21,6 +21,7 @@ import com.nullinnix.clippr.misc.coerce
 import com.nullinnix.clippr.misc.copyMultipleToClipboard
 import com.nullinnix.clippr.misc.copyToClipboard
 import com.nullinnix.clippr.misc.desc
+import com.nullinnix.clippr.misc.emptyClip
 import com.nullinnix.clippr.misc.epoch
 import com.nullinnix.clippr.misc.focusWindow
 import com.nullinnix.clippr.misc.log
@@ -230,7 +231,7 @@ class ClipsViewModel(
             ClipMenuAction.Edit -> {
                 viewModelScope.launch {
                     setCurrentlyPreviewingClip(clip)
-                    setShowClipPreview(true)
+                    setShowClipEditView(true)
 
                     delay(300)
                     miscViewModel.setLastHoveredClip(clip)
@@ -425,45 +426,68 @@ class ClipsViewModel(
     fun onSaveAction(action: SaveAs) {
         println(action.desc())
 
-        if (clipsState.value.editedClip != null && clipsState.value.currentlyPreviewingClip != null) {
-            val newClip = clipsState.value.editedClip!!
-            val oldClip = clipsState.value.currentlyPreviewingClip!!
+        if (clipsState.value.isNewClip) {
+            notificationsViewModel.postNotification(
+                Notification(
+                    duration = 6,
+                    content = "Clip saved",
+                    type = NotificationType.Info()
+                )
+            )
 
-            when (action) {
-                SaveAs.Save -> {
-                    addClip(
-                        clip = newClip.copy(
-                            pinnedAt = if (oldClip.isPinned != newClip.isPinned) LocalDateTime.now().epoch() else oldClip.pinnedAt,
-                            edited = true
-                        )
-                    )
+            clipsState.value.editedClip?.let {
+                val renewedClip = emptyClip().copy(
+                    content = it.content,
+                    isPinned = it.isPinned,
+                    mimeType = it.mimeType,
+                    edited = false,
+                    source = "com.nullinnix.clippr",
+                    associatedIcon = it.associatedIcon
+                )
 
-                    notificationsViewModel.postNotification(
-                        Notification(
-                            duration = 6,
-                            content = "Saved",
-                            type = NotificationType.Info()
-                        )
-                    )
-                }
+                addClip(renewedClip)
+            }
+        } else {
+            if (clipsState.value.editedClip != null && clipsState.value.currentlyPreviewingClip != null) {
+                val newClip = clipsState.value.editedClip!!
+                val oldClip = clipsState.value.currentlyPreviewingClip!!
 
-                SaveAs.SaveAsCopy -> {
-                    addClip(
-                        clip = newClip.copy(
-                            clipID = UUID.randomUUID().toString(),
-                            pinnedAt = if (oldClip.isPinned != newClip.isPinned) LocalDateTime.now().epoch() else oldClip.pinnedAt,
-                            copiedAt = LocalDateTime.now().epoch(),
-                            edited = false
+                when (action) {
+                    SaveAs.Save -> {
+                        addClip(
+                            clip = newClip.copy(
+                                pinnedAt = if (oldClip.isPinned != newClip.isPinned) LocalDateTime.now().epoch() else oldClip.pinnedAt,
+                                edited = true
+                            )
                         )
-                    )
 
-                    notificationsViewModel.postNotification(
-                        Notification(
-                            duration = 6,
-                            content = "Copy saved",
-                            type = NotificationType.Info()
+                        notificationsViewModel.postNotification(
+                            Notification(
+                                duration = 6,
+                                content = "Saved",
+                                type = NotificationType.Info()
+                            )
                         )
-                    )
+                    }
+
+                    SaveAs.SaveAsCopy -> {
+                        addClip(
+                            clip = newClip.copy(
+                                clipID = UUID.randomUUID().toString(),
+                                pinnedAt = if (oldClip.isPinned != newClip.isPinned) LocalDateTime.now().epoch() else oldClip.pinnedAt,
+                                copiedAt = LocalDateTime.now().epoch(),
+                                edited = false
+                            )
+                        )
+
+                        notificationsViewModel.postNotification(
+                            Notification(
+                                duration = 6,
+                                content = "Copy saved",
+                                type = NotificationType.Info()
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -704,13 +728,13 @@ class ClipsViewModel(
         }
     }
 
-    fun setShowClipPreview(value: Boolean) {
+    fun setShowClipEditView(value: Boolean) {
         if (!value) {
             miscViewModel.setLastHoveredClip(null)
         }
 
         _clipsState.update {
-            it.copy(showClipPreview = value)
+            it.copy(showClipEditView = value)
         }
     }
 
@@ -723,6 +747,12 @@ class ClipsViewModel(
     fun setAllPinnedClipsExpanded (value: Boolean) {
         _clipsState.update {
             it.copy(allPinnedClipsExpanded = value)
+        }
+    }
+
+    fun setIsNewClip (value: Boolean) {
+        _clipsState.update {
+            it.copy(isNewClip = value)
         }
     }
 }

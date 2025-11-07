@@ -125,7 +125,7 @@ fun main() {
 
                 LaunchedEffect(composeWindowState) {
                     while (true) {
-                        if (!clipsViewModel.clipsState.value.isSearching && clipsViewModel.clipsState.value.currentTab != Tab.SettingsTab && !clipsViewModel.clipsState.value.showClipPreview) {
+                        if (!clipsViewModel.clipsState.value.isSearching && clipsViewModel.clipsState.value.currentTab != Tab.SettingsTab && !clipsViewModel.clipsState.value.showClipEditView) {
                             focusRequester.requestFocus()
                         }
 
@@ -190,8 +190,8 @@ fun main() {
                         onToggleFullScreen = {
                             toggleFullscreen(window)
                         },
-                        onHideMainApp = {
-                            clipsViewModel.setShowMainApp(false)
+                        onCloseWindow = {
+                            window.isVisible = false
                         }
                     )
                 }

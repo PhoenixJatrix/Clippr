@@ -195,7 +195,7 @@ fun WindowBar (
     window: Window,
     isFocused: Boolean,
     onToggleFullScreen: () -> Unit,
-    onHideMainApp: () -> Unit
+    onCloseWindow: () -> Unit
 ) {
     val hoverSource = remember { MutableInteractionSource() }
     val onHover by hoverSource.collectIsHoveredAsState()
@@ -231,7 +231,7 @@ fun WindowBar (
                         .relaxedShadow(10.dp, RoundedCornerShape(90.dp), clip = false, ambientColor = closeShadowColor, spotColor = closeShadowColor)
                         .clip(corners(90.dp))
                         .noGleamTaps {
-                            onHideMainApp()
+                            onCloseWindow()
                         }
                         .background(Color.White)
                         .padding(10.dp), contentAlignment = Alignment.Center
