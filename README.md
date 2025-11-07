@@ -1,4 +1,5 @@
 
+[![Download](https://img.shields.io/badge/Donwload%20Clippr-blue)](https://github.com/PhoenixJatrix/Clippr/raw/refs/heads/main/assets/Clippr-1.0.0.dmg)
 [![Compose-Multiplatform](https://img.shields.io/badge/UI-Compose%20Multiplatform-3a7af2?logo=jetpackcompose&logoColor=white)](https://github.com/JetBrains/compose-multiplatform)
 ![Static Badge](https://img.shields.io/badge/Database-RoomDB-red)
 ![Kotlin](https://img.shields.io/badge/Lang-Kotlin-0095D5.svg?logo=kotlin&logoColor=white)
