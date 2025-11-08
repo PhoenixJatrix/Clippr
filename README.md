@@ -1,17 +1,18 @@
 
-[![Download](https://img.shields.io/badge/Donwload%20Clippr-blue)](https://github.com/PhoenixJatrix/Clippr/raw/refs/heads/main/assets/Clippr-1.0.0.dmg)
+[![Download](https://img.shields.io/badge/Download%20Clippr-green)](https://github.com/PhoenixJatrix/Clippr/raw/refs/heads/main/assets/Clippr-1.0.0.dmg)
 [![Compose-Multiplatform](https://img.shields.io/badge/UI-Compose%20Multiplatform-3a7af2?logo=jetpackcompose&logoColor=white)](https://github.com/JetBrains/compose-multiplatform)
 ![Static Badge](https://img.shields.io/badge/Database-RoomDB-red)
-![Kotlin](https://img.shields.io/badge/Lang-Kotlin-0095D5.svg?logo=kotlin&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Lang-Kotlin-purple.svg?logo=kotlin&logoColor=pruple)
 ![OS](https://img.shields.io/badge/OS-macOS-blue)
 [![Static Badge](https://img.shields.io/badge/License-MIT-silver)](https://github.com/PhoenixJatrix/Clippr/blob/main/LICENSE)
-  
+[![Website](https://img.shields.io/badge/Website-green)](https://clippr.nullinnix.com)
 
 # 🧷 Clippr
 
 **Clippr** is a minimalist clipboard manager built for macOS.  
 It saves everything you copy on device and let's you paste them directly from the menu bar or the main app
 
+**⬇︎ Download Clippr.dmg** [**here**](https://github.com/PhoenixJatrix/Clippr/raw/refs/heads/main/assets/Clippr-1.0.0.dmg)
 ---
 
 ## 🚀 Features
@@ -56,7 +57,7 @@ Your privacy is core to Clippr’s design.
 
 ❌ No cloud sync, telemetry, or analytics.
 
-🔐 You control what gets saved and can clear history anytime.
+🔐 You control what gets saved and for how long.
 
 ### 🧰 Tech Stack
 
